@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#ffd600"><title>Sr. Dogão | É bom pra mais de metro!</title>
+<style>
+:root{--yellow:#ffd600;--yellow2:#ffea00;--red:#d70b13;--dark:#35100b;--cream:#fffaf0;--white:#fff}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:Arial,Helvetica,sans-serif;color:var(--dark);background:var(--cream)}a{text-decoration:none;color:inherit}
+.header{background:var(--yellow2);position:sticky;top:0;z-index:20;box-shadow:0 2px 12px #6b2c0015}.nav{max-width:1200px;margin:auto;min-height:92px;padding:10px 22px;display:flex;align-items:center;gap:28px}.logo{width:145px;height:72px;object-fit:contain}.links{display:flex;gap:26px;margin-left:auto;font-weight:800}.links a:first-child{background:var(--red);color:#fff;padding:12px 20px;border-radius:24px}.actions{display:flex;gap:10px}.pill{background:#fff;padding:13px 18px;border-radius:28px;font-weight:800;box-shadow:0 5px 14px #8b40001c}.cart{background:var(--red);color:#fff}
+.hero{background:radial-gradient(circle at 80% 25%,#fff25a 0,#ffe400 24%,#ffd000 70%);overflow:hidden}.hero-inner{max-width:1200px;margin:auto;min-height:610px;padding:55px 24px 48px;display:grid;grid-template-columns:1.05fr .95fr;align-items:center;gap:32px}.eyebrow{font-weight:1000;font-size:clamp(2.2rem,5vw,4.7rem);line-height:.88;margin:0;text-transform:uppercase;transform:rotate(-2deg)}.eyebrow .red{display:block;color:var(--red);font-size:1.18em;text-shadow:0 4px 0 #fff,0 8px 0 #9f0b0b}.tape-wrap{position:relative;margin:30px 0 20px;padding-left:74px}.case{position:absolute;left:0;top:-20px;width:92px;height:92px;border-radius:50%;background:#1d1d1d;border:12px solid #f5b900;box-shadow:0 7px 12px #0003;z-index:2}.case:after{content:"";position:absolute;inset:17px;border-radius:50%;border:3px solid #555}.tape{height:58px;background:linear-gradient(#ffe42e,#ffc900);border:4px solid #1b1b1b;border-radius:4px;box-shadow:0 7px 12px #0003;display:flex;align-items:center;justify-content:space-around;font-weight:1000;transform:rotate(-2deg);overflow:hidden}.tick{height:100%;padding-top:22px;position:relative}.tick:before{content:"";position:absolute;top:0;left:50%;height:17px;border-left:2px solid #111}.tick:last-child{font-size:1.45rem;color:var(--red);padding-top:16px}.sub{font-size:1.18rem;font-weight:800;max-width:560px;line-height:1.4}.cta{display:inline-flex;align-items:center;gap:12px;background:var(--red);color:#fff;padding:17px 28px;border-radius:32px;font-weight:900;font-size:1.15rem;box-shadow:0 8px 18px #a00b0b45;margin-top:8px}.benefits{display:flex;gap:26px;flex-wrap:wrap;margin-top:30px;font-weight:800;font-size:.9rem}.visual{position:relative;min-height:450px;display:grid;place-items:center}.visual:before{content:"";position:absolute;width:470px;height:470px;background:var(--red);border-radius:42% 58% 65% 35%;transform:rotate(12deg);box-shadow:inset 0 0 0 8px #ff5c1d33}.visual img{position:relative;width:min(100%,500px);filter:drop-shadow(0 22px 18px #7b230055);transform:rotate(3deg)}
+.categories{max-width:1200px;margin:-28px auto 0;position:relative;z-index:4;padding:0 24px}.cat-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:12px}.cat{background:#fff;border-radius:18px;padding:20px 10px;text-align:center;font-weight:900;box-shadow:0 7px 24px #5d1a0012}.cat:first-child{background:var(--yellow)}.cat span{display:block;font-size:2rem;margin-bottom:8px}
+.section{max-width:1200px;margin:auto;padding:54px 24px}.section h2{font-size:2rem;margin:0 0 20px}.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}.card{background:#fff;border-radius:18px;padding:22px;box-shadow:0 8px 25px #4d160012}.card .fake{height:130px;border-radius:14px;background:linear-gradient(135deg,#ffbf00,#d60c12);display:grid;place-items:center;font-size:4rem}.card h3{margin:14px 0 7px}.price{font-size:1.35rem;color:var(--red);font-weight:1000}.add{display:block;text-align:center;background:var(--red);color:#fff;border-radius:24px;padding:12px;margin-top:14px;font-weight:900}.soon{text-align:center;color:#755;padding-top:12px}
+@media(max-width:850px){.links{display:none}.nav{min-height:76px}.logo{width:110px;height:58px}.actions .pill:first-child{display:none}.hero-inner{grid-template-columns:1fr;text-align:center;padding-top:35px}.sub{margin-left:auto;margin-right:auto}.benefits{justify-content:center}.visual{min-height:300px}.visual:before{width:300px;height:300px}.visual img{width:330px}.cat-grid{grid-template-columns:repeat(3,1fr)}.cards{grid-template-columns:repeat(2,1fr)}.tape-wrap{padding-left:52px}.case{width:70px;height:70px;top:-7px;border-width:9px}.tape{height:54px}.tick:nth-child(even){display:none}}
+@media(max-width:520px){.nav{padding:8px 14px}.cart{padding:11px 14px}.hero-inner{min-height:auto;padding:28px 16px 52px}.eyebrow{font-size:2.55rem}.tape-wrap{margin:25px 0 18px}.tape{font-size:.72rem}.tick:last-child{font-size:1rem}.visual{min-height:260px}.visual img{width:280px}.cat-grid{grid-template-columns:repeat(2,1fr)}.cards{grid-template-columns:1fr}.benefits{gap:12px;font-size:.8rem}.section{padding:42px 16px}}
+</style></head>
+<body>
+<header class="header"><nav class="nav">
+<img class="logo" src="/sr-dogao-logo.png" alt="Sr. Dogão">
+<div class="links"><a href="#">Início</a><a href="#cardapio">Cardápio</a><a href="#promocoes">Promoções</a><a href="#sobre">Sobre</a><a href="#contato">Contato</a></div>
+<div class="actions"><div class="pill">📍 Meu endereço</div><div class="pill cart">🛒 Carrinho</div></div>
+</nav></header>
+<main>
+<section class="hero"><div class="hero-inner">
+<div>
+<h1 class="eyebrow">É bom pra <span class="red">mais de metro!</span></h1>
+<div class="tape-wrap"><div class="case"></div><div class="tape" aria-label="Trena decorativa"><span class="tick">0</span><span class="tick">10</span><span class="tick">20</span><span class="tick">30</span><span class="tick">40</span><span class="tick">50</span><span class="tick">60</span><span class="tick">70</span><span class="tick">80</span><span class="tick">90</span><span class="tick">100+</span></div></div>
+<p class="sub">Dogão caprichado, recheado de verdade e do jeito que você gosta.</p>
+<a class="cta" href="#cardapio">🛒 Fazer meu pedido <b>›</b></a>
+<div class="benefits"><span>🛵 Entrega rápida</span><span>🛡️ Pagamento seguro</span><span>⭐ Qualidade garantida</span></div>
+</div>
+<div class="visual"><img src="/sr-dogao-logo.png" alt="Sr. Dogão"></div>
+</div></section>
+<section class="categories"><div class="cat-grid"><div class="cat"><span>🌭</span>Hot Dogs</div><div class="cat"><span>🍟</span>Combos</div><div class="cat"><span>🥔</span>Porções</div><div class="cat"><span>🥤</span>Bebidas</div><div class="cat"><span>🍨</span>Sobremesas</div><div class="cat"><span>🏷️</span>Promoções</div></div></section>
+<section class="section" id="cardapio"><h2>Destaques do Cardápio</h2><div class="cards">
+<div class="card"><div class="fake">🌭</div><h3>Dogão Especial</h3><p>Um dogão caprichado, preparado do seu jeito.</p><div class="price">Em breve</div><a class="add" href="#">Ver produto</a></div>
+<div class="card"><div class="fake">🌭</div><h3>Dogão Tradicional</h3><p>O clássico do Sr. Dogão com muito recheio.</p><div class="price">Em breve</div><a class="add" href="#">Ver produto</a></div>
+<div class="card"><div class="fake">🌭</div><h3>Dogão Calabresa</h3><p>Sabor marcante e recheio de verdade.</p><div class="price">Em breve</div><a class="add" href="#">Ver produto</a></div>
+<div class="card"><div class="fake">🍟</div><h3>Combos</h3><p>Dogão, acompanhamento e bebida.</p><div class="price">Em breve</div><a class="add" href="#">Ver combos</a></div>
+</div><p class="soon">Cardápio, preços, pedidos, login por telefone e programa de pontos serão conectados ao painel administrativo nas próximas etapas.</p></section>
+</main>
+</body></html>
