@@ -43,21 +43,21 @@ const STORE_URL='https://dlccdfwteekecjiwybfr.supabase.co',STORE_KEY='sb_publish
 async function loadStoreProducts(){const {data,error}=await storeDb.from('srdogao_products').select('*').eq('available',true).order('display_order');if(error)return;menuProducts=(data||[]).map(p=>({id:p.id,name:p.name,price:+(p.promo&&p.promo_price?p.promo_price:p.price),category:p.category,img:p.image_url,desc:p.description,popular:p.popular,featured:p.featured}));const featured=menuProducts.filter(p=>p.featured);document.getElementById('productGrid').innerHTML=featured.map(p=>'<div class="card" data-name="'+p.name+'" data-price="'+p.price+'" data-category="'+p.category+'">'+(p.popular?'<span class="badge">Mais pedido</span>':'')+'<div class="fake"><img src="'+p.img+'" alt="'+p.name+'"></div><h3>'+p.name+'</h3><p>'+p.desc+'</p><div class="price">'+money(p.price)+'</div><button class="add" type="button" style="border:0;width:100%">🛒 Adicionar</button></div>').join('');bindAddButtons();}
 const money=v=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v);
 let cart=JSON.parse(localStorage.getItem('srdogao_cart')||'[]');
-const $=q=>document.querySelector(q), $=q=>[...document.querySelectorAll(q)];
+const $=q=>document.querySelector(q), $=q=>Array.from(document.querySelectorAll(q));
 function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),1800)}
-function openModal(id){$(id).classList.add('open')} function closeAll(){$('.modal-backdrop').forEach(x=>x.classList.remove('open'))}
-$('[data-close]').forEach(b=>b.onclick=closeAll); $('.modal-backdrop').forEach(m=>m.onclick=e=>{if(e.target===m)closeAll()});
+function openModal(id){$(id).classList.add('open')} function closeAll(){$$('.modal-backdrop').forEach(x=>x.classList.remove('open'))}
+$$('[data-close]').forEach(b=>b.onclick=closeAll); $$('.modal-backdrop').forEach(m=>m.onclick=e=>{if(e.target===m)closeAll()});
 function saveCart(){localStorage.setItem('srdogao_cart',JSON.stringify(cart));renderCart()}
 function renderCart(){const count=cart.reduce((a,x)=>a+x.qty,0);$('#cartCount').textContent=count?('('+count+')'):'';
  const box=$('#cartItems'); if(!cart.length){box.innerHTML='<p>Seu carrinho está vazio.</p>';$('#cartTotal').textContent='Total: R$ 0,00';return}
  box.innerHTML=cart.map((x,i)=>'<div class="cart-row"><b>'+x.name+'</b><div class="qty"><button onclick="qty('+i+',-1)">−</button><span>'+x.qty+'</span><button onclick="qty('+i+',1)">+</button></div><span class="price-line">'+money(x.price*x.qty)+'</span></div>').join('');
  $('#cartTotal').textContent='Total: '+money(cart.reduce((a,x)=>a+x.price*x.qty,0))}
 window.qty=(i,d)=>{cart[i].qty+=d;if(cart[i].qty<=0)cart.splice(i,1);saveCart()};
-$('.add').forEach(b=>b.onclick=()=>{const c=b.closest('.card'),name=c.dataset.name,price=+c.dataset.price;let x=cart.find(x=>x.name===name);x?x.qty++:cart.push({name,price,qty:1});saveCart();toast(name+' adicionado ao carrinho')});
+$$('.add').forEach(b=>b.onclick=()=>{const c=b.closest('.card'),name=c.dataset.name,price=+c.dataset.price;let x=cart.find(x=>x.name===name);x?x.qty++:cart.push({name,price,qty:1});saveCart();toast(name+' adicionado ao carrinho')});
 $('#cartBtn').onclick=()=>{renderCart();openModal('#cartModal')};
 const catNames={hotdogs:'Hot Dogs',combos:'Combos',porcoes:'Porções',bebidas:'Bebidas',sobremesas:'Sobremesas',promocoes:'Promoções'};
 function addCart(p){let x=cart.find(x=>x.name===p.name);x?x.qty++:cart.push({name:p.name,price:p.price,qty:1});saveCart();toast(p.name+' adicionado ao carrinho')}
-function bindAddButtons(){$$('.add').forEach(b=>b.onclick=()=>{const c=b.closest('.card');addCart({name:c.dataset.name,price:+c.dataset.price})})}
+function bindAddButtons(){$$$('.add').forEach(b=>b.onclick=()=>{const c=b.closest('.card');addCart({name:c.dataset.name,price:+c.dataset.price})})}
 function renderFullMenu(cat=''){const cats=$('#fullMenuCats');cats.innerHTML='<button data-fmcat="" class="'+(!cat?'active':'')+'">Todos</button>'+Object.entries(catNames).map(([k,v])=>'<button data-fmcat="'+k+'" class="'+(cat===k?'active':'')+'">'+v+'</button>').join('');$$('[data-fmcat]').forEach(b=>b.onclick=()=>renderFullMenu(b.dataset.fmcat));const list=cat?menuProducts.filter(p=>p.category===cat):menuProducts;$('#fullMenuGrid').innerHTML=list.length?list.map(p=>'<div class="fullmenu-item"><img src="'+p.img+'" alt=""><div><h3>'+p.name+'</h3><p>'+p.desc+'</p><div class="fmprice">'+money(p.price)+'</div></div><button data-fmadd="'+p.id+'" aria-label="Adicionar">+</button></div>').join(''):'<p>Nenhum produto disponível nesta categoria.</p>';$$('[data-fmadd]').forEach(b=>b.onclick=()=>{const p=menuProducts.find(x=>String(x.id)===b.dataset.fmadd);if(p)addCart(p)})}
 $$('.openFullMenu').forEach(a=>a.onclick=e=>{e.preventDefault();renderFullMenu();openModal('#fullMenuModal')});
 const savedAddress=localStorage.getItem('srdogao_address'); if(savedAddress)$('#addressLabel').textContent=savedAddress.length>20?savedAddress.slice(0,20)+'…':savedAddress;
@@ -65,9 +65,9 @@ function address(){ $('#addressInput').value=localStorage.getItem('srdogao_addre
 $('#addressBtn').onclick=address; $('#footerAddress').onclick=e=>{e.preventDefault();address()};
 $('#saveAddress').onclick=()=>{const v=$('#addressInput').value.trim();if(!v)return toast('Digite seu endereço');localStorage.setItem('srdogao_address',v);$('#addressLabel').textContent=v.length>20?v.slice(0,20)+'…':v;closeAll();toast('Endereço salvo')};
 $('#checkoutBtn').onclick=()=>{if(!cart.length)return toast('Adicione um item ao carrinho');if(!localStorage.getItem('srdogao_address')){closeAll();address();return toast('Informe o endereço primeiro')}toast('Carrinho pronto. Pagamento será conectado na próxima etapa')};
-$('.cat').forEach(c=>c.onclick=()=>{$('.cat').forEach(x=>x.classList.remove('active'));c.classList.add('active');const cat=c.dataset.category;if(cat==='promocoes'){location.hash='promocoes';return}$('.card').forEach(card=>card.style.display=(card.dataset.category===cat?'':'none'));location.hash='cardapio'});
+$$('.cat').forEach(c=>c.onclick=()=>{$$('.cat').forEach(x=>x.classList.remove('active'));c.classList.add('active');const cat=c.dataset.category;if(cat==='promocoes'){location.hash='promocoes';return}$$('.card').forEach(card=>card.style.display=(card.dataset.category===cat?'':'none'));location.hash='cardapio'});
 $('.cta').onclick=e=>{e.preventDefault();location.hash='cardapio'};
-$('.combo-action a').onclick=e=>{e.preventDefault();$('.cat').find(x=>x.dataset.category==='combos')?.click()};
+$('.combo-action a').onclick=e=>{e.preventDefault();$$('.cat').find(x=>x.dataset.category==='combos')?.click()};
 $('#trackOrder').onclick=e=>{e.preventDefault();$('#infoTitle').textContent='Acompanhar pedido';$('#infoBody').innerHTML='<p>Quando seu pedido for finalizado, o acompanhamento aparecerá aqui.</p>';openModal('#infoModal')};
 $('#faqBtn').onclick=e=>{e.preventDefault();$('#infoTitle').textContent='Dúvidas frequentes';$('#infoBody').innerHTML='<p><b>Como faço um pedido?</b><br>Escolha os produtos, adicione ao carrinho e informe o endereço.</p><p><b>Como acompanho?</b><br>Use a opção Acompanhar pedido após finalizar.</p>';openModal('#infoModal')};
 renderCart();
