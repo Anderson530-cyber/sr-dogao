@@ -43,7 +43,7 @@ const STORE_URL='https://dlccdfwteekecjiwybfr.supabase.co',STORE_KEY='sb_publish
 async function loadStoreProducts(){const {data,error}=await storeDb.from('srdogao_products').select('*').eq('available',true).order('display_order');if(error)return;menuProducts=(data||[]).map(p=>({id:p.id,name:p.name,price:+(p.promo&&p.promo_price?p.promo_price:p.price),category:p.category,img:p.image_url,desc:p.description,popular:p.popular,featured:p.featured}));const featured=menuProducts.filter(p=>p.featured);document.getElementById('productGrid').innerHTML=featured.map(p=>'<div class="card" data-name="'+p.name+'" data-price="'+p.price+'" data-category="'+p.category+'">'+(p.popular?'<span class="badge">Mais pedido</span>':'')+'<div class="fake"><img src="'+p.img+'" alt="'+p.name+'"></div><h3>'+p.name+'</h3><p>'+p.desc+'</p><div class="price">'+money(p.price)+'</div><button class="add" type="button" style="border:0;width:100%">🛒 Adicionar</button></div>').join('');bindAddButtons();}
 const money=v=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v);
 let cart=JSON.parse(localStorage.getItem('srdogao_cart')||'[]');
-const $=q=>document.querySelector(q), $=q=>Array.from(document.querySelectorAll(q));
+const $=q=>document.querySelector(q); const $=q=>Array.from(document.querySelectorAll(q));
 function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),1800)}
 function openModal(id){$(id).classList.add('open')} function closeAll(){$$('.modal-backdrop').forEach(x=>x.classList.remove('open'))}
 $$('[data-close]').forEach(b=>b.onclick=closeAll); $$('.modal-backdrop').forEach(m=>m.onclick=e=>{if(e.target===m)closeAll()});
