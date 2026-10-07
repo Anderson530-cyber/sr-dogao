@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#ffd600">
 <title>Carrinho | Sr. Dogão</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -129,7 +131,7 @@ header{background:var(--y);position:sticky;top:0;z-index:10;box-shadow:0 2px 14p
 <h2>Pedido finalizado!</h2>
 <p>Seu pedido foi preparado no sistema.</p>
 <div class="success-info" id="successInfo"></div>
-<div class="delivery-pin-card"><span>PIN da entrega</span><strong id="deliveryPin">----</strong><small>Informe este PIN ao entregador somente quando receber o pedido.</small></div><div class="delivery-notice" id="deliveryNotice"></div><div class="driver-map" id="driverMap"></div><div class="tracking"><h3>Acompanhar pedido</h3><div class="tracking-current"><span class="tracking-dot"></span><span id="orderStatusText">Pedido confirmado</span></div><div class="timeline" id="orderTimeline"></div></div>
+<div class="delivery-notice show" id="pushStatus">🔔 Ative as notificações para receber avisos quando o entregador estiver chegando.</div><div class="delivery-pin-card"><span>PIN da entrega</span><strong id="deliveryPin">----</strong><small>Informe este PIN ao entregador somente quando receber o pedido.</small></div><div class="delivery-notice" id="deliveryNotice"></div><div class="driver-map" id="driverMap"></div><div class="tracking"><h3>Acompanhar pedido</h3><div class="tracking-current"><span class="tracking-dot"></span><span id="orderStatusText">Pedido confirmado</span></div><div class="timeline" id="orderTimeline"></div></div>
 <div class="points-card">
 <div><span>Seus pontos</span><strong id="pointsTotal">0</strong></div>
 <p>A cada R$ 10,00 em compras você ganha 1 ponto.</p>
@@ -144,6 +146,7 @@ header{background:var(--y);position:sticky;top:0;z-index:10;box-shadow:0 2px 14p
 <script>
 const money=value=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(value);
 const TRACKING_SUPABASE_URL='https://dlccdfwteekecjiwybfr.supabase.co',TRACKING_SUPABASE_KEY='sb_publishable_izc2on9Gie9UC5iCHSjaBQ_5ItuscE2';
+const VAPID_PUBLIC_KEY='BIfPPWOQSFAp9An4HOklxcbaz3FReZgqJ7iCgJhOcM2rMhZigBmJMfP70uVifU29_2q0PpbcX1FyWQe7U6ihuDA';
 const trackingDb=supabase.createClient(TRACKING_SUPABASE_URL,TRACKING_SUPABASE_KEY);
 const getCart=()=>JSON.parse(localStorage.getItem('srdogao_cart')||'[]');
 const saveCart=cart=>localStorage.setItem('srdogao_cart',JSON.stringify(cart));
@@ -152,6 +155,23 @@ let checkoutState=JSON.parse(localStorage.getItem('srdogao_checkout')||'{}');
 const orderCompleted=()=>getCart().length===0&&localStorage.getItem('srdogao_last_order_completed')==='1';
 
 let trackingTimer=null,driverMap=null,driverMarker=null;
+function urlBase64ToUint8Array(base64String){
+  const padding='='.repeat((4-base64String.length%4)%4),base64=(base64String+padding).replace(/-/g,'+').replace(/_/g,'/');
+  const raw=atob(base64),out=new Uint8Array(raw.length);for(let i=0;i<raw.length;i++)out[i]=raw.charCodeAt(i);return out;
+}
+async function registerOrderPush(token){
+  if(!token||!("serviceWorker" in navigator)||!("PushManager" in window))return false;
+  try{
+    const reg=await navigator.serviceWorker.register('/sw.js');
+    await navigator.serviceWorker.ready;
+    if(Notification.permission!=='granted')return false;
+    let sub=await reg.pushManager.getSubscription();
+    if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlBase64ToUint8Array(VAPID_PUBLIC_KEY)});
+    const j=sub.toJSON();
+    const {data,error}=await trackingDb.rpc('srdogao_register_push_subscription',{p_token:token,p_endpoint:j.endpoint,p_p256dh:j.keys?.p256dh||'',p_auth:j.keys?.auth||''});
+    return !error&&Boolean(data);
+  }catch(e){return false}
+}
 async function createRemoteOrder(order){
   const {data,error}=await trackingDb.rpc('srdogao_create_order',{
     p_customer_name:order.customer?.name||'Cliente',
@@ -217,6 +237,13 @@ async function refreshTracking(token,pin){
   const {data,error}=await trackingDb.rpc('srdogao_track_order',{p_token:token});
   if(!error&&data)renderDeliveryTracking(data,token,pin);
 }
+function updatePushStatus(){
+  const el=document.getElementById('pushStatus');if(!el)return;
+  if(!('PushManager' in window)){el.textContent='📱 Para receber avisos com o site fechado, instale o Sr. Dogão na tela inicial e permita notificações.';return}
+  if(Notification.permission==='granted'){el.textContent='🔔 Notificações do pedido ativadas.';return}
+  if(Notification.permission==='denied'){el.textContent='🔕 Notificações estão bloqueadas neste aparelho.';return}
+  el.textContent='🔔 Permita notificações ao confirmar o pedido para receber avisos da entrega.';
+}
 function startCustomerTracking(token,pin){
   if(trackingTimer)clearInterval(trackingTimer);
   if(!token)return;
@@ -243,6 +270,7 @@ function showCompletedOrder(){
   document.getElementById('pointsEarnedText').textContent='Neste pedido você ganhou '+(saved.pointsEarned||0)+' ponto'+((saved.pointsEarned||0)===1?'':'s')+'.';
   document.getElementById('success').style.display='block';
   document.getElementById('deliveryPin').textContent=saved.deliveryPin||'----';
+  updatePushStatus();
   renderTracking(saved.status||'confirmed');
   startCustomerTracking(saved.trackingToken,saved.deliveryPin);
   return true;
@@ -480,6 +508,7 @@ document.getElementById('finishOrder').onclick=async()=>{
       customer,address:checkoutState.address||{},deliveryType:checkoutState.deliveryType,payment:checkoutState.payment,
       items:cart,deliveryCoords:checkoutState.deliveryCoords||null,subtotal,discount,total:finalTotal,couponCode:checkoutState.couponCode||'',redeemTitle:(selectedRedeem()?.title||'')
     });
+    await registerOrderPush(remoteOrder?.public_token);
   }catch(error){
     finishBtn.disabled=false;finishBtn.textContent='Confirmar pedido';
     const reviewMsg=document.getElementById('reviewMessage');
@@ -519,6 +548,7 @@ document.getElementById('finishOrder').onclick=async()=>{
   document.getElementById('pointsEarnedText').textContent='Neste pedido você ganhou '+earned+' ponto'+(earned===1?'':'s')+'.';
   document.getElementById('success').style.display='block';
   document.getElementById('deliveryPin').textContent=finalOrder.deliveryPin||'----';
+  updatePushStatus();
   renderTracking('confirmed');
   startCustomerTracking(finalOrder.trackingToken,finalOrder.deliveryPin);
   finishBtn.disabled=false;finishBtn.textContent='Confirmar pedido';
@@ -527,6 +557,7 @@ document.getElementById('finishOrder').onclick=async()=>{
 document.querySelectorAll('[data-back]').forEach(button=>button.onclick=()=>showStep(Number(button.dataset.back)));
 document.querySelectorAll('.option input').forEach(input=>input.addEventListener('change',syncOptions));
 
+if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});
 loadAddress();loadCustomer();syncOptions();renderCouponTrigger();renderRedeemTrigger();if(!showCompletedOrder()){renderCart();showStep(1);}
 </script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
