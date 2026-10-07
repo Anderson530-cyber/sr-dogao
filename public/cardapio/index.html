@@ -27,7 +27,7 @@ function addProduct(id){
 function render(cat=''){
   currentCat=cat;
   document.getElementById('cats').innerHTML='<button class="'+(!cat?'active':'')+'" data-c="">Todos</button>'+Object.entries(names).map(([k,v])=>'<button class="'+(cat===k?'active':'')+'" data-c="'+k+'">'+v+'</button>').join('');
-  document.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>render(b.dataset.c));
+  document.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>{const cat=b.dataset.c;const url=cat?'/cardapio/?categoria='+encodeURIComponent(cat):'/cardapio/';history.replaceState(null,'',url);render(cat)});
   const list=cat?products.filter(p=>p.category===cat):products;
   document.getElementById('grid').innerHTML=list.map(p=>{
     const qty=itemQty(p.name);
@@ -41,7 +41,8 @@ async function load(){
   const {data,error}=await db.from('srdogao_products').select('*').eq('available',true).order('display_order');
   if(error){document.getElementById('grid').innerHTML='<p>Não foi possível carregar o cardápio.</p>';return}
   products=data||[];
-  render();
+  const requested=new URLSearchParams(location.search).get('categoria')||'';
+  render(names[requested]?requested:'');
 }
 window.addEventListener('storage',updateCartCount);
 load();
