@@ -16,8 +16,10 @@ const getCart=()=>JSON.parse(localStorage.getItem('srdogao_cart')||'[]');
 const saveCart=cart=>localStorage.setItem('srdogao_cart',JSON.stringify(cart));
 const getCheckout=()=>JSON.parse(localStorage.getItem('srdogao_checkout')||'{}');
 function preserveAddressForNewOrder(){
+  const wasCompleted=localStorage.getItem('srdogao_last_order_completed')==='1',old=getCheckout();
   localStorage.removeItem('srdogao_last_order_completed');localStorage.removeItem('srdogao_last_order');
-  const old=getCheckout(),fresh={};
+  if(!wasCompleted)return;
+  const fresh={};
   if(old.address)fresh.address=old.address;
   if(old.deliveryFee!=null)fresh.deliveryFee=old.deliveryFee;
   if(old.deliveryCoords)fresh.deliveryCoords=old.deliveryCoords;
