@@ -309,7 +309,7 @@ function renderCart(){
       (additions.length?'<small><b>Adicionar:</b> '+additions.map(x=>x.name+(Number(x.price)>0?' ('+money(x.price)+')':'')).join(', ')+'</small>':'')+
       '</div>';
     const note='<label class="item-note-label">Observações</label><textarea class="item-note" maxlength="300" data-note="'+index+'" placeholder="Ex.: molho à parte, cortar ao meio...">'+String(item.note||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</textarea>';
-    return '<div class="item"><div><h3>'+item.name+'</h3><small>'+money(item.price)+' cada</small>'+custom+note+'<br><button class="remove" type="button" data-remove="'+index+'">Remover</button></div><div class="qty"><button type="button" data-minus="'+index+'">−</button><span>'+item.qty+'</span><button type="button" data-plus="'+index+'">+</button></div><div class="price">'+money(item.price*item.qty)+'</div></div>'
+    return '<div class="item"><div><h3>'+item.name+'</h3><small>'+(item.rewardItem?'⭐ Resgate aplicado':money(item.price)+' cada')+'</small>'+custom+(item.rewardItem?'':note)+'<br><button class="remove" type="button" data-remove="'+index+'">Remover</button></div>'+(item.rewardItem?'<div class="qty"><span>1</span></div>':'<div class="qty"><button type="button" data-minus="'+index+'">−</button><span>'+item.qty+'</span><button type="button" data-plus="'+index+'">+</button></div>')+'<div class="price">'+money(item.price*item.qty)+'</div></div>'
   }).join('');
   document.querySelectorAll('[data-plus]').forEach(button=>button.onclick=()=>changeQty(Number(button.dataset.plus),1));
   document.querySelectorAll('[data-minus]').forEach(button=>button.onclick=()=>changeQty(Number(button.dataset.minus),-1));
@@ -318,7 +318,11 @@ function renderCart(){
   updateSummary();
 }
 function changeQty(index,delta){const cart=getCart();if(!cart[index])return;cart[index].qty+=delta;if(cart[index].qty<=0)cart.splice(index,1);saveCart(cart);renderCart()}
-function removeItem(index){const cart=getCart();cart.splice(index,1);saveCart(cart);renderCart()}
+function removeItem(index){
+  const cart=getCart(),item=cart[index];
+  if(item?.rewardItem&&item.rewardId===checkoutState.redeemRewardId){checkoutState.redeemRewardId='';persistCheckout();renderRedeemTrigger()}
+  cart.splice(index,1);saveCart(cart);renderCart()
+}
 function updateItemNote(index,value){const cart=getCart();if(!cart[index])return;cart[index].note=String(value||'').trim();saveCart(cart)}
 function showStep(step){
   if(orderCompleted()){showCompletedOrder();return;}
@@ -450,7 +454,7 @@ const rewardOptions=[
   {id:'r35',points:50,title:'R$ 35 de desconto',value:35,type:'discount'}
 ];
 function getLoyaltyAccount(){
-  const customer=checkoutState.customer||{},key=normalizePhone(customer.phone),loyalty=getLoyalty();
+  const customer=checkoutState.customer||{},loyalty=getLoyalty(),customerKey=normalizePhone(customer.phone),key=checkoutState.redeemLoyaltyKey||customerKey;
   return {key,loyalty,account:loyalty[key]||null};
 }
 function getAvailableCoupons(){
@@ -543,7 +547,7 @@ function orderDiscountData(){
 }
 function renderReview(){
   const cart=getCart(),a=checkoutState.address||{},customer=checkoutState.customer||{},r=selectedRedeem(),d=orderDiscountData();
-  document.getElementById('reviewItems').innerHTML=cart.map(x=>{const details=[];if(Array.isArray(x.removals)&&x.removals.length)details.push('Retirar: '+x.removals.join(', '));if(Array.isArray(x.additions)&&x.additions.length)details.push('Adicionar: '+x.additions.map(a=>a.name).join(', '));if(x.note)details.push('Obs.: '+x.note);return '<div class="review-item"><span>'+x.qty+'× '+x.name+(details.length?'<br><small>'+details.join(' • ')+'</small>':'')+'</span><b>'+money(x.price*x.qty)+'</b></div>'}).join('')+(r&&r.type==='product'?'<div class="review-item"><span>⭐ Resgate: '+r.title+'</span><b>0,00</b></div>':'');
+  document.getElementById('reviewItems').innerHTML=cart.map(x=>{const details=[];if(Array.isArray(x.removals)&&x.removals.length)details.push('Retirar: '+x.removals.join(', '));if(Array.isArray(x.additions)&&x.additions.length)details.push('Adicionar: '+x.additions.map(a=>a.name).join(', '));if(x.note)details.push('Obs.: '+x.note);return '<div class="review-item"><span>'+x.qty+'× '+x.name+(details.length?'<br><small>'+details.join(' • ')+'</small>':'')+'</span><b>'+money(x.price*x.qty)+'</b></div>'}).join('')+(r&&r.type==='product'&&!cart.some(x=>x.rewardItem&&x.rewardId===r.id)?'<div class="review-item"><span>⭐ Resgate: '+r.title+'</span><b>R$ 0,00</b></div>':'');
   document.getElementById('reviewDelivery').innerHTML='<div class="review-line"><span><b>'+(checkoutState.deliveryType==='pickup'?'Retirada':'Entrega')+'</b><br><small>'+([a.street,a.number,a.district,a.city?(a.city+(a.state?' - '+a.state:'')):'',a.cep,a.reference].filter(Boolean).join(', ')||'-')+'</small></span></div><div class="review-line"><span>Cliente</span><b>'+(customer.name||'-')+'</b></div><div class="review-line"><span>Telefone</span><b>'+(customer.phone||'-')+'</b></div>';
   document.getElementById('reviewPayment').innerHTML='<div class="review-line"><span>Forma de pagamento</span><b>'+paymentLabel()+'</b></div>'+(checkoutState.couponCode?'<div class="review-line"><span>Cupom</span><b>'+checkoutState.couponCode+'</b></div>':'')+(r?'<div class="review-line"><span>Resgate</span><b>'+r.title+'</b></div>':'');
   document.getElementById('reviewTotals').innerHTML='<div class="review-line"><span>Subtotal</span><b>'+money(d.subtotal)+'</b></div><div class="review-line"><span>Entrega</span><b>'+(d.delivery===0?'Grátis':money(d.delivery))+'</b></div>'+(d.discount?'<div class="review-line"><span>Descontos</span><b>- '+money(d.discount)+'</b></div>':'')+'<div class="review-line"><span><b>Total</b></span><b>'+money(d.total)+'</b></div>';
@@ -567,20 +571,24 @@ document.getElementById('couponModal').onclick=e=>{if(e.target.id==='couponModal
 document.getElementById('clearCoupon').onclick=()=>{pendingCouponSelection={code:'',rewardId:''};checkoutState.couponCode='';persistCheckout();renderCouponTrigger();updateSummary();closeCouponModal()};
 document.getElementById('applyCoupon').onclick=()=>{
   checkoutState.couponCode=pendingCouponSelection.code||'';
-  const reward=selectedRedeem();
-  if(checkoutState.couponCode&&reward&&reward.type==='discount')checkoutState.redeemRewardId='';
-  persistCheckout();renderCouponTrigger();renderRedeemTrigger();updateSummary();closeCouponModal()
+  if(checkoutState.couponCode){
+    checkoutState.redeemRewardId='';
+    saveCart(getCart().filter(x=>!x.rewardItem));
+  }
+  persistCheckout();renderCouponTrigger();renderRedeemTrigger();renderCart();updateSummary();closeCouponModal()
 };
 document.getElementById('openRedeemModal').onclick=openRedeemModal;
 document.getElementById('closeRedeemModal').onclick=closeRedeemModal;
 document.getElementById('redeemModal').onclick=e=>{if(e.target.id==='redeemModal')closeRedeemModal()};
 document.getElementById('clearRedeem').onclick=()=>{pendingRedeemId='';checkoutState.redeemRewardId='';persistCheckout();renderRedeemTrigger();updateSummary();closeRedeemModal()};
 document.getElementById('applyRedeem').onclick=()=>{
-  const reward=rewardOptions.find(r=>r.id===pendingRedeemId),{account}=getLoyaltyAccount(),balance=Number(account?.points||0);
+  const reward=rewardOptions.find(r=>r.id===pendingRedeemId),{key,account}=getLoyaltyAccount(),balance=Number(account?.points||0);
   if(reward&&balance>=reward.points){
-    checkoutState.redeemRewardId=reward.id;
-    if(reward.type==='discount')checkoutState.couponCode='';
-    persistCheckout();renderCouponTrigger();renderRedeemTrigger();updateSummary()
+    checkoutState.redeemRewardId=reward.id;checkoutState.redeemLoyaltyKey=key||checkoutState.redeemLoyaltyKey||'';
+    checkoutState.couponCode='';
+    let cart=getCart().filter(x=>!x.rewardItem);
+    if(reward.type==='product')cart.push({cartId:'reward-'+Date.now(),rewardItem:true,rewardId:reward.id,name:reward.title+' (Resgate)',price:0,basePrice:0,qty:1,removals:[],additions:[],note:''});
+    saveCart(cart);persistCheckout();renderCouponTrigger();renderRedeemTrigger();renderCart();updateSummary()
   }
   closeRedeemModal();
 };
@@ -592,7 +600,11 @@ document.getElementById('finishOrder').onclick=async()=>{
   const msg=document.getElementById('paymentMessage');if(!checkoutState.payment){msg.style.display='block';return}msg.style.display='none';
   const cart=getCart();if(!cart.length){showCompletedOrder();return}
   const subtotal=cartSubtotal(),delivery=currentDeliveryFee(),selectedReward=selectedRedeem(),couponValue=couponDiscount(),redeemValue=(selectedReward&&selectedReward.type==='discount'&&!checkoutState.couponCode)?redeemDiscount():0,discount=couponValue+redeemValue,finalTotal=Math.max(0,subtotal-discount)+delivery,earned=Math.floor(finalTotal/10),customer=checkoutState.customer||{};
-  const phoneKey=normalizePhone(customer.phone);
+  const phoneKey=normalizePhone(customer.phone),loyaltyBefore=getLoyalty(),rewardKey=checkoutState.redeemLoyaltyKey||phoneKey,rewardAccount=loyaltyBefore[rewardKey]||null;
+  if(selectedReward&&(!rewardAccount||Number(rewardAccount.points||0)<selectedReward.points)){
+    finishBtn.disabled=false;finishBtn.textContent='Confirmar pedido';
+    const reviewMsg=document.getElementById('reviewMessage');reviewMsg.textContent='Seu saldo de pontos mudou. Escolha o resgate novamente.';reviewMsg.style.display='block';return;
+  }
   let remoteOrder;
   try{
     remoteOrder=await createRemoteOrder({
@@ -609,20 +621,23 @@ document.getElementById('finishOrder').onclick=async()=>{
   }
   const loyalty=getLoyalty();
   const current=loyalty[phoneKey]||{name:customer.name||'',cpf:customer.cpf||'',points:0,history:[]};
-  current.name=customer.name||current.name;current.cpf=customer.cpf||current.cpf;current.points=(Number(current.points)||0)+earned;
-  current.history.unshift({date:new Date().toISOString(),amount:subtotal,points:earned});
+  current.name=customer.name||current.name;current.cpf=customer.cpf||current.cpf;
   if(checkoutState.couponCode){
-    const redemption=(current.redemptions||[]).find(r=>r.code===checkoutState.couponCode&&!r.usedAt);
+    const couponOwner=loyalty[checkoutState.redeemLoyaltyKey||phoneKey]||current;
+    const redemption=(couponOwner.redemptions||[]).find(r=>r.code===checkoutState.couponCode&&!r.usedAt);
     if(redemption)redemption.usedAt=new Date().toISOString();
+    if(checkoutState.redeemLoyaltyKey&&loyalty[checkoutState.redeemLoyaltyKey])loyalty[checkoutState.redeemLoyaltyKey]=couponOwner;
   }
-  if(checkoutState.redeemRewardId){
-    const reward=rewardOptions.find(r=>r.id===checkoutState.redeemRewardId);
-    if(reward&&Number(current.points||0)>=reward.points){
-      current.points=Number(current.points||0)-reward.points;
-      current.redemptions=current.redemptions||[];
-      current.redemptions.unshift({date:new Date().toISOString(),rewardId:reward.id,title:reward.title,points:reward.points,value:reward.value,type:reward.type,usedAt:new Date().toISOString(),usedDirectlyAtCheckout:true});
-    }
+  if(selectedReward){
+    const owner=loyalty[rewardKey];
+    owner.points=Number(owner.points||0)-selectedReward.points;
+    owner.redemptions=owner.redemptions||[];
+    owner.redemptions.unshift({date:new Date().toISOString(),rewardId:selectedReward.id,title:selectedReward.title,points:selectedReward.points,value:selectedReward.value,type:selectedReward.type,usedAt:new Date().toISOString(),usedDirectlyAtCheckout:true});
+    loyalty[rewardKey]=owner;
   }
+  current.points=Number(current.points||0)+earned;
+  current.history=current.history||[];
+  current.history.unshift({date:new Date().toISOString(),amount:subtotal,points:earned});
   loyalty[phoneKey]=current;saveLoyalty(loyalty);
   checkoutState.updatedAt=new Date().toISOString();checkoutState.pointsEarned=earned;persistCheckout();
   const finalOrder={remoteId:remoteOrder?.id||'',trackingToken:remoteOrder?.public_token||'',deliveryPin:remoteOrder?.delivery_pin||'',customer,address:checkoutState.address||{},deliveryType:checkoutState.deliveryType,payment:checkoutState.payment,items:cart,subtotal,deliveryFee:delivery,discount,total:finalTotal,couponCode:checkoutState.couponCode||'',redeemRewardId:checkoutState.redeemRewardId||'',redeemTitle:(selectedRedeem()?.title||''),pointsEarned:earned,pointsTotal:current.points,status:'confirmed',date:checkoutState.updatedAt};
