@@ -86,7 +86,7 @@
 <h1 class="eyebrow">É bom pra <span class="red">mais de metro!</span></h1>
 <div class="tape-wrap"><img class="tape-img" src="/Trena-mede.png" alt="Trena 100+"></div>
 <p class="sub">Dogão caprichado, recheado de verdade e do jeito que você gosta.</p>
-<div class="hero-actions"><a class="cta" href="/cardapio/">🛒 Fazer meu pedido <b>›</b></a><a class="points-cta" href="/pontos/">⭐ Programa de pontos</a></div>
+<div class="hero-actions"><a class="cta" id="startOrderBtn" href="/cardapio/">🛒 Fazer meu pedido <b>›</b></a><a class="points-cta" href="/pontos/">⭐ Programa de pontos</a></div>
 <div class="benefits"><span>🛵 Entrega rápida</span><span>🛡️ Pagamento seguro</span><span>⭐ Qualidade garantida</span></div>
 </div>
 <div class="visual"><a class="hero-promo-card" href="/cardapio/?categoria=combos" aria-label="Ver combos"><div class="hero-promo-media"><img src="/Combo-dog.png" alt="Combo Sr. Dogão"></div><div class="hero-promo-copy"><strong>COMBOS<br>QUE VALEM<br>A PENA!</strong><b>Hot Dog + Batata + Bebida</b><div class="hero-promo-bottom"><div><span>A partir de</span><div class="hero-promo-price">R$ 29,90</div></div><span class="hero-promo-link">Ver combos →</span></div></div></a></div>
@@ -94,6 +94,7 @@
 <section class="combo-banner combo-banner-top" id="promocoes"><div class="combo-banner-inner"><img class="combo-photo" src="/Combo-dog.png" alt="Combo Sr. Dogão"><div class="combo-copy"><strong>COMBOS<br>QUE VALEM<br>A PENA!</strong><b>Hot Dog + Batata + Bebida</b><span>A partir de</span><div class="combo-price">R$ 29,90</div></div><div class="combo-action"><img src="/porcoes-dog.png" alt=""><a href="/cardapio/?categoria=combos">Ver combos →</a></div></div></section><section class="section" id="cardapio"><div class="cards" id="productGrid"></div><div style="text-align:right;margin-top:18px"><a class="view-all" href="/cardapio/" id="viewAll">Ver cardápio completo →</a></div></section>
 <section class="info-strip"><div class="info-inner"><div class="info-box"><div class="info-icon">🛵</div><div><b>Entrega rápida</b><span>Seu dogão quentinho e caprichado até você.</span></div></div><div class="info-box"><div class="info-icon">📍</div><div><b>Área de entrega</b><span>Informe seu endereço para conferir disponibilidade.</span></div></div><div class="info-box"><div class="info-icon">💳</div><div><b>Pagamento fácil</b><span>Escolha a melhor forma de pagamento no pedido.</span></div></div></div></section></main>
 <footer class="footer" id="contato"><div class="footer-inner"><div><img class="footer-logo" src="/sr-dogao-logo.png" alt="Sr. Dogão"><p>É bom pra mais de metro! Dogão caprichado, recheado de verdade e feito para matar a fome.</p><div class="socials"><a href="#" aria-label="Instagram">IG</a><a href="#" aria-label="Facebook">f</a><a href="#" aria-label="WhatsApp">WA</a></div></div><div><h3>Sr. Dogão</h3><a href="#">Início</a><a href="/cardapio/">Cardápio</a><a href="#promocoes">Promoções</a><a href="#sobre">Sobre nós</a></div><div><h3>Atendimento</h3><a href="#contato">Fale conosco</a><a href="#" id="footerAddress">Meu endereço</a><a href="#" id="trackOrder">Acompanhar pedido</a><a href="#" id="faqBtn">Dúvidas frequentes</a></div><div><h3>Horários</h3><ul class="hours"><li>Segunda a quinta: 18h–23h</li><li>Sexta e sábado: 18h–00h</li><li>Domingo: 18h–23h</li></ul></div></div><div class="copyright">© 2026 Sr. Dogão. Todos os direitos reservados. · <a href="/admin" style="color:#c9aaa1">Área administrativa</a></div></footer>
+<div class="modal-backdrop" id="orderCepModal"><div class="modal"><div class="modal-head"><div><h2>📍 Informe seu CEP</h2><small>Usaremos o CEP para preparar seu endereço e a taxa de entrega.</small></div><button class="close" data-close>×</button></div><label for="orderCepInput">CEP</label><input class="field" id="orderCepInput" inputmode="numeric" maxlength="9" autocomplete="postal-code" placeholder="00000-000"><p id="orderCepStatus" style="color:#765;margin:0 0 12px"></p><button class="primary" id="continueOrderByCep" type="button" style="width:100%">Continuar para o cardápio</button></div></div>
 <div class="modal-backdrop" id="addressModal"><div class="modal"><div class="modal-head"><h2>📍 Endereço de entrega</h2><button class="close" data-close>×</button></div><label>Seu endereço</label><input class="field" id="addressInput" placeholder="Rua, número, bairro"><button class="primary" id="saveAddress">Salvar endereço</button></div></div>
 <div class="modal-backdrop" id="cartModal"><div class="modal"><div class="modal-head"><h2>🛒 Seu carrinho</h2><button class="close" data-close>×</button></div><div id="cartItems"></div><div class="cart-total" id="cartTotal">Total: R$ 0,00</div><button class="primary" id="checkoutBtn" style="width:100%">Continuar pedido</button></div></div>
 <div class="modal-backdrop" id="infoModal"><div class="modal"><div class="modal-head"><h2 id="infoTitle">Informação</h2><button class="close" data-close>×</button></div><div id="infoBody"></div></div></div>
@@ -107,8 +108,48 @@ let cart=JSON.parse(localStorage.getItem('srdogao_cart')||'[]');
 const $=q=>document.querySelector(q); const $$=q=>Array.from(document.querySelectorAll(q));
 function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),1800)}
 function openModal(id){$(id).classList.add('open')} function closeAll(){$$('.modal-backdrop').forEach(x=>x.classList.remove('open'))}
-$$('[data-close]').forEach(b=>b.onclick=closeAll); $$('.modal-backdrop').forEach(m=>m.onclick=e=>{if(e.target===m)closeAll()});
-function startFreshOrder(){localStorage.removeItem('srdogao_last_order_completed');localStorage.removeItem('srdogao_last_order');localStorage.removeItem('srdogao_checkout')}
+$('[data-close]').forEach(b=>b.onclick=closeAll); $('.modal-backdrop').forEach(m=>m.onclick=e=>{if(e.target===m)closeAll()});
+function formatOrderCep(v){const d=String(v||'').replace(/\D/g,'').slice(0,8);return d.length>5?d.slice(0,5)+'-'+d.slice(5):d}
+async function getPublicDeliveryFee(){
+  const {data}=await storeDb.from('srdogao_settings').select('value').eq('key','site').maybeSingle();
+  const fee=Number(data?.value?.deliveryFee||0);
+  return Number.isFinite(fee)&&fee>=0?fee:0;
+}
+async function prepareOrderByCep(){
+  const input=$('#orderCepInput'),status=$('#orderCepStatus'),button=$('#continueOrderByCep'),cep=input.value.replace(/\D/g,'');
+  if(cep.length!==8){status.textContent='Digite um CEP válido com 8 números.';return}
+  button.disabled=true;button.textContent='Consultando CEP...';status.textContent='';
+  try{
+    const res=await fetch('https://viacep.com.br/ws/'+cep+'/json/');if(!res.ok)throw new Error('cep');
+    const data=await res.json();if(data.erro)throw new Error('cep');
+    const old=JSON.parse(localStorage.getItem('srdogao_checkout')||'{}');
+    const deliveryFee=await getPublicDeliveryFee();
+    const address={cep:formatOrderCep(cep),city:data.localidade||'',state:data.uf||'',street:data.logradouro||'',district:data.bairro||'',number:old.address?.cep===formatOrderCep(cep)?(old.address?.number||''):'',reference:old.address?.cep===formatOrderCep(cep)?(old.address?.reference||''):''};
+    localStorage.setItem('srdogao_checkout',JSON.stringify({...old,address,deliveryFee,deliveryType:'delivery'}));
+    localStorage.setItem('srdogao_address',[address.street,address.district,address.city+(address.state?' - '+address.state:''),address.cep].filter(Boolean).join(', '));
+    location.href='/cardapio/';
+  }catch(e){status.textContent='CEP não encontrado. Confira e tente novamente.';button.disabled=false;button.textContent='Continuar para o cardápio'}
+}
+$('#startOrderBtn').onclick=e=>{
+  e.preventDefault();
+  const saved=JSON.parse(localStorage.getItem('srdogao_checkout')||'{}');
+  $('#orderCepInput').value=saved.address?.cep||'';
+  $('#orderCepStatus').textContent='';
+  openModal('#orderCepModal');
+};
+$('#orderCepInput').oninput=e=>e.target.value=formatOrderCep(e.target.value);
+$('#continueOrderByCep').onclick=prepareOrderByCep;
+
+function startFreshOrder(){
+  localStorage.removeItem('srdogao_last_order_completed');localStorage.removeItem('srdogao_last_order');
+  const old=JSON.parse(localStorage.getItem('srdogao_checkout')||'{}');
+  const fresh={};
+  if(old.address)fresh.address=old.address;
+  if(old.deliveryFee!=null)fresh.deliveryFee=old.deliveryFee;
+  if(old.deliveryCoords)fresh.deliveryCoords=old.deliveryCoords;
+  if(old.address?.cep)fresh.deliveryType='delivery';
+  localStorage.setItem('srdogao_checkout',JSON.stringify(fresh));
+}
 function saveCart(){localStorage.setItem('srdogao_cart',JSON.stringify(cart));renderCart()}
 function renderCart(){const count=cart.reduce((a,x)=>a+x.qty,0);$('#cartCount').textContent=count?('('+count+')'):'';
  const box=$('#cartItems'); if(!cart.length){box.innerHTML='<p>Seu carrinho está vazio.</p>';$('#cartTotal').textContent='Total: R$ 0,00';return}
