@@ -1,0 +1,11 @@
+{
+  "name":"Sr. Dogão",
+  "short_name":"Sr. Dogão",
+  "start_url":"/",
+  "display":"standalone",
+  "background_color":"#fffaf0",
+  "theme_color":"#ffd600",
+  "icons":[
+    {"src":"/sr-dogao-logo.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}
+  ]
+}
