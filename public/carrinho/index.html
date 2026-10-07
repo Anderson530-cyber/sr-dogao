@@ -54,9 +54,9 @@ header{background:var(--y);position:sticky;top:0;z-index:10;box-shadow:0 2px 14p
 <div class="field"><label for="street">Rua / Avenida</label><input id="street" autocomplete="street-address" placeholder="Ex.: Rua das Flores"></div>
 <div class="field"><label for="number">Número</label><input id="number" inputmode="numeric" placeholder="Ex.: 123"></div>
 <div class="field"><label for="district">Bairro</label><input id="district" placeholder="Ex.: Centro"></div>
-<div class="field"><label for="reference">Complemento / referência</label><textarea id="reference" placeholder="Apartamento, bloco, ponto de referência..."></textarea></div>
+<div class="field"><label for="reference">Complemento / referência</label><textarea id="reference" required placeholder="Apartamento, bloco, ponto de referência..."></textarea></div>
 <div class="actions-row"><button class="secondary" type="button" data-back="1">Voltar</button><button class="primary" id="saveAddress" type="button">Continuar</button></div>
-<div class="message" id="addressMessage">Preencha rua, número e bairro para continuar.</div>
+<div class="message" id="addressMessage">Preencha rua, número, bairro e complemento / referência para continuar.</div>
 </div>
 </section>
 
@@ -118,6 +118,26 @@ const getCart=()=>JSON.parse(localStorage.getItem('srdogao_cart')||'[]');
 const saveCart=cart=>localStorage.setItem('srdogao_cart',JSON.stringify(cart));
 let currentStep=1;
 let checkoutState=JSON.parse(localStorage.getItem('srdogao_checkout')||'{}');
+const orderCompleted=()=>localStorage.getItem('srdogao_last_order_completed')==='1';
+
+
+function showCompletedOrder(){
+  const saved=JSON.parse(localStorage.getItem('srdogao_last_order')||'null');
+  if(!saved)return false;
+  document.getElementById('empty').hidden=true;
+  document.getElementById('checkoutArea').classList.remove('hidden');
+  document.getElementById('steps').classList.remove('hidden');
+  document.querySelectorAll('.step-content').forEach(section=>section.classList.add('hidden'));
+  document.querySelectorAll('[data-step-pill]').forEach(pill=>{pill.classList.remove('active');pill.classList.add('done')});
+  document.getElementById('pageTitle').textContent='Pedido finalizado';
+  document.getElementById('pageSubtitle').textContent='Este pedido já foi concluído.';
+  const a=saved.address||{}, customer=saved.customer||{};
+  document.getElementById('successInfo').innerHTML='<p><b>Cliente:</b> '+(customer.name||'-')+'</p><p><b>Telefone:</b> '+(customer.phone||'-')+'</p><p><b>Endereço:</b> '+[a.street,a.number,a.district,a.reference].filter(Boolean).join(', ')+'</p><p><b>Entrega:</b> '+(saved.deliveryType==='pickup'?'Retirada':'Entrega')+'</p><p><b>Pagamento:</b> '+({pix:'Pix',card:'Cartão',cash:'Dinheiro'}[saved.payment]||saved.payment)+'</p><p><b>Total:</b> '+money(saved.total||0)+'</p>';
+  document.getElementById('pointsTotal').textContent=saved.pointsTotal||0;
+  document.getElementById('pointsEarnedText').textContent='Neste pedido você ganhou '+(saved.pointsEarned||0)+' ponto'+((saved.pointsEarned||0)===1?'':'s')+'.';
+  document.getElementById('success').style.display='block';
+  return true;
+}
 
 function cartSubtotal(){return getCart().reduce((sum,item)=>sum+(Number(item.price)||0)*(Number(item.qty)||0),0)}
 function updateSummary(){
@@ -140,6 +160,7 @@ function renderCart(){
 function changeQty(index,delta){const cart=getCart();if(!cart[index])return;cart[index].qty+=delta;if(cart[index].qty<=0)cart.splice(index,1);saveCart(cart);renderCart()}
 function removeItem(index){const cart=getCart();cart.splice(index,1);saveCart(cart);renderCart()}
 function showStep(step){
+  if(orderCompleted()){showCompletedOrder();return;}
   currentStep=step;
   document.querySelectorAll('.step-content').forEach(section=>section.classList.add('hidden'));
   document.getElementById('success').style.display='none';
@@ -181,7 +202,7 @@ document.getElementById('goAddress').onclick=()=>showStep(2);
 document.getElementById('saveAddress').onclick=()=>{
   const address={street:document.getElementById('street').value.trim(),number:document.getElementById('number').value.trim(),district:document.getElementById('district').value.trim(),reference:document.getElementById('reference').value.trim()};
   const msg=document.getElementById('addressMessage');
-  if(!address.street||!address.number||!address.district){msg.style.display='block';return}
+  if(!address.street||!address.number||!address.district||!address.reference){msg.style.display='block';return}
   msg.style.display='none';checkoutState.address=address;persistCheckout();localStorage.setItem('srdogao_address',[address.street,address.number,address.district].join(', '));showStep(3);
 };
 document.getElementById('saveCustomer').onclick=()=>{
@@ -196,8 +217,10 @@ document.getElementById('saveDelivery').onclick=()=>{
 };
 document.querySelectorAll('input[name="payment"]').forEach(radio=>radio.onchange=()=>{checkoutState.payment=radio.value;persistCheckout();syncOptions()});
 document.getElementById('finishOrder').onclick=()=>{
+  if(orderCompleted()){showCompletedOrder();return}
   const msg=document.getElementById('paymentMessage');if(!checkoutState.payment){msg.style.display='block';return}msg.style.display='none';
-  const cart=getCart(),subtotal=cartSubtotal(),earned=Math.floor(subtotal/10),customer=checkoutState.customer||{};
+  const cart=getCart();if(!cart.length){showCompletedOrder();return}
+  const subtotal=cartSubtotal(),earned=Math.floor(subtotal/10),customer=checkoutState.customer||{};
   const phoneKey=normalizePhone(customer.phone);
   const loyalty=getLoyalty();
   const current=loyalty[phoneKey]||{name:customer.name||'',cpf:customer.cpf||'',points:0,history:[]};
@@ -205,12 +228,16 @@ document.getElementById('finishOrder').onclick=()=>{
   current.history.unshift({date:new Date().toISOString(),amount:subtotal,points:earned});
   loyalty[phoneKey]=current;saveLoyalty(loyalty);
   checkoutState.updatedAt=new Date().toISOString();checkoutState.pointsEarned=earned;persistCheckout();
+  const finalOrder={customer,address:checkoutState.address||{},deliveryType:checkoutState.deliveryType,payment:checkoutState.payment,total:subtotal,pointsEarned:earned,pointsTotal:current.points,date:checkoutState.updatedAt};
+  localStorage.setItem('srdogao_last_order',JSON.stringify(finalOrder));
+  localStorage.setItem('srdogao_last_order_completed','1');
+  saveCart([]);
   document.querySelectorAll('.step-content').forEach(section=>section.classList.add('hidden'));
   document.querySelectorAll('[data-step-pill]').forEach(pill=>{pill.classList.remove('active');pill.classList.add('done')});
   document.getElementById('pageTitle').textContent='Pedido finalizado';
   document.getElementById('pageSubtitle').textContent='Confira abaixo os dados do pedido.';
   const a=checkoutState.address||{};
-  document.getElementById('successInfo').innerHTML='<p><b>Cliente:</b> '+(customer.name||'-')+'</p><p><b>Telefone:</b> '+(customer.phone||'-')+'</p><p><b>Endereço:</b> '+[a.street,a.number,a.district].filter(Boolean).join(', ')+'</p><p><b>Entrega:</b> '+(checkoutState.deliveryType==='pickup'?'Retirada':'Entrega')+'</p><p><b>Pagamento:</b> '+({pix:'Pix',card:'Cartão',cash:'Dinheiro'}[checkoutState.payment]||checkoutState.payment)+'</p><p><b>Total:</b> '+money(subtotal)+'</p>';
+  document.getElementById('successInfo').innerHTML='<p><b>Cliente:</b> '+(customer.name||'-')+'</p><p><b>Telefone:</b> '+(customer.phone||'-')+'</p><p><b>Endereço:</b> '+[a.street,a.number,a.district,a.reference].filter(Boolean).join(', ')+'</p><p><b>Entrega:</b> '+(checkoutState.deliveryType==='pickup'?'Retirada':'Entrega')+'</p><p><b>Pagamento:</b> '+({pix:'Pix',card:'Cartão',cash:'Dinheiro'}[checkoutState.payment]||checkoutState.payment)+'</p><p><b>Total:</b> '+money(subtotal)+'</p>';
   document.getElementById('pointsTotal').textContent=current.points;
   document.getElementById('pointsEarnedText').textContent='Neste pedido você ganhou '+earned+' ponto'+(earned===1?'':'s')+'.';
   document.getElementById('success').style.display='block';
@@ -219,7 +246,7 @@ document.getElementById('finishOrder').onclick=()=>{
 document.querySelectorAll('[data-back]').forEach(button=>button.onclick=()=>showStep(Number(button.dataset.back)));
 document.querySelectorAll('.option input').forEach(input=>input.addEventListener('change',syncOptions));
 
-loadAddress();loadCustomer();syncOptions();renderCart();showStep(1);
+loadAddress();loadCustomer();syncOptions();if(!showCompletedOrder()){renderCart();showStep(1);}
 </script>
 </body>
 </html>
