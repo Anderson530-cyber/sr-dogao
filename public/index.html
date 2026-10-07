@@ -48,16 +48,17 @@ const $=q=>document.querySelector(q); const $$=q=>Array.from(document.querySelec
 function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),1800)}
 function openModal(id){$(id).classList.add('open')} function closeAll(){$$('.modal-backdrop').forEach(x=>x.classList.remove('open'))}
 $$('[data-close]').forEach(b=>b.onclick=closeAll); $$('.modal-backdrop').forEach(m=>m.onclick=e=>{if(e.target===m)closeAll()});
+function startFreshOrder(){localStorage.removeItem('srdogao_last_order_completed');localStorage.removeItem('srdogao_last_order');localStorage.removeItem('srdogao_checkout')}
 function saveCart(){localStorage.setItem('srdogao_cart',JSON.stringify(cart));renderCart()}
 function renderCart(){const count=cart.reduce((a,x)=>a+x.qty,0);$('#cartCount').textContent=count?('('+count+')'):'';
  const box=$('#cartItems'); if(!cart.length){box.innerHTML='<p>Seu carrinho está vazio.</p>';$('#cartTotal').textContent='Total: R$ 0,00';return}
  box.innerHTML=cart.map((x,i)=>'<div class="cart-row"><b>'+x.name+'</b><div class="qty"><button onclick="qty('+i+',-1)">−</button><span>'+x.qty+'</span><button onclick="qty('+i+',1)">+</button></div><span class="price-line">'+money(x.price*x.qty)+'</span></div>').join('');
  $('#cartTotal').textContent='Total: '+money(cart.reduce((a,x)=>a+x.price*x.qty,0))}
 window.qty=(i,d)=>{cart[i].qty+=d;if(cart[i].qty<=0)cart.splice(i,1);saveCart()};
-$$('.add').forEach(b=>b.onclick=()=>{const c=b.closest('.card'),name=c.dataset.name,price=+c.dataset.price;let x=cart.find(x=>x.name===name);x?x.qty++:cart.push({name,price,qty:1});saveCart();toast(name+' adicionado ao carrinho')});
+$('.add').forEach(b=>b.onclick=()=>{startFreshOrder();const c=b.closest('.card'),name=c.dataset.name,price=+c.dataset.price;let x=cart.find(x=>x.name===name);x?x.qty++:cart.push({name,price,qty:1});saveCart();toast(name+' adicionado ao carrinho')});
 
 const catNames={hotdogs:'Hot Dogs',hamburguer:'Hambúrguer',barca:'Na Barca',combos:'Combos',porcoes:'Porções',bebidas:'Bebidas',sobremesas:'Sobremesas',promocoes:'Promoções'};
-function addCart(p){let x=cart.find(x=>x.name===p.name);x?x.qty++:cart.push({name:p.name,price:p.price,qty:1});saveCart();toast(p.name+' adicionado ao carrinho')}
+function addCart(p){startFreshOrder();let x=cart.find(x=>x.name===p.name);x?x.qty++:cart.push({name:p.name,price:p.price,qty:1});saveCart();toast(p.name+' adicionado ao carrinho')}
 function bindAddButtons(){$$('.add').forEach(b=>b.onclick=()=>{const c=b.closest('.card');addCart({name:c.dataset.name,price:+c.dataset.price})})}
 function renderFullMenu(cat=''){const cats=$('#fullMenuCats');cats.innerHTML='<button data-fmcat="" class="'+(!cat?'active':'')+'">Todos</button>'+Object.entries(catNames).map(([k,v])=>'<button data-fmcat="'+k+'" class="'+(cat===k?'active':'')+'">'+v+'</button>').join('');$$('[data-fmcat]').forEach(b=>b.onclick=()=>renderFullMenu(b.dataset.fmcat));const list=cat?menuProducts.filter(p=>p.category===cat):menuProducts;$('#fullMenuGrid').innerHTML=list.length?list.map(p=>'<div class="fullmenu-item"><img src="'+p.img+'" alt=""><div><h3>'+p.name+'</h3><p>'+p.desc+'</p><div class="fmprice">'+money(p.price)+'</div></div><button data-fmadd="'+p.id+'" aria-label="Adicionar">+</button></div>').join(''):'<p>Nenhum produto disponível nesta categoria.</p>';$$('[data-fmadd]').forEach(b=>b.onclick=()=>{const p=menuProducts.find(x=>String(x.id)===b.dataset.fmadd);if(p)addCart(p)})}
 $$('.openFullMenu').forEach(a=>a.onclick=e=>{e.preventDefault();renderFullMenu();openModal('#fullMenuModal')});
