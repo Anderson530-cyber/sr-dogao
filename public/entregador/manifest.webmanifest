@@ -1,0 +1,9 @@
+{
+  "name":"Sr. Dogão Entregador",
+  "short_name":"Dogão Entrega",
+  "start_url":"/entregador/",
+  "display":"standalone",
+  "background_color":"#fffaf0",
+  "theme_color":"#ffd600",
+  "icons":[]
+}
