@@ -95,6 +95,7 @@ $('#loginBtn').onclick=async()=>{const email=$('#email').value.trim(),password=$
 $('#logout').onclick=async()=>{if(watchId!==null)navigator.geolocation.clearWatch(watchId);await sb.auth.signOut();location.reload()};
 $('#refresh').onclick=loadOrders;$('#startGps').onclick=startGps;
 enter();
+if('serviceWorker' in navigator)navigator.serviceWorker.register('/entregador/sw.js').catch(()=>{});
 </script>
 </body>
 </html>
