@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#ffd600">
 <title>Carrinho | Sr. Dogão</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{--y:#ffd600;--r:#d70b13;--d:#35100b;--c:#fffaf0;--w:#fff;--muted:#7a655d;--line:#eee1d7}
 *{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--c);color:var(--d)}a{text-decoration:none;color:inherit}button,input,textarea{font:inherit}
@@ -15,7 +17,7 @@ header{background:var(--y);position:sticky;top:0;z-index:10;box-shadow:0 2px 14p
 .summary{padding:22px;position:sticky;top:104px}.summary h2{margin:0 0 18px}.line{display:flex;justify-content:space-between;gap:12px;padding:9px 0;color:var(--muted)}.total{display:flex;justify-content:space-between;gap:12px;border-top:1px solid #eaded3;margin-top:8px;padding-top:18px;font-size:1.25rem;font-weight:1000}.primary{width:100%;border:0;background:var(--r);color:#fff;padding:15px 18px;border-radius:28px;font-weight:900;font-size:1rem;margin-top:18px;cursor:pointer}.secondary{width:100%;border:1px solid #ead8cc;background:#fff;color:var(--d);padding:13px 18px;border-radius:28px;font-weight:900;margin-top:10px;cursor:pointer}.continue{display:block;text-align:center;margin-top:12px;font-weight:800;color:var(--r)}
 .checkout-box{padding:22px}.checkout-box h2{margin:0 0 6px}.checkout-box .intro{margin:0 0 18px;color:var(--muted)}.field{display:grid;gap:6px;margin:12px 0}.field label{font-weight:800}.field input,.field textarea{width:100%;border:1px solid #dfd2c8;border-radius:14px;padding:13px 14px;background:#fff}.field textarea{min-height:80px;resize:vertical}.options{display:grid;gap:10px;margin-top:14px}.coupon-area{margin-top:24px;padding-top:20px;border-top:1px solid var(--line)}.coupon-area h3{margin:0 0 4px}.coupon-option{border:1px dashed #d9b24a;border-radius:16px;padding:14px;background:#fff9dd;display:flex;align-items:center;gap:12px;cursor:pointer}.coupon-option input{width:18px;height:18px;accent-color:var(--r)}.coupon-option.active{border-style:solid;border-color:#d09e00;background:#fff2b2}.coupon-option strong{display:block}.coupon-option small{display:block;color:var(--muted);margin-top:3px}.option{border:1px solid #e5d9cf;border-radius:16px;padding:14px;display:flex;align-items:center;gap:12px;cursor:pointer}.option input{accent-color:var(--r);width:18px;height:18px}.option.active{border-color:#e0b900;background:#fff8d7}.option b{display:block}.option small{display:block;color:var(--muted);margin-top:3px}.actions-row{display:flex;gap:10px;margin-top:18px}.actions-row .primary,.actions-row .secondary{margin:0}.message{display:none;margin-top:16px;background:#fff4bf;border:1px solid #ecd264;padding:14px 15px;border-radius:14px;font-weight:800}.success{display:none;text-align:center;padding:36px 18px}.success h2{margin:10px 0 6px}.success>p{color:var(--muted);max-width:520px;margin:0 auto 18px}.success>a{display:inline-block;background:var(--r);color:#fff;padding:13px 22px;border-radius:24px;font-weight:900}.check-wrap{width:92px;height:92px;margin:0 auto 10px}.check-svg{width:100%;height:100%;overflow:visible}.check-circle{fill:none;stroke:#23a55a;stroke-width:6;stroke-dasharray:201;stroke-dashoffset:201;animation:drawCircle .65s ease forwards}.check-path{fill:none;stroke:#23a55a;stroke-width:7;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:50;stroke-dashoffset:50;animation:drawCheck .45s .55s ease forwards}@keyframes drawCircle{to{stroke-dashoffset:0}}@keyframes drawCheck{to{stroke-dashoffset:0}}.success-info{max-width:620px;margin:18px auto;text-align:left;background:#fffaf0;border:1px solid #eedfce;border-radius:16px;padding:16px}.success-info p{margin:8px 0;color:var(--d)}.points-card{max-width:620px;margin:16px auto 22px;background:#fff7cf;border:1px solid #ead26b;border-radius:18px;padding:18px;text-align:left}.points-card>div{display:flex;align-items:center;justify-content:space-between;gap:12px}.points-card span{font-weight:900}.points-card strong{font-size:2rem;color:var(--r)}.points-card p{margin:8px 0;color:#6f5b3d}.points-note{font-weight:900}.points-link{display:inline-block;margin-top:8px;color:var(--r);font-weight:900}
 .empty{padding:48px 24px;text-align:center}.empty .icon{font-size:3rem}.empty h2{margin:12px 0 6px}.empty p{color:var(--muted);margin:0 0 20px}.empty a{display:inline-block;background:var(--r);color:#fff;padding:13px 22px;border-radius:26px;font-weight:900}
-.hidden{display:none!important}.coupon-trigger{width:100%;border:1px solid #dfc35b;background:#fff8d7;color:var(--d);padding:14px 16px;border-radius:16px;font-weight:900;display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer}.coupon-trigger small{font-weight:700;color:var(--muted)}.modal-backdrop{position:fixed;inset:0;background:#0009;z-index:100;display:none;align-items:center;justify-content:center;padding:18px}.modal-backdrop.open{display:flex}.modal{background:#fff;width:min(620px,100%);max-height:86vh;overflow:auto;border-radius:22px;padding:22px;box-shadow:0 20px 60px #0005}.modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.modal-head h2{margin:0}.modal-close{border:0;background:#f3e8df;width:38px;height:38px;border-radius:50%;font-size:1.35rem;cursor:pointer}.coupon-choice{border:1px solid #eaded3;border-radius:16px;padding:14px;margin-top:10px;display:flex;align-items:flex-start;gap:12px;cursor:pointer}.coupon-choice.active{border-color:#d09e00;background:#fff5c9}.coupon-choice input{margin-top:3px;width:18px;height:18px;accent-color:var(--r)}.coupon-choice strong{display:block}.coupon-choice small{display:block;color:var(--muted);margin-top:4px}.coupon-choice .tag{display:inline-block;margin-top:7px;background:#f7ebdf;border-radius:999px;padding:5px 8px;font-size:.78rem;font-weight:900}.modal-actions{display:flex;gap:10px;margin-top:18px}.modal-actions button{flex:1}.review-block{border-top:1px solid var(--line);padding:18px 0}.review-block:first-of-type{border-top:0}.review-block h3{margin:0 0 10px}.review-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.edit-link{border:0;background:transparent;color:var(--r);font-weight:900;cursor:pointer}.review-item,.review-line{display:flex;justify-content:space-between;gap:16px;padding:7px 0}.review-link{display:inline-block;margin-top:10px;color:var(--r);font-weight:900}.tracking{max-width:620px;margin:18px auto;text-align:left;background:#fff;border:1px solid #e8ddd4;border-radius:18px;padding:18px}.tracking h3{margin:0 0 14px}.tracking-current{display:flex;align-items:center;gap:10px;background:#fff7cf;border-radius:14px;padding:13px;font-weight:900}.tracking-dot{width:12px;height:12px;border-radius:50%;background:#23a55a}.timeline{display:grid;gap:10px;margin-top:14px}.timeline-step{display:flex;align-items:center;gap:10px;color:#9a8a80}.timeline-step.done,.timeline-step.current{color:var(--d);font-weight:900}.timeline-step span:first-child{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:#eee}.timeline-step.done span:first-child,.timeline-step.current span:first-child{background:#23a55a;color:#fff}
+.hidden{display:none!important}.coupon-trigger{width:100%;border:1px solid #dfc35b;background:#fff8d7;color:var(--d);padding:14px 16px;border-radius:16px;font-weight:900;display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer}.coupon-trigger small{font-weight:700;color:var(--muted)}.modal-backdrop{position:fixed;inset:0;background:#0009;z-index:100;display:none;align-items:center;justify-content:center;padding:18px}.modal-backdrop.open{display:flex}.modal{background:#fff;width:min(620px,100%);max-height:86vh;overflow:auto;border-radius:22px;padding:22px;box-shadow:0 20px 60px #0005}.modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.modal-head h2{margin:0}.modal-close{border:0;background:#f3e8df;width:38px;height:38px;border-radius:50%;font-size:1.35rem;cursor:pointer}.coupon-choice{border:1px solid #eaded3;border-radius:16px;padding:14px;margin-top:10px;display:flex;align-items:flex-start;gap:12px;cursor:pointer}.coupon-choice.active{border-color:#d09e00;background:#fff5c9}.coupon-choice input{margin-top:3px;width:18px;height:18px;accent-color:var(--r)}.coupon-choice strong{display:block}.coupon-choice small{display:block;color:var(--muted);margin-top:4px}.coupon-choice .tag{display:inline-block;margin-top:7px;background:#f7ebdf;border-radius:999px;padding:5px 8px;font-size:.78rem;font-weight:900}.modal-actions{display:flex;gap:10px;margin-top:18px}.modal-actions button{flex:1}.review-block{border-top:1px solid var(--line);padding:18px 0}.review-block:first-of-type{border-top:0}.review-block h3{margin:0 0 10px}.review-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.edit-link{border:0;background:transparent;color:var(--r);font-weight:900;cursor:pointer}.review-item,.review-line{display:flex;justify-content:space-between;gap:16px;padding:7px 0}.review-link{display:inline-block;margin-top:10px;color:var(--r);font-weight:900}.tracking{max-width:620px;margin:18px auto;text-align:left;background:#fff;border:1px solid #e8ddd4;border-radius:18px;padding:18px}.tracking h3{margin:0 0 14px}.tracking-current{display:flex;align-items:center;gap:10px;background:#fff7cf;border-radius:14px;padding:13px;font-weight:900}.tracking-dot{width:12px;height:12px;border-radius:50%;background:#23a55a}.timeline{display:grid;gap:10px;margin-top:14px}.timeline-step{display:flex;align-items:center;gap:10px;color:#9a8a80}.timeline-step.done,.timeline-step.current{color:var(--d);font-weight:900}.timeline-step span:first-child{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:#eee}.timeline-step.done span:first-child,.timeline-step.current span:first-child{background:#23a55a;color:#fff}.delivery-pin-card{max-width:620px;margin:16px auto;background:#35100b;color:#fff;border-radius:18px;padding:18px;text-align:center}.delivery-pin-card span,.delivery-pin-card small{display:block}.delivery-pin-card strong{display:block;font-size:2.5rem;letter-spacing:.35rem;color:var(--y);margin:8px 0}.delivery-notice{max-width:620px;margin:14px auto;padding:14px 16px;border-radius:16px;background:#fff7cf;border:1px solid #ead26b;text-align:left;font-weight:800;display:none}.delivery-notice.show{display:block}.driver-map{max-width:620px;height:300px;margin:14px auto;border-radius:18px;overflow:hidden;border:1px solid #e8ddd4;display:none}.driver-map.show{display:block}
 @media(max-width:760px){.title{display:none}.top{min-height:72px}.logo{width:100px;height:54px}.wrap{padding:24px 14px 40px}.steps{grid-template-columns:repeat(2,1fr)}.layout{grid-template-columns:1fr}.summary{position:static}.item{grid-template-columns:1fr auto}.qty{grid-row:1/3;grid-column:2}.item .price{display:none}.actions-row{flex-direction:column}}
 </style>
 </head>
@@ -126,7 +128,7 @@ header{background:var(--y);position:sticky;top:0;z-index:10;box-shadow:0 2px 14p
 <h2>Pedido finalizado!</h2>
 <p>Seu pedido foi preparado no sistema.</p>
 <div class="success-info" id="successInfo"></div>
-<div class="tracking"><h3>Acompanhar pedido</h3><div class="tracking-current"><span class="tracking-dot"></span><span id="orderStatusText">Pedido confirmado</span></div><div class="timeline" id="orderTimeline"></div></div>
+<div class="delivery-pin-card"><span>PIN da entrega</span><strong id="deliveryPin">----</strong><small>Informe este PIN ao entregador somente quando receber o pedido.</small></div><div class="delivery-notice" id="deliveryNotice"></div><div class="driver-map" id="driverMap"></div><div class="tracking"><h3>Acompanhar pedido</h3><div class="tracking-current"><span class="tracking-dot"></span><span id="orderStatusText">Pedido confirmado</span></div><div class="timeline" id="orderTimeline"></div></div>
 <div class="points-card">
 <div><span>Seus pontos</span><strong id="pointsTotal">0</strong></div>
 <p>A cada R$ 10,00 em compras você ganha 1 ponto.</p>
@@ -140,11 +142,84 @@ header{background:var(--y);position:sticky;top:0;z-index:10;box-shadow:0 2px 14p
 
 <script>
 const money=value=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(value);
+const TRACKING_SUPABASE_URL='https://dlccdfwteekecjiwybfr.supabase.co',TRACKING_SUPABASE_KEY='sb_publishable_izc2on9Gie9UC5iCHSjaBQ_5ItuscE2';
+const trackingDb=supabase.createClient(TRACKING_SUPABASE_URL,TRACKING_SUPABASE_KEY);
 const getCart=()=>JSON.parse(localStorage.getItem('srdogao_cart')||'[]');
 const saveCart=cart=>localStorage.setItem('srdogao_cart',JSON.stringify(cart));
 let currentStep=1;
 let checkoutState=JSON.parse(localStorage.getItem('srdogao_checkout')||'{}');
 const orderCompleted=()=>getCart().length===0&&localStorage.getItem('srdogao_last_order_completed')==='1';
+
+let trackingTimer=null,driverMap=null,driverMarker=null;
+async function createRemoteOrder(order){
+  const {data,error}=await trackingDb.rpc('srdogao_create_order',{
+    p_customer_name:order.customer?.name||'Cliente',
+    p_customer_phone:order.customer?.phone||'',
+    p_address:order.address||{},
+    p_delivery_type:order.deliveryType||'delivery',
+    p_payment:order.payment||'',
+    p_items:order.items||[],
+    p_subtotal:order.subtotal||0,
+    p_discount:order.discount||0,
+    p_total:order.total||0,
+    p_coupon_code:order.couponCode||null,
+    p_redeem_title:order.redeemTitle||null
+  });
+  if(error)throw error;
+  return data;
+}
+function showDriverMap(lat,lng){
+  const box=document.getElementById('driverMap');if(!box||typeof L==='undefined')return;
+  box.classList.add('show');
+  if(!driverMap){
+    driverMap=L.map('driverMap').setView([lat,lng],16);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(driverMap);
+    driverMarker=L.marker([lat,lng]).addTo(driverMap).bindPopup('Seu entregador');
+  }else{
+    driverMarker.setLatLng([lat,lng]);driverMap.setView([lat,lng],16);
+  }
+  setTimeout(()=>driverMap.invalidateSize(),100);
+}
+function customerNotify(token,key,title,body){
+  const storageKey='srdogao_notice_'+token+'_'+key;
+  if(localStorage.getItem(storageKey))return;
+  localStorage.setItem(storageKey,'1');
+  if('Notification' in window&&Notification.permission==='granted')new Notification(title,{body});
+}
+function renderDeliveryTracking(data,token,pin){
+  if(!data)return;
+  renderTracking(data.status||'confirmed');
+  document.getElementById('deliveryPin').textContent=pin||data.delivery_pin||'----';
+  const notice=document.getElementById('deliveryNotice');
+  let message='';
+  if(data.status==='out_for_delivery'&&Number(data.deliveries_ahead||0)>0){
+    const n=Number(data.deliveries_ahead);
+    message='🛵 O entregador tem '+n+' '+(n===1?'entrega':'entregas')+' no caminho antes da sua. Seu pedido chegará em breve.';
+    customerNotify(token,'route','Sr. Dogão',message.replace('🛵 ',''));
+  }
+  if(data.status==='out_for_delivery'&&Number(data.eta_minutes||99)<=1){
+    message='🔔 Seu pedido vai chegar em cerca de 1 minuto. Apresente o PIN '+(pin||data.delivery_pin)+' ao entregador.';
+    customerNotify(token,'arriving','Seu pedido está chegando!',message.replace('🔔 ',''));
+  }
+  if(data.status==='delivered'){
+    message='✅ Pedido entregue. Obrigado por pedir no Sr. Dogão!';
+    customerNotify(token,'delivered','Pedido entregue',message.replace('✅ ',''));
+  }
+  notice.textContent=message;notice.classList.toggle('show',Boolean(message));
+  if(data.driver_lat!=null&&data.driver_lng!=null)showDriverMap(Number(data.driver_lat),Number(data.driver_lng));
+}
+async function refreshTracking(token,pin){
+  if(!token)return;
+  const {data,error}=await trackingDb.rpc('srdogao_track_order',{p_token:token});
+  if(!error&&data)renderDeliveryTracking(data,token,pin);
+}
+function startCustomerTracking(token,pin){
+  if(trackingTimer)clearInterval(trackingTimer);
+  if(!token)return;
+  refreshTracking(token,pin);
+  trackingTimer=setInterval(()=>refreshTracking(token,pin),5000);
+}
+
 
 
 function showCompletedOrder(){
@@ -163,7 +238,9 @@ function showCompletedOrder(){
   document.getElementById('pointsTotal').textContent=saved.pointsTotal||0;
   document.getElementById('pointsEarnedText').textContent='Neste pedido você ganhou '+(saved.pointsEarned||0)+' ponto'+((saved.pointsEarned||0)===1?'':'s')+'.';
   document.getElementById('success').style.display='block';
+  document.getElementById('deliveryPin').textContent=saved.deliveryPin||'----';
   renderTracking(saved.status||'confirmed');
+  startCustomerTracking(saved.trackingToken,saved.deliveryPin);
   return true;
 }
 
@@ -374,12 +451,27 @@ document.getElementById('applyRedeem').onclick=()=>{
   closeRedeemModal();
 };
 
-document.getElementById('finishOrder').onclick=()=>{
+document.getElementById('finishOrder').onclick=async()=>{
   if(orderCompleted()){showCompletedOrder();return}
+  if('Notification' in window&&Notification.permission==='default'){try{await Notification.requestPermission()}catch(e){}}
+  const finishBtn=document.getElementById('finishOrder');finishBtn.disabled=true;finishBtn.textContent='Confirmando...';
   const msg=document.getElementById('paymentMessage');if(!checkoutState.payment){msg.style.display='block';return}msg.style.display='none';
   const cart=getCart();if(!cart.length){showCompletedOrder();return}
   const subtotal=cartSubtotal(),selectedReward=selectedRedeem(),couponValue=couponDiscount(),redeemValue=(selectedReward&&selectedReward.type==='discount'&&!checkoutState.couponCode)?redeemDiscount():0,discount=couponValue+redeemValue,finalTotal=Math.max(0,subtotal-discount),earned=Math.floor(finalTotal/10),customer=checkoutState.customer||{};
   const phoneKey=normalizePhone(customer.phone);
+  let remoteOrder;
+  try{
+    remoteOrder=await createRemoteOrder({
+      customer,address:checkoutState.address||{},deliveryType:checkoutState.deliveryType,payment:checkoutState.payment,
+      items:cart,subtotal,discount,total:finalTotal,couponCode:checkoutState.couponCode||'',redeemTitle:(selectedRedeem()?.title||'')
+    });
+  }catch(error){
+    finishBtn.disabled=false;finishBtn.textContent='Confirmar pedido';
+    const reviewMsg=document.getElementById('reviewMessage');
+    reviewMsg.textContent='Não foi possível confirmar o pedido agora. Verifique sua internet e tente novamente.';
+    reviewMsg.style.display='block';
+    return;
+  }
   const loyalty=getLoyalty();
   const current=loyalty[phoneKey]||{name:customer.name||'',cpf:customer.cpf||'',points:0,history:[]};
   current.name=customer.name||current.name;current.cpf=customer.cpf||current.cpf;current.points=(Number(current.points)||0)+earned;
@@ -398,7 +490,7 @@ document.getElementById('finishOrder').onclick=()=>{
   }
   loyalty[phoneKey]=current;saveLoyalty(loyalty);
   checkoutState.updatedAt=new Date().toISOString();checkoutState.pointsEarned=earned;persistCheckout();
-  const finalOrder={customer,address:checkoutState.address||{},deliveryType:checkoutState.deliveryType,payment:checkoutState.payment,subtotal,discount,total:finalTotal,couponCode:checkoutState.couponCode||'',redeemRewardId:checkoutState.redeemRewardId||'',redeemTitle:(selectedRedeem()?.title||''),pointsEarned:earned,pointsTotal:current.points,status:'confirmed',date:checkoutState.updatedAt};
+  const finalOrder={remoteId:remoteOrder?.id||'',trackingToken:remoteOrder?.public_token||'',deliveryPin:remoteOrder?.delivery_pin||'',customer,address:checkoutState.address||{},deliveryType:checkoutState.deliveryType,payment:checkoutState.payment,items:cart,subtotal,discount,total:finalTotal,couponCode:checkoutState.couponCode||'',redeemRewardId:checkoutState.redeemRewardId||'',redeemTitle:(selectedRedeem()?.title||''),pointsEarned:earned,pointsTotal:current.points,status:'confirmed',date:checkoutState.updatedAt};
   localStorage.setItem('srdogao_last_order',JSON.stringify(finalOrder));
   localStorage.setItem('srdogao_last_order_completed','1');
   saveCart([]);
@@ -411,7 +503,10 @@ document.getElementById('finishOrder').onclick=()=>{
   document.getElementById('pointsTotal').textContent=current.points;
   document.getElementById('pointsEarnedText').textContent='Neste pedido você ganhou '+earned+' ponto'+(earned===1?'':'s')+'.';
   document.getElementById('success').style.display='block';
+  document.getElementById('deliveryPin').textContent=finalOrder.deliveryPin||'----';
   renderTracking('confirmed');
+  startCustomerTracking(finalOrder.trackingToken,finalOrder.deliveryPin);
+  finishBtn.disabled=false;finishBtn.textContent='Confirmar pedido';
   window.scrollTo({top:0,behavior:'smooth'});
 };
 document.querySelectorAll('[data-back]').forEach(button=>button.onclick=()=>showStep(Number(button.dataset.back)));
@@ -419,5 +514,6 @@ document.querySelectorAll('.option input').forEach(input=>input.addEventListener
 
 loadAddress();loadCustomer();syncOptions();renderCouponTrigger();renderRedeemTrigger();if(!showCompletedOrder()){renderCart();showStep(1);}
 </script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </body>
 </html>
