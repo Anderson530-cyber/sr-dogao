@@ -76,16 +76,24 @@ function updateRedeemStrip(){
   const cart=getCart(),strip=document.getElementById('redeemStrip'),box=document.getElementById('redeemStripContent');
   if(!cart.length){strip.classList.remove('show');return}
   const checkout=getCheckout(),active=activeQuickReward(checkout),account=resolveQuickAccount(),parts=[];
-  if(active)parts.push('<button class="redeem-chip active" type="button" id="openQuickRedeem">Ativo: '+esc(active.title)+'</button>');
-  else if(checkout.couponCode)parts.push('<button class="redeem-chip active" type="button" id="openQuickRedeem">Cupom de resgate ativo</button>');
-  else if(account)parts.push('<button class="redeem-chip" type="button" id="openQuickRedeem">Resgatar • '+Number(account.account.points||0)+' pts</button>');
-  else parts.push('<button class="redeem-chip redeem-login" type="button" id="openQuickRedeem">Entrar e resgatar</button>');
+  const minRewardPoints=Math.min(...quickRewards.map(r=>Number(r.points)||0).filter(Boolean));
+  if(active){
+    parts.push('<button class="redeem-chip active" type="button" id="openQuickRedeem">Ativo: '+esc(active.title)+'</button>');
+  }else if(checkout.couponCode&&!checkout.storeCoupon){
+    parts.push('<button class="redeem-chip active" type="button" id="openQuickRedeem">Cupom de resgate ativo</button>');
+  }else if(account){
+    const points=Number(account.account.points||0);
+    if(points>=minRewardPoints)parts.push('<button class="redeem-chip" type="button" id="openQuickRedeem">Resgates</button>');
+    else parts.push('<button class="redeem-chip" type="button" id="openQuickRedeem">Pontos insuficientes para resgates</button>');
+  }else{
+    parts.push('<button class="redeem-chip redeem-login" type="button" id="openQuickRedeem">Entrar e visualizar</button>');
+  }
   if(storeCoupons.length){
     const activeStore=activeStoreCoupon(checkout);
     parts.push('<button class="redeem-chip '+(activeStore?'active':'')+'" type="button" id="openStoreCoupons">'+(activeStore?'Cupom: '+esc(activeStore.title):'Cupons da loja')+'</button>');
   }
   box.innerHTML=parts.join('');
-  document.getElementById('openQuickRedeem').onclick=openQuickRedeem;
+  const redeemBtn=document.getElementById('openQuickRedeem');if(redeemBtn)redeemBtn.onclick=openQuickRedeem;
   const sc=document.getElementById('openStoreCoupons');if(sc)sc.onclick=openStoreCoupons;
   strip.classList.add('show');
 }
@@ -167,8 +175,9 @@ function renderQuickRedeemAccount(key,account){
   document.getElementById('quickRedeemLogin').style.display='none';
   document.getElementById('quickRedeemOptions').style.display='block';
   document.getElementById('quickRedeemBalance').textContent='Você tem '+Number(account.points||0)+' pontos';
-  const checkout=getCheckout(),balance=Number(account.points||0),coupons=(account.redemptions||[]).filter(r=>r.code&&!r.usedAt&&Number(r.value)>0);
+  const checkout=getCheckout(),balance=Number(account.points||0),coupons=(account.redemptions||[]).filter(r=>r.code&&!r.usedAt&&Number(r.value)>0),available=quickRewards.filter(r=>balance>=Number(r.points||0));
   let html='<h3>Resgatar com pontos</h3>';
+  if(!available.length)html+='<p style="color:#765;margin:6px 0 12px">Você ainda não tem pontos suficientes para nenhum resgate.</p>';
   html+=quickRewards.map(r=>{const missing=Math.max(0,r.points-balance),active=checkout.redeemRewardId===r.id;return '<button type="button" class="redeem-chip '+(active?'active':'')+'" data-quick-reward="'+r.id+'" '+(missing?'disabled style="opacity:.45;cursor:not-allowed"':'')+'>'+esc(r.title)+' • '+r.points+' pts'+(missing?' • faltam '+missing:'')+'</button>'}).join(' ');
   if(coupons.length){html+='<h3 style="margin-top:18px">Cupons disponíveis</h3>'+coupons.map(cp=>'<button type="button" class="redeem-chip '+(checkout.couponCode===cp.code?'active':'')+'" data-quick-coupon="'+esc(cp.code)+'">'+esc(cp.title)+' • '+money(cp.value)+'</button>').join(' ')}
   document.getElementById('quickRedeemList').innerHTML=html;
