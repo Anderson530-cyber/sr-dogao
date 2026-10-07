@@ -95,7 +95,7 @@ header{background:var(--y);position:sticky;top:0;z-index:10;box-shadow:0 2px 14p
 </div>
 <div class="coupon-area">
 <h3>Cupom de desconto</h3>
-<p class="intro">Você pode usar apenas 1 cupom por pedido.</p>
+<p class="intro">Use 1 desconto por pedido. Um resgate de produto pode ser usado junto.</p>
 <button class="coupon-trigger" id="openCouponModal" type="button"><span>🎟️ Cupom de desconto</span><small id="couponSelectedLabel">Nenhum cupom selecionado</small></button>
 <div style="height:10px"></div>
 <button class="coupon-trigger" id="openRedeemModal" type="button"><span>⭐ Resgates</span><small id="redeemSelectedLabel">Ver opções disponíveis</small></button>
@@ -106,7 +106,7 @@ header{background:var(--y);position:sticky;top:0;z-index:10;box-shadow:0 2px 14p
 </section>
 
 <div class="modal-backdrop" id="couponModal"><div class="modal"><div class="modal-head"><div><h2>Cupons de desconto</h2><p class="intro">Escolha um cupom já resgatado ou use seus pontos agora.</p></div><button class="modal-close" id="closeCouponModal" type="button">×</button></div><div id="couponModalList"></div><div class="modal-actions"><button class="secondary" id="clearCoupon" type="button">Não usar cupom</button><button class="primary" id="applyCoupon" type="button">Aplicar cupom</button></div></div></div>
-<div class="modal-backdrop" id="redeemModal"><div class="modal"><div class="modal-head"><div><h2>Resgates</h2><p class="intro">Use seus pontos em uma recompensa disponível.</p></div><button class="modal-close" id="closeRedeemModal" type="button">×</button></div><div class="points" style="margin:10px 0 16px"><span>Seus pontos</span><strong id="redeemPointsBalance">0</strong></div><div id="redeemModalList"></div><div class="modal-actions"><button class="secondary" id="clearRedeem" type="button">Não usar resgate</button><button class="primary" id="applyRedeem" type="button">Aplicar resgate</button></div></div></div>
+<div class="modal-backdrop" id="redeemModal"><div class="modal"><div class="modal-head"><div><h2>Resgates</h2><p class="intro">Resgate de desconto substitui o cupom. Resgate de produto pode ser adicionado junto.</p></div><button class="modal-close" id="closeRedeemModal" type="button">×</button></div><div class="points" style="margin:10px 0 16px"><span>Seus pontos</span><strong id="redeemPointsBalance">0</strong></div><div id="redeemModalList"></div><div class="modal-actions"><button class="secondary" id="clearRedeem" type="button">Não usar resgate</button><button class="primary" id="applyRedeem" type="button">Aplicar resgate</button></div></div></div>
 <section id="success" class="panel success">
 <div class="check-wrap" aria-hidden="true"><svg class="check-svg" viewBox="0 0 80 80"><circle class="check-circle" cx="40" cy="40" r="32"></circle><path class="check-path" d="M24 41 L35 52 L57 29"></path></svg></div>
 <h2>Pedido finalizado!</h2>
@@ -154,7 +154,7 @@ function cartSubtotal(){return getCart().reduce((sum,item)=>sum+(Number(item.pri
 function updateSummary(){
   const subtotal=cartSubtotal();
   const delivery=checkoutState.deliveryType==='pickup'?0:null;
-  const couponValue=couponDiscount(),redeemValue=redeemDiscount(),discount=couponValue+redeemValue;
+  const selectedReward=selectedRedeem(),couponValue=couponDiscount(),redeemValue=(selectedReward&&selectedReward.type==='discount'&&!checkoutState.couponCode)?redeemDiscount():0,discount=couponValue+redeemValue;
   document.getElementById('subtotal').textContent=money(subtotal);
   document.getElementById('deliveryLabel').textContent=delivery===0?'Grátis':'A calcular';
   const discountLine=document.getElementById('discountLine');
@@ -284,7 +284,7 @@ function renderRedeemModal(){
   document.getElementById('redeemPointsBalance').textContent=balance;
   box.innerHTML=rewardOptions.map(r=>{
     const missing=Math.max(0,r.points-balance),disabled=missing>0,current=pendingRedeemId===r.id;
-    return '<label class="coupon-choice '+(current?'active':'')+'" style="'+(disabled?'opacity:.55;cursor:not-allowed':'')+'"><input type="radio" name="redeemPick" value="'+r.id+'" '+(current?'checked':'')+' '+(disabled?'disabled':'')+'><span><strong>'+r.title+'</strong><small>'+r.points+' pontos'+(missing?(' • faltam '+missing+' pts'):' • disponível')+'</small><span class="tag">'+(r.type==='product'?'Produto':'Desconto')+'</span></span></label>';
+    return '<label class="coupon-choice '+(current?'active':'')+'" style="'+(disabled?'opacity:.55;cursor:not-allowed':'')+'"><input type="radio" name="redeemPick" value="'+r.id+'" '+(current?'checked':'')+' '+(disabled?'disabled':'')+'><span><strong>'+r.title+'</strong><small>'+r.points+' pontos'+(missing?(' • faltam '+missing+' pts'):' • disponível')+'</small><span class="tag">'+(r.type==='product'?'Produto • pode combinar com cupom':'Desconto • não combina com cupom')+'</span></span></label>';
   }).join('');
   document.querySelectorAll('input[name="redeemPick"]').forEach(r=>r.onchange=()=>{pendingRedeemId=r.value;renderRedeemModal()});
 }
@@ -312,14 +312,23 @@ document.getElementById('openCouponModal').onclick=openCouponModal;
 document.getElementById('closeCouponModal').onclick=closeCouponModal;
 document.getElementById('couponModal').onclick=e=>{if(e.target.id==='couponModal')closeCouponModal()};
 document.getElementById('clearCoupon').onclick=()=>{pendingCouponSelection={code:'',rewardId:''};checkoutState.couponCode='';persistCheckout();renderCouponTrigger();updateSummary();closeCouponModal()};
-document.getElementById('applyCoupon').onclick=()=>{checkoutState.couponCode=pendingCouponSelection.code||'';persistCheckout();renderCouponTrigger();updateSummary();closeCouponModal()};
+document.getElementById('applyCoupon').onclick=()=>{
+  checkoutState.couponCode=pendingCouponSelection.code||'';
+  const reward=selectedRedeem();
+  if(checkoutState.couponCode&&reward&&reward.type==='discount')checkoutState.redeemRewardId='';
+  persistCheckout();renderCouponTrigger();renderRedeemTrigger();updateSummary();closeCouponModal()
+};
 document.getElementById('openRedeemModal').onclick=openRedeemModal;
 document.getElementById('closeRedeemModal').onclick=closeRedeemModal;
 document.getElementById('redeemModal').onclick=e=>{if(e.target.id==='redeemModal')closeRedeemModal()};
 document.getElementById('clearRedeem').onclick=()=>{pendingRedeemId='';checkoutState.redeemRewardId='';persistCheckout();renderRedeemTrigger();updateSummary();closeRedeemModal()};
 document.getElementById('applyRedeem').onclick=()=>{
   const reward=rewardOptions.find(r=>r.id===pendingRedeemId),{account}=getLoyaltyAccount(),balance=Number(account?.points||0);
-  if(reward&&balance>=reward.points){checkoutState.redeemRewardId=reward.id;persistCheckout();renderRedeemTrigger();updateSummary()}
+  if(reward&&balance>=reward.points){
+    checkoutState.redeemRewardId=reward.id;
+    if(reward.type==='discount')checkoutState.couponCode='';
+    persistCheckout();renderCouponTrigger();renderRedeemTrigger();updateSummary()
+  }
   closeRedeemModal();
 };
 
@@ -327,7 +336,7 @@ document.getElementById('finishOrder').onclick=()=>{
   if(orderCompleted()){showCompletedOrder();return}
   const msg=document.getElementById('paymentMessage');if(!checkoutState.payment){msg.style.display='block';return}msg.style.display='none';
   const cart=getCart();if(!cart.length){showCompletedOrder();return}
-  const subtotal=cartSubtotal(),couponValue=couponDiscount(),redeemValue=redeemDiscount(),discount=couponValue+redeemValue,finalTotal=Math.max(0,subtotal-discount),earned=Math.floor(finalTotal/10),customer=checkoutState.customer||{};
+  const subtotal=cartSubtotal(),selectedReward=selectedRedeem(),couponValue=couponDiscount(),redeemValue=(selectedReward&&selectedReward.type==='discount'&&!checkoutState.couponCode)?redeemDiscount():0,discount=couponValue+redeemValue,finalTotal=Math.max(0,subtotal-discount),earned=Math.floor(finalTotal/10),customer=checkoutState.customer||{};
   const phoneKey=normalizePhone(customer.phone);
   const loyalty=getLoyalty();
   const current=loyalty[phoneKey]||{name:customer.name||'',cpf:customer.cpf||'',points:0,history:[]};
