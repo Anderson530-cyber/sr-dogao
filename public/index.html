@@ -122,10 +122,11 @@ async function prepareOrderByCep(){
   try{
     const res=await fetch('https://viacep.com.br/ws/'+cep+'/json/');if(!res.ok)throw new Error('cep');
     const data=await res.json();if(data.erro)throw new Error('cep');
-    const old=JSON.parse(localStorage.getItem('srdogao_checkout')||'{}');
-    const deliveryFee=await getPublicDeliveryFee();
+    const old=JSON.parse(localStorage.getItem('srdogao_checkout')||'{}'),wasCompleted=localStorage.getItem('srdogao_last_order_completed')==='1';
+    const base=wasCompleted?{}:old,deliveryFee=await getPublicDeliveryFee();
     const address={cep:formatOrderCep(cep),city:data.localidade||'',state:data.uf||'',street:data.logradouro||'',district:data.bairro||'',number:old.address?.cep===formatOrderCep(cep)?(old.address?.number||''):'',reference:old.address?.cep===formatOrderCep(cep)?(old.address?.reference||''):''};
-    localStorage.setItem('srdogao_checkout',JSON.stringify({...old,address,deliveryFee,deliveryType:'delivery'}));
+    localStorage.removeItem('srdogao_last_order_completed');localStorage.removeItem('srdogao_last_order');
+    localStorage.setItem('srdogao_checkout',JSON.stringify({...base,address,deliveryFee,deliveryType:'delivery'}));
     localStorage.setItem('srdogao_address',[address.street,address.district,address.city+(address.state?' - '+address.state:''),address.cep].filter(Boolean).join(', '));
     location.href='/cardapio/';
   }catch(e){status.textContent='CEP não encontrado. Confira e tente novamente.';button.disabled=false;button.textContent='Continuar para o cardápio'}
@@ -141,8 +142,10 @@ $('#orderCepInput').oninput=e=>e.target.value=formatOrderCep(e.target.value);
 $('#continueOrderByCep').onclick=prepareOrderByCep;
 
 function startFreshOrder(){
-  localStorage.removeItem('srdogao_last_order_completed');localStorage.removeItem('srdogao_last_order');
+  const wasCompleted=localStorage.getItem('srdogao_last_order_completed')==='1';
   const old=JSON.parse(localStorage.getItem('srdogao_checkout')||'{}');
+  localStorage.removeItem('srdogao_last_order_completed');localStorage.removeItem('srdogao_last_order');
+  if(!wasCompleted)return;
   const fresh={};
   if(old.address)fresh.address=old.address;
   if(old.deliveryFee!=null)fresh.deliveryFee=old.deliveryFee;
