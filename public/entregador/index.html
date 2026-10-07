@@ -42,11 +42,19 @@ header{background:var(--y);padding:12px 16px;position:sticky;top:0;z-index:5;box
 const SUPABASE_URL='https://dlccdfwteekecjiwybfr.supabase.co',SUPABASE_KEY='sb_publishable_izc2on9Gie9UC5iCHSjaBQ_5ItuscE2';
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const $=q=>document.querySelector(q);
-let watchId=null,lastSent=0,profile=null;
+let watchId=null,lastSent=0,profile=null,currentMineOrders=[],autoArrivalSent=new Set();
 
 function toast(t){const x=$('#toast');x.textContent=t;x.style.display='block';setTimeout(()=>x.style.display='none',2200)}
 function addr(a={}){return [a.street,a.number,a.district,a.reference].filter(Boolean).join(', ')}
 function money(v){return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(v)||0)}
+async function sendPush(event,orderId=null){
+  try{await sb.functions.invoke('srdogao-delivery-push',{body:{event,order_id:orderId}})}catch(e){}
+}
+function distanceMeters(lat1,lng1,lat2,lng2){
+  const R=6371000,toRad=x=>x*Math.PI/180,dLat=toRad(lat2-lat1),dLng=toRad(lng2-lng1);
+  const a=Math.sin(dLat/2)**2+Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLng/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
 
 async function loadProfile(){
   const {data:{session}}=await sb.auth.getSession();
@@ -63,7 +71,7 @@ async function enter(){
 async function loadOrders(){
   const {data,error}=await sb.rpc('srdogao_driver_orders');
   if(error){toast('Não foi possível carregar as entregas');return}
-  const orders=Array.isArray(data)?data:[],mine=orders.filter(o=>o.driver_id),ready=orders.filter(o=>!o.driver_id);
+  const orders=Array.isArray(data)?data:[],mine=orders.filter(o=>o.driver_id),ready=orders.filter(o=>!o.driver_id);currentMineOrders=mine;
   $('#multiNote').classList.toggle('hidden',mine.length<2);
   if(mine.length>=2)$('#multiNote').textContent='🛵 Você está com '+mine.length+' entregas na rota. Os clientes serão avisados quando houver outras entregas antes deles.';
   $('#myOrders').innerHTML=mine.length?mine.map((o,i)=>orderCard(o,true,i)).join(''):'<div class="empty">Nenhuma entrega em rota.</div>';
@@ -76,9 +84,9 @@ function orderCard(o,mine,index=0){
   return '<div class="order"><span class="pill">Entrega '+(index+1)+'</span><h3>'+o.customer_name+'</h3><div class="meta"><span>📍 '+addr(o.address)+'</span><span>📞 '+(o.customer_phone||'-')+'</span><span>💳 '+(o.payment||'-')+' • '+money(o.total)+'</span></div><div class="items">'+items+'</div><div class="actions"><button class="btn yellow" data-arriving="'+o.id+'">Avisar chegada (~1 min)</button></div><div class="pinrow"><input class="field" id="pin-'+o.id+'" inputmode="numeric" maxlength="4" placeholder="PIN"><button class="btn primary" data-deliver="'+o.id+'">Confirmar entrega</button></div></div>';
 }
 function bind(){
-  document.querySelectorAll('[data-claim]').forEach(b=>b.onclick=async()=>{b.disabled=true;const {data,error}=await sb.rpc('srdogao_driver_claim_order',{p_order_id:b.dataset.claim});if(error||!data){toast('Não foi possível assumir');b.disabled=false;return}toast('Entrega adicionada à sua rota');await loadOrders()});
-  document.querySelectorAll('[data-arriving]').forEach(b=>b.onclick=async()=>{const {data,error}=await sb.rpc('srdogao_driver_mark_arriving',{p_order_id:b.dataset.arriving});if(error||!data)return toast('Não foi possível avisar');toast('Cliente avisado: chegando em cerca de 1 minuto')});
-  document.querySelectorAll('[data-deliver]').forEach(b=>b.onclick=async()=>{const pin=$('#pin-'+b.dataset.deliver).value.replace(/\D/g,'');if(pin.length!==4)return toast('Digite o PIN de 4 dígitos');b.disabled=true;const {data,error}=await sb.rpc('srdogao_driver_confirm_delivery',{p_order_id:b.dataset.deliver,p_pin:pin});if(error||!data){toast('PIN incorreto');b.disabled=false;return}toast('Entrega confirmada');await loadOrders()});
+  document.querySelectorAll('[data-claim]').forEach(b=>b.onclick=async()=>{b.disabled=true;const {data,error}=await sb.rpc('srdogao_driver_claim_order',{p_order_id:b.dataset.claim});if(error||!data){toast('Não foi possível assumir');b.disabled=false;return}toast('Entrega adicionada à sua rota');await sendPush('route_update');await loadOrders()});
+  document.querySelectorAll('[data-arriving]').forEach(b=>b.onclick=async()=>{const {data,error}=await sb.rpc('srdogao_driver_mark_arriving',{p_order_id:b.dataset.arriving});if(error||!data)return toast('Não foi possível avisar');await sendPush('arriving',b.dataset.arriving);toast('Cliente avisado: chegando em cerca de 1 minuto')});
+  document.querySelectorAll('[data-deliver]').forEach(b=>b.onclick=async()=>{const pin=$('#pin-'+b.dataset.deliver).value.replace(/\D/g,'');if(pin.length!==4)return toast('Digite o PIN de 4 dígitos');b.disabled=true;const {data,error}=await sb.rpc('srdogao_driver_confirm_delivery',{p_order_id:b.dataset.deliver,p_pin:pin});if(error||!data){toast('PIN incorreto');b.disabled=false;return}await sendPush('delivered',b.dataset.deliver);await sendPush('route_update');toast('Entrega confirmada');await loadOrders()});
 }
 function startGps(){
   if(!navigator.geolocation)return toast('Localização não suportada neste celular');
@@ -88,6 +96,16 @@ function startGps(){
     $('#gpsDot').classList.add('on');$('#gpsText').textContent='Compartilhando sua localização';
     const now=Date.now();if(now-lastSent<5000)return;lastSent=now;
     await sb.rpc('srdogao_driver_update_location',{p_lat:pos.coords.latitude,p_lng:pos.coords.longitude});
+    const first=currentMineOrders.slice().sort((a,b)=>(a.route_position||999999)-(b.route_position||999999))[0];
+    if(first&&first.delivery_lat!=null&&first.delivery_lng!=null&&!autoArrivalSent.has(first.id)){
+      const dist=distanceMeters(pos.coords.latitude,pos.coords.longitude,Number(first.delivery_lat),Number(first.delivery_lng));
+      if(dist<=300){
+        autoArrivalSent.add(first.id);
+        await sb.rpc('srdogao_driver_mark_arriving',{p_order_id:first.id});
+        await sendPush('arriving',first.id);
+        toast('Cliente avisado automaticamente: chegada em cerca de 1 minuto');
+      }
+    }
   },err=>{$('#gpsText').textContent='Permita o acesso à localização';toast('Ative a localização para iniciar as entregas')},{enableHighAccuracy:true,maximumAge:3000,timeout:12000});
 }
 
