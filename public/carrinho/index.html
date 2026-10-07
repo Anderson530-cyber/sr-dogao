@@ -467,19 +467,22 @@ function getRedeemableRewards(){
   return rewardOptions.filter(r=>points>=r.points);
 }
 function selectedCoupon(){
+  if(checkoutState.storeCoupon&&checkoutState.couponCode===checkoutState.storeCoupon.code)return checkoutState.storeCoupon;
   if(checkoutState.couponCode)return getAvailableCoupons().find(c=>c.code===checkoutState.couponCode)||null;
   return null;
 }
 function couponDiscount(){
-  const coupon=selectedCoupon();
-  return coupon?Math.min(Number(coupon.value)||0,cartSubtotal()):0;
+  const coupon=selectedCoupon();if(!coupon)return 0;
+  const subtotal=cartSubtotal(),min=Number(coupon.min_order||0);if(subtotal<min)return 0;
+  const raw=coupon.discount_type==='percent'?(subtotal*Number(coupon.value||0)/100):Number(coupon.value)||0;
+  return Math.min(Math.max(0,raw),subtotal);
 }
 let pendingCouponSelection={code:'',rewardId:''};
 function renderCouponTrigger(){
   const label=document.getElementById('couponSelectedLabel');if(!label)return;
   const coupon=selectedCoupon();
   if(!coupon){label.textContent='Nenhum cupom selecionado';return}
-  label.textContent=checkoutState.couponCode?(coupon.title+' • '+coupon.code):(coupon.title+' • '+coupon.points+' pontos');
+  label.textContent=checkoutState.storeCoupon?(coupon.title+' • '+coupon.code):checkoutState.couponCode?(coupon.title+' • '+coupon.code):(coupon.title+' • '+coupon.points+' pontos');
 }
 function renderCouponModal(){
   const redeemed=getAvailableCoupons(),box=document.getElementById('couponModalList');
@@ -572,6 +575,7 @@ document.getElementById('clearCoupon').onclick=()=>{pendingCouponSelection={code
 document.getElementById('applyCoupon').onclick=()=>{
   checkoutState.couponCode=pendingCouponSelection.code||'';
   if(checkoutState.couponCode){
+    delete checkoutState.storeCoupon;
     checkoutState.redeemRewardId='';
     saveCart(getCart().filter(x=>!x.rewardItem));
   }
@@ -585,7 +589,7 @@ document.getElementById('applyRedeem').onclick=()=>{
   const reward=rewardOptions.find(r=>r.id===pendingRedeemId),{key,account}=getLoyaltyAccount(),balance=Number(account?.points||0);
   if(reward&&balance>=reward.points){
     checkoutState.redeemRewardId=reward.id;checkoutState.redeemLoyaltyKey=key||checkoutState.redeemLoyaltyKey||'';
-    checkoutState.couponCode='';
+    if(reward.type==='discount'){checkoutState.couponCode='';delete checkoutState.storeCoupon}
     let cart=getCart().filter(x=>!x.rewardItem);
     if(reward.type==='product')cart.push({cartId:'reward-'+Date.now(),rewardItem:true,rewardId:reward.id,name:reward.title+' (Resgate)',price:0,basePrice:0,qty:1,removals:[],additions:[],note:''});
     saveCart(cart);persistCheckout();renderCouponTrigger();renderRedeemTrigger();renderCart();updateSummary()
@@ -622,7 +626,7 @@ document.getElementById('finishOrder').onclick=async()=>{
   const loyalty=getLoyalty();
   const current=loyalty[phoneKey]||{name:customer.name||'',cpf:customer.cpf||'',points:0,history:[]};
   current.name=customer.name||current.name;current.cpf=customer.cpf||current.cpf;
-  if(checkoutState.couponCode){
+  if(checkoutState.couponCode&&!checkoutState.storeCoupon){
     const couponOwner=loyalty[checkoutState.redeemLoyaltyKey||phoneKey]||current;
     const redemption=(couponOwner.redemptions||[]).find(r=>r.code===checkoutState.couponCode&&!r.usedAt);
     if(redemption)redemption.usedAt=new Date().toISOString();
