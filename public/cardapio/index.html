@@ -1,29 +1,71 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Cardápio | Sr. Dogão</title><style>:root{--y:#ffd600;--r:#d70b13;--d:#35100b;--c:#fffaf0}*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:var(--c);color:var(--d)}header{background:var(--y);padding:12px 20px;position:sticky;top:0;z-index:5}.top{max-width:1150px;margin:auto;display:flex;align-items:center;gap:18px}.logo{width:120px;height:65px;object-fit:contain}.back{margin-left:auto;background:var(--r);color:#fff;text-decoration:none;padding:12px 20px;border-radius:24px;font-weight:800}.wrap{max-width:1150px;margin:auto;padding:32px 20px}.wrap h1{margin:0 0 5px}.cats{display:flex;gap:8px;overflow:auto;padding:18px 0}.cats button{border:0;padding:11px 16px;border-radius:22px;font-weight:800;white-space:nowrap;cursor:pointer}.cats button.active{background:var(--r);color:#fff}.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}.item{background:#fff;border-radius:18px;padding:14px;display:grid;grid-template-columns:110px 1fr auto;gap:14px;align-items:center;box-shadow:0 6px 20px #4d160012}.item img{width:110px;height:95px;object-fit:contain;background:#fff6cf;border-radius:12px}.item h3{margin:0 0 5px}.item p{margin:0 0 8px;color:#765}.price{color:var(--r);font-weight:900}.add-wrap{position:relative;width:42px;height:42px}.add{border:0;background:var(--r);color:#fff;width:42px;height:42px;border-radius:50%;font-size:22px;cursor:pointer}.qty-badge{position:absolute;right:-7px;top:-9px;min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:var(--y);color:var(--d);border:2px solid #fff;display:grid;place-items:center;font-size:12px;font-weight:900;box-shadow:0 2px 6px #0002}.cart-badge{display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 6px;margin-left:5px;border-radius:999px;background:#fff;color:var(--r);font-size:12px;font-weight:900}@media(max-width:700px){.grid{grid-template-columns:1fr}.item{grid-template-columns:80px 1fr auto}.item img{width:80px;height:72px}.logo{width:95px}}</style><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script></head><body><header><div class="top"><a href="/"><img class="logo" src="/sr-dogao-logo.png"></a><b>Cardápio completo</b><a class="back" href="/carrinho/">🛒 Carrinho <span class="cart-badge" id="cartCount">0</span></a><a class="back" href="/">← Voltar</a></div></header><main class="wrap"><h1>Cardápio Sr. Dogão</h1><p>Escolha seus favoritos e adicione ao carrinho.</p><div class="cats" id="cats"></div><div class="grid" id="grid">Carregando cardápio...</div></main><script>
+<!doctype html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Cardápio | Sr. Dogão</title><style>:root{--y:#ffd600;--r:#d70b13;--d:#35100b;--c:#fffaf0}*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:var(--c);color:var(--d)}header{background:var(--y);padding:12px 20px;position:sticky;top:0;z-index:5}.top{max-width:1150px;margin:auto;display:flex;align-items:center;gap:18px}.logo{width:120px;height:65px;object-fit:contain}.back{margin-left:auto;background:var(--r);color:#fff;text-decoration:none;padding:12px 20px;border-radius:24px;font-weight:800}.wrap{max-width:1150px;margin:auto;padding:32px 20px}.wrap h1{margin:0 0 5px}.cats{display:flex;gap:8px;overflow:auto;padding:18px 0}.cats button{border:0;padding:11px 16px;border-radius:22px;font-weight:800;white-space:nowrap;cursor:pointer}.cats button.active{background:var(--r);color:#fff}.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}.item{background:#fff;border-radius:18px;padding:14px;display:grid;grid-template-columns:110px 1fr auto;gap:14px;align-items:center;box-shadow:0 6px 20px #4d160012}.item img{width:110px;height:95px;object-fit:contain;background:#fff6cf;border-radius:12px}.item h3{margin:0 0 5px}.item p{margin:0 0 8px;color:#765}.price{color:var(--r);font-weight:900}.add-wrap{position:relative;width:42px;height:42px}.add{border:0;background:var(--r);color:#fff;width:42px;height:42px;border-radius:50%;font-size:22px;cursor:pointer}.qty-badge{position:absolute;right:-7px;top:-9px;min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:var(--y);color:var(--d);border:2px solid #fff;display:grid;place-items:center;font-size:12px;font-weight:900;box-shadow:0 2px 6px #0002}.cart-badge{display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 6px;margin-left:5px;border-radius:999px;background:#fff;color:var(--r);font-size:12px;font-weight:900}.modal-bg{position:fixed;inset:0;background:#0009;display:none;align-items:center;justify-content:center;padding:18px;z-index:50}.modal-bg.open{display:flex}.custom-modal{width:min(620px,100%);max-height:88vh;overflow:auto;background:#fff;border-radius:22px;padding:20px;box-shadow:0 20px 55px #0005}.custom-head{display:flex;gap:14px;align-items:center;border-bottom:1px solid #eee1d7;padding-bottom:14px}.custom-head img{width:86px;height:76px;object-fit:contain;background:#fff6cf;border-radius:12px}.custom-head h2{margin:0 0 4px}.close{margin-left:auto;border:0;background:#f4e9e1;width:38px;height:38px;border-radius:50%;font-size:22px;cursor:pointer}.custom-section{padding:16px 0;border-bottom:1px solid #eee1d7}.custom-section h3{margin:0 0 10px}.choice{display:flex;align-items:center;gap:10px;padding:10px 0}.choice input{width:19px;height:19px;accent-color:var(--r)}.choice span{flex:1}.choice b{color:var(--r)}.obs{width:100%;min-height:84px;border:1px solid #ded1c6;border-radius:14px;padding:12px;font:inherit;resize:vertical}.custom-actions{display:flex;gap:10px;padding-top:16px}.custom-actions button{flex:1;border:0;border-radius:24px;padding:13px 16px;font-weight:900;cursor:pointer}.custom-actions .cancel{background:#f2e7df;color:var(--d)}.custom-actions .confirm{background:var(--r);color:#fff}@media(max-width:700px){.grid{grid-template-columns:1fr}.item{grid-template-columns:80px 1fr auto}.item img{width:80px;height:72px}.logo{width:95px}.custom-modal{padding:16px}.custom-actions{position:sticky;bottom:-16px;background:#fff;padding-bottom:6px}}</style><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script></head><body><header><div class="top"><a href="/"><img class="logo" src="/sr-dogao-logo.png"></a><b>Cardápio completo</b><a class="back" href="/carrinho/">🛒 Carrinho <span class="cart-badge" id="cartCount">0</span></a><a class="back" href="/">← Voltar</a></div></header><main class="wrap"><h1>Cardápio Sr. Dogão</h1><p>Escolha seus favoritos e adicione ao carrinho.</p><div class="cats" id="cats"></div><div class="grid" id="grid">Carregando cardápio...</div></main>
+<div class="modal-bg" id="customModal"><div class="custom-modal">
+  <div class="custom-head"><img id="customImg" src="" alt=""><div><h2 id="customName">Produto</h2><div class="price" id="customBasePrice"></div></div><button class="close" id="closeCustom" type="button">×</button></div>
+  <div class="custom-section"><h3>Retirar ingredientes</h3><div id="removeOptions"><p style="color:#765">Nenhuma opção de retirada cadastrada para este produto.</p></div></div>
+  <div class="custom-section"><h3>Adicionar</h3><div id="addOptions"><p style="color:#765">Nenhum adicional cadastrado para este produto.</p></div></div>
+  <div class="custom-section"><h3>Observações</h3><textarea class="obs" id="customNote" maxlength="300" placeholder="Ex.: cortar ao meio, molho à parte, sem cebola..."></textarea></div>
+  <div class="custom-actions"><button class="cancel" id="cancelCustom" type="button">Voltar</button><button class="confirm" id="confirmCustom" type="button">Adicionar ao carrinho</button></div>
+</div></div>
+<script>
 const db=supabase.createClient('https://dlccdfwteekecjiwybfr.supabase.co','sb_publishable_izc2on9Gie9UC5iCHSjaBQ_5ItuscE2');
 const names={hotdogs:'Hot Dogs',hamburguer:'Hambúrguer',barca:'Na Barca',combos:'Combos',porcoes:'Porções',bebidas:'Bebidas',sobremesas:'Sobremesas',promocoes:'Promoções'};
 let products=[],currentCat='';
 const money=v=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v);
 const getCart=()=>JSON.parse(localStorage.getItem('srdogao_cart')||'[]');
 const saveCart=cart=>localStorage.setItem('srdogao_cart',JSON.stringify(cart));
-const itemQty=name=>{const item=getCart().find(x=>x.name===name);return item?Number(item.qty)||0:0};
+const itemQty=name=>getCart().filter(x=>x.name===name).reduce((sum,item)=>sum+(Number(item.qty)||0),0);
+const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+let customProduct=null;
 function updateCartCount(){
   const total=getCart().reduce((sum,item)=>sum+(Number(item.qty)||0),0);
   document.getElementById('cartCount').textContent=total;
 }
-function addProduct(id){
-  const p=products.find(x=>String(x.id)===String(id));
-  if(!p)return;
-  const price=+(p.promo&&p.promo_price?p.promo_price:p.price);
+function parseOptions(raw=''){
+  const remove=[],add=[];
+  String(raw||'').split(/\n|;/).map(x=>x.trim()).filter(Boolean).forEach(line=>{
+    let m=line.match(/^(?:retirar|remover|sem)\s*:\s*(.+)$/i)||line.match(/^[-–]\s*(.+)$/);
+    if(m){remove.push({name:m[1].trim()});return}
+    m=line.match(/^(?:adicionar|add|extra)\s*:\s*(.+)$/i)||line.match(/^\+\s*(.+)$/);
+    if(m){
+      const parts=m[1].split('|').map(x=>x.trim()),name=parts[0],price=Number(String(parts[1]||'0').replace(',','.').replace(/[^0-9.-]/g,''))||0;
+      if(name)add.push({name,price});
+    }
+  });
+  return {remove,add};
+}
+function openCustom(id){
+  const p=products.find(x=>String(x.id)===String(id));if(!p)return;
+  customProduct=p;
+  const parsed=parseOptions(p.options||'');
+  document.getElementById('customImg').src=p.image_url||'';
+  document.getElementById('customName').textContent=p.name;
+  document.getElementById('customBasePrice').textContent=money(p.promo&&p.promo_price?p.promo_price:p.price);
+  document.getElementById('customNote').value='';
+  document.getElementById('removeOptions').innerHTML=parsed.remove.length?parsed.remove.map((o,i)=>'<label class="choice"><input type="checkbox" data-remove-opt value="'+esc(o.name)+'"><span>Sem '+esc(o.name)+'</span></label>').join(''):'<p style="color:#765">Nenhuma opção de retirada cadastrada para este produto.</p>';
+  document.getElementById('addOptions').innerHTML=parsed.add.length?parsed.add.map((o,i)=>'<label class="choice"><input type="checkbox" data-add-opt data-name="'+esc(o.name)+'" data-price="'+o.price+'"><span>'+esc(o.name)+'</span><b>'+(o.price>0?'+ '+money(o.price):'Grátis')+'</b></label>').join(''):'<p style="color:#765">Nenhum adicional cadastrado para este produto.</p>';
+  document.getElementById('customModal').classList.add('open');
+}
+function closeCustom(){document.getElementById('customModal').classList.remove('open');customProduct=null}
+function confirmCustom(){
+  if(!customProduct)return;
+  const removals=[...document.querySelectorAll('[data-remove-opt]:checked')].map(x=>x.value);
+  const additions=[...document.querySelectorAll('[data-add-opt]:checked')].map(x=>({name:x.dataset.name,price:Number(x.dataset.price)||0}));
+  const note=document.getElementById('customNote').value.trim();
+  const basePrice=+(customProduct.promo&&customProduct.promo_price?customProduct.promo_price:customProduct.price);
+  const extras=additions.reduce((s,x)=>s+x.price,0),price=basePrice+extras;
   const cart=getCart();
-  const existing=cart.find(x=>x.name===p.name);
-  existing?existing.qty++:cart.push({name:p.name,price,qty:1});
+  cart.push({
+    cartId:'ci-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),
+    productId:customProduct.id,name:customProduct.name,price,basePrice,qty:1,
+    removals,additions,note
+  });
   saveCart(cart);
   localStorage.removeItem('srdogao_last_order_completed');
   localStorage.removeItem('srdogao_last_order');
   localStorage.removeItem('srdogao_checkout');
-  updateCartCount();
-  render(currentCat);
+  closeCustom();updateCartCount();render(currentCat);
 }
+function addProduct(id){openCustom(id)}
 function render(cat=''){
   currentCat=cat;
   document.getElementById('cats').innerHTML='<button class="'+(!cat?'active':'')+'" data-c="">Todos</button>'+Object.entries(names).map(([k,v])=>'<button class="'+(cat===k?'active':'')+'" data-c="'+k+'">'+v+'</button>').join('');
@@ -40,10 +82,14 @@ async function load(){
   updateCartCount();
   const {data,error}=await db.from('srdogao_products').select('*').eq('available',true).order('display_order');
   if(error){document.getElementById('grid').innerHTML='<p>Não foi possível carregar o cardápio.</p>';return}
-  products=data||[];
+  products=(data||[]).map(p=>({...p,options:p.options||''}));
   const requested=new URLSearchParams(location.search).get('categoria')||'';
   render(names[requested]?requested:'');
 }
+document.getElementById('closeCustom').onclick=closeCustom;
+document.getElementById('cancelCustom').onclick=closeCustom;
+document.getElementById('confirmCustom').onclick=confirmCustom;
+document.getElementById('customModal').addEventListener('click',e=>{if(e.target.id==='customModal')closeCustom()});
 window.addEventListener('storage',updateCartCount);
 load();
 </script></body></html>
