@@ -42,6 +42,7 @@ header{background:var(--y);position:sticky;top:0;z-index:10;box-shadow:0 2px 14p
 <div class="line"><span>Subtotal</span><strong id="subtotal">R$ 0,00</strong></div>
 <div class="line"><span>Entrega</span><strong id="deliveryLabel">A calcular</strong></div>
 <div class="line" id="discountLine" style="display:none"><span>Desconto</span><strong id="discountLabel">- R$ 0,00</strong></div>
+<div class="line" id="redeemLine" style="display:none"><span>Resgate</span><strong id="redeemLabel"></strong></div>
 <div class="total"><span>Total</span><span id="total">R$ 0,00</span></div>
 <button class="primary" id="goAddress" type="button">Continuar</button>
 <a class="continue" href="/cardapio/">Adicionar mais itens</a>
@@ -96,6 +97,8 @@ header{background:var(--y);position:sticky;top:0;z-index:10;box-shadow:0 2px 14p
 <h3>Cupom de desconto</h3>
 <p class="intro">Você pode usar apenas 1 cupom por pedido.</p>
 <button class="coupon-trigger" id="openCouponModal" type="button"><span>🎟️ Cupom de desconto</span><small id="couponSelectedLabel">Nenhum cupom selecionado</small></button>
+<div style="height:10px"></div>
+<button class="coupon-trigger" id="openRedeemModal" type="button"><span>⭐ Resgates</span><small id="redeemSelectedLabel">Ver opções disponíveis</small></button>
 </div>
 <div class="actions-row"><button class="secondary" type="button" data-back="4">Voltar</button><button class="primary" id="finishOrder" type="button">Finalizar pedido</button></div>
 <div class="message" id="paymentMessage">Escolha uma forma de pagamento para continuar.</div>
@@ -103,6 +106,7 @@ header{background:var(--y);position:sticky;top:0;z-index:10;box-shadow:0 2px 14p
 </section>
 
 <div class="modal-backdrop" id="couponModal"><div class="modal"><div class="modal-head"><div><h2>Cupons de desconto</h2><p class="intro">Escolha um cupom já resgatado ou use seus pontos agora.</p></div><button class="modal-close" id="closeCouponModal" type="button">×</button></div><div id="couponModalList"></div><div class="modal-actions"><button class="secondary" id="clearCoupon" type="button">Não usar cupom</button><button class="primary" id="applyCoupon" type="button">Aplicar cupom</button></div></div></div>
+<div class="modal-backdrop" id="redeemModal"><div class="modal"><div class="modal-head"><div><h2>Resgates</h2><p class="intro">Use seus pontos em uma recompensa disponível.</p></div><button class="modal-close" id="closeRedeemModal" type="button">×</button></div><div class="points" style="margin:10px 0 16px"><span>Seus pontos</span><strong id="redeemPointsBalance">0</strong></div><div id="redeemModalList"></div><div class="modal-actions"><button class="secondary" id="clearRedeem" type="button">Não usar resgate</button><button class="primary" id="applyRedeem" type="button">Aplicar resgate</button></div></div></div>
 <section id="success" class="panel success">
 <div class="check-wrap" aria-hidden="true"><svg class="check-svg" viewBox="0 0 80 80"><circle class="check-circle" cx="40" cy="40" r="32"></circle><path class="check-path" d="M24 41 L35 52 L57 29"></path></svg></div>
 <h2>Pedido finalizado!</h2>
@@ -139,7 +143,7 @@ function showCompletedOrder(){
   document.getElementById('pageTitle').textContent='Pedido finalizado';
   document.getElementById('pageSubtitle').textContent='Este pedido já foi concluído.';
   const a=saved.address||{}, customer=saved.customer||{};
-  document.getElementById('successInfo').innerHTML='<p><b>Cliente:</b> '+(customer.name||'-')+'</p><p><b>Telefone:</b> '+(customer.phone||'-')+'</p><p><b>Endereço:</b> '+[a.street,a.number,a.district,a.reference].filter(Boolean).join(', ')+'</p><p><b>Entrega:</b> '+(saved.deliveryType==='pickup'?'Retirada':'Entrega')+'</p><p><b>Pagamento:</b> '+({pix:'Pix',card:'Cartão',cash:'Dinheiro'}[saved.payment]||saved.payment)+'</p><p><b>Subtotal:</b> '+money(saved.subtotal!=null?saved.subtotal:saved.total||0)+'</p>'+(saved.discount?'<p><b>Cupom:</b> '+(saved.couponCode||'-')+' (- '+money(saved.discount)+')</p>':'')+'<p><b>Total:</b> '+money(saved.total||0)+'</p>';
+  document.getElementById('successInfo').innerHTML='<p><b>Cliente:</b> '+(customer.name||'-')+'</p><p><b>Telefone:</b> '+(customer.phone||'-')+'</p><p><b>Endereço:</b> '+[a.street,a.number,a.district,a.reference].filter(Boolean).join(', ')+'</p><p><b>Entrega:</b> '+(saved.deliveryType==='pickup'?'Retirada':'Entrega')+'</p><p><b>Pagamento:</b> '+({pix:'Pix',card:'Cartão',cash:'Dinheiro'}[saved.payment]||saved.payment)+'</p><p><b>Subtotal:</b> '+money(saved.subtotal!=null?saved.subtotal:saved.total||0)+'</p>'+(saved.couponCode?'<p><b>Cupom:</b> '+saved.couponCode+'</p>':'')+(saved.redeemTitle?'<p><b>Resgate:</b> '+saved.redeemTitle+'</p>':'')+(saved.discount?'<p><b>Desconto total:</b> - '+money(saved.discount)+'</p>':'')+'<p><b>Total:</b> '+money(saved.total||0)+'</p>';
   document.getElementById('pointsTotal').textContent=saved.pointsTotal||0;
   document.getElementById('pointsEarnedText').textContent='Neste pedido você ganhou '+(saved.pointsEarned||0)+' ponto'+((saved.pointsEarned||0)===1?'':'s')+'.';
   document.getElementById('success').style.display='block';
@@ -150,11 +154,13 @@ function cartSubtotal(){return getCart().reduce((sum,item)=>sum+(Number(item.pri
 function updateSummary(){
   const subtotal=cartSubtotal();
   const delivery=checkoutState.deliveryType==='pickup'?0:null;
-  const discount=couponDiscount();
+  const couponValue=couponDiscount(),redeemValue=redeemDiscount(),discount=couponValue+redeemValue;
   document.getElementById('subtotal').textContent=money(subtotal);
   document.getElementById('deliveryLabel').textContent=delivery===0?'Grátis':'A calcular';
   const discountLine=document.getElementById('discountLine');
   if(discount>0){discountLine.style.display='flex';document.getElementById('discountLabel').textContent='- '+money(discount)}else{discountLine.style.display='none'}
+  const redeemLine=document.getElementById('redeemLine'),r=selectedRedeem();
+  if(r){redeemLine.style.display='flex';document.getElementById('redeemLabel').textContent=r.title}else{redeemLine.style.display='none'}
   document.getElementById('total').textContent=money(Math.max(0,subtotal-discount)+(delivery||0));
 }
 function renderCart(){
@@ -174,7 +180,7 @@ function showStep(step){
   currentStep=step;
   document.querySelectorAll('.step-content').forEach(section=>section.classList.add('hidden'));
   document.getElementById('success').style.display='none';
-  const target=document.getElementById('step'+step);if(target)target.classList.remove('hidden');if(step===5){renderCouponTrigger();updateSummary();}
+  const target=document.getElementById('step'+step);if(target)target.classList.remove('hidden');if(step===5){renderCouponTrigger();renderRedeemTrigger();updateSummary();}
   document.querySelectorAll('[data-step-pill]').forEach(pill=>{
     const n=Number(pill.dataset.stepPill);pill.classList.toggle('active',n===step);pill.classList.toggle('done',n<step);
   });
@@ -209,10 +215,11 @@ function loadCustomer(){
 function getLoyalty(){return JSON.parse(localStorage.getItem('srdogao_loyalty')||'{}')}
 function saveLoyalty(data){localStorage.setItem('srdogao_loyalty',JSON.stringify(data))}
 const rewardOptions=[
-  {id:'r5',points:10,title:'R$ 5 de desconto',value:5},
-  {id:'r12',points:20,title:'R$ 12 de desconto',value:12},
-  {id:'r20',points:30,title:'R$ 20 de desconto',value:20},
-  {id:'r35',points:50,title:'R$ 35 de desconto',value:35}
+  {id:'r5',points:10,title:'R$ 5 de desconto',value:5,type:'discount'},
+  {id:'r12',points:20,title:'R$ 12 de desconto',value:12,type:'discount'},
+  {id:'burger',points:30,title:'Hambúrguer',value:0,type:'product'},
+  {id:'r20',points:30,title:'R$ 20 de desconto',value:20,type:'discount'},
+  {id:'r35',points:50,title:'R$ 35 de desconto',value:35,type:'discount'}
 ];
 function getLoyaltyAccount(){
   const customer=checkoutState.customer||{},key=normalizePhone(customer.phone),loyalty=getLoyalty();
@@ -229,7 +236,6 @@ function getRedeemableRewards(){
 }
 function selectedCoupon(){
   if(checkoutState.couponCode)return getAvailableCoupons().find(c=>c.code===checkoutState.couponCode)||null;
-  if(checkoutState.couponRewardId)return rewardOptions.find(r=>r.id===checkoutState.couponRewardId)||null;
   return null;
 }
 function couponDiscount(){
@@ -244,21 +250,15 @@ function renderCouponTrigger(){
   label.textContent=checkoutState.couponCode?(coupon.title+' • '+coupon.code):(coupon.title+' • '+coupon.points+' pontos');
 }
 function renderCouponModal(){
-  const redeemed=getAvailableCoupons(),rewards=getRedeemableRewards(),box=document.getElementById('couponModalList');
-  const currentCode=pendingCouponSelection.code||'',currentReward=pendingCouponSelection.rewardId||'';
-  let html='';
-  if(redeemed.length){
-    html+='<h3>Cupons já resgatados</h3>'+redeemed.map(c=>'<label class="coupon-choice '+(currentCode===c.code?'active':'')+'"><input type="radio" name="couponPick" value="code:'+c.code+'" '+(currentCode===c.code?'checked':'')+'><span><strong>'+c.title+'</strong><small>'+c.code+' • '+money(c.value)+' de desconto</small><span class="tag">Já resgatado</span></span></label>').join('');
+  const redeemed=getAvailableCoupons(),box=document.getElementById('couponModalList');
+  const currentCode=pendingCouponSelection.code||'';
+  if(!redeemed.length){
+    box.innerHTML='<p class="muted">Você não possui cupons de desconto resgatados. Use a opção <b>Resgates</b> para trocar seus pontos.</p>';
+    return;
   }
-  if(rewards.length){
-    html+='<h3 style="margin-top:20px">Resgatar com seus pontos</h3>'+rewards.map(r=>'<label class="coupon-choice '+(currentReward===r.id?'active':'')+'"><input type="radio" name="couponPick" value="reward:'+r.id+'" '+(currentReward===r.id?'checked':'')+'><span><strong>'+r.title+'</strong><small>'+r.points+' pontos • '+money(r.value)+' de desconto</small><span class="tag">Resgatar agora</span></span></label>').join('');
-  }
-  if(!html)html='<p class="muted">Você não possui cupons resgatados nem pontos suficientes para resgatar um agora.</p>';
-  box.innerHTML=html;
+  box.innerHTML='<h3>Cupons disponíveis</h3>'+redeemed.map(c=>'<label class="coupon-choice '+(currentCode===c.code?'active':'')+'"><input type="radio" name="couponPick" value="code:'+c.code+'" '+(currentCode===c.code?'checked':'')+'><span><strong>'+c.title+'</strong><small>'+c.code+' • '+money(c.value)+' de desconto</small><span class="tag">Disponível</span></span></label>').join('');
   document.querySelectorAll('input[name="couponPick"]').forEach(r=>r.onchange=()=>{
-    pendingCouponSelection={code:'',rewardId:''};
-    if(r.value.startsWith('code:'))pendingCouponSelection.code=r.value.slice(5);
-    if(r.value.startsWith('reward:'))pendingCouponSelection.rewardId=r.value.slice(7);
+    pendingCouponSelection={code:r.value.slice(5),rewardId:''};
     renderCouponModal();
   });
 }
@@ -268,6 +268,28 @@ function openCouponModal(){
   document.getElementById('couponModal').classList.add('open');
 }
 function closeCouponModal(){document.getElementById('couponModal').classList.remove('open')}
+let pendingRedeemId='';
+function selectedRedeem(){return rewardOptions.find(r=>r.id===checkoutState.redeemRewardId)||null}
+function redeemDiscount(){
+  const r=selectedRedeem();
+  return r&&r.type==='discount'?Math.min(Number(r.value)||0,cartSubtotal()):0;
+}
+function renderRedeemTrigger(){
+  const label=document.getElementById('redeemSelectedLabel');if(!label)return;
+  const r=selectedRedeem();
+  label.textContent=r?(r.title+' • '+r.points+' pontos'):'Ver opções disponíveis';
+}
+function renderRedeemModal(){
+  const {account}=getLoyaltyAccount(),balance=Number(account?.points||0),box=document.getElementById('redeemModalList');
+  document.getElementById('redeemPointsBalance').textContent=balance;
+  box.innerHTML=rewardOptions.map(r=>{
+    const missing=Math.max(0,r.points-balance),disabled=missing>0,current=pendingRedeemId===r.id;
+    return '<label class="coupon-choice '+(current?'active':'')+'" style="'+(disabled?'opacity:.55;cursor:not-allowed':'')+'"><input type="radio" name="redeemPick" value="'+r.id+'" '+(current?'checked':'')+' '+(disabled?'disabled':'')+'><span><strong>'+r.title+'</strong><small>'+r.points+' pontos'+(missing?(' • faltam '+missing+' pts'):' • disponível')+'</small><span class="tag">'+(r.type==='product'?'Produto':'Desconto')+'</span></span></label>';
+  }).join('');
+  document.querySelectorAll('input[name="redeemPick"]').forEach(r=>r.onchange=()=>{pendingRedeemId=r.value;renderRedeemModal()});
+}
+function openRedeemModal(){pendingRedeemId=checkoutState.redeemRewardId||'';renderRedeemModal();document.getElementById('redeemModal').classList.add('open')}
+function closeRedeemModal(){document.getElementById('redeemModal').classList.remove('open')}
 document.getElementById('goAddress').onclick=()=>showStep(2);
 document.getElementById('saveAddress').onclick=()=>{
   const address={street:document.getElementById('street').value.trim(),number:document.getElementById('number').value.trim(),district:document.getElementById('district').value.trim(),reference:document.getElementById('reference').value.trim()};
@@ -289,14 +311,23 @@ document.querySelectorAll('input[name="payment"]').forEach(radio=>radio.onchange
 document.getElementById('openCouponModal').onclick=openCouponModal;
 document.getElementById('closeCouponModal').onclick=closeCouponModal;
 document.getElementById('couponModal').onclick=e=>{if(e.target.id==='couponModal')closeCouponModal()};
-document.getElementById('clearCoupon').onclick=()=>{pendingCouponSelection={code:'',rewardId:''};checkoutState.couponCode='';checkoutState.couponRewardId='';persistCheckout();renderCouponTrigger();updateSummary();closeCouponModal()};
-document.getElementById('applyCoupon').onclick=()=>{checkoutState.couponCode=pendingCouponSelection.code||'';checkoutState.couponRewardId=pendingCouponSelection.rewardId||'';persistCheckout();renderCouponTrigger();updateSummary();closeCouponModal()};
+document.getElementById('clearCoupon').onclick=()=>{pendingCouponSelection={code:'',rewardId:''};checkoutState.couponCode='';persistCheckout();renderCouponTrigger();updateSummary();closeCouponModal()};
+document.getElementById('applyCoupon').onclick=()=>{checkoutState.couponCode=pendingCouponSelection.code||'';persistCheckout();renderCouponTrigger();updateSummary();closeCouponModal()};
+document.getElementById('openRedeemModal').onclick=openRedeemModal;
+document.getElementById('closeRedeemModal').onclick=closeRedeemModal;
+document.getElementById('redeemModal').onclick=e=>{if(e.target.id==='redeemModal')closeRedeemModal()};
+document.getElementById('clearRedeem').onclick=()=>{pendingRedeemId='';checkoutState.redeemRewardId='';persistCheckout();renderRedeemTrigger();updateSummary();closeRedeemModal()};
+document.getElementById('applyRedeem').onclick=()=>{
+  const reward=rewardOptions.find(r=>r.id===pendingRedeemId),{account}=getLoyaltyAccount(),balance=Number(account?.points||0);
+  if(reward&&balance>=reward.points){checkoutState.redeemRewardId=reward.id;persistCheckout();renderRedeemTrigger();updateSummary()}
+  closeRedeemModal();
+};
 
 document.getElementById('finishOrder').onclick=()=>{
   if(orderCompleted()){showCompletedOrder();return}
   const msg=document.getElementById('paymentMessage');if(!checkoutState.payment){msg.style.display='block';return}msg.style.display='none';
   const cart=getCart();if(!cart.length){showCompletedOrder();return}
-  const subtotal=cartSubtotal(),discount=couponDiscount(),finalTotal=Math.max(0,subtotal-discount),earned=Math.floor(finalTotal/10),customer=checkoutState.customer||{};
+  const subtotal=cartSubtotal(),couponValue=couponDiscount(),redeemValue=redeemDiscount(),discount=couponValue+redeemValue,finalTotal=Math.max(0,subtotal-discount),earned=Math.floor(finalTotal/10),customer=checkoutState.customer||{};
   const phoneKey=normalizePhone(customer.phone);
   const loyalty=getLoyalty();
   const current=loyalty[phoneKey]||{name:customer.name||'',cpf:customer.cpf||'',points:0,history:[]};
@@ -305,19 +336,18 @@ document.getElementById('finishOrder').onclick=()=>{
   if(checkoutState.couponCode){
     const redemption=(current.redemptions||[]).find(r=>r.code===checkoutState.couponCode&&!r.usedAt);
     if(redemption)redemption.usedAt=new Date().toISOString();
-  }else if(checkoutState.couponRewardId){
-    const reward=rewardOptions.find(r=>r.id===checkoutState.couponRewardId);
+  }
+  if(checkoutState.redeemRewardId){
+    const reward=rewardOptions.find(r=>r.id===checkoutState.redeemRewardId);
     if(reward&&Number(current.points||0)>=reward.points){
       current.points=Number(current.points||0)-reward.points;
       current.redemptions=current.redemptions||[];
-      const generatedCode='DOGAO-'+Math.random().toString(36).slice(2,8).toUpperCase();
-      current.redemptions.unshift({date:new Date().toISOString(),rewardId:reward.id,title:reward.title,points:reward.points,value:reward.value,code:generatedCode,usedAt:new Date().toISOString(),usedDirectlyAtCheckout:true});
-      checkoutState.couponCode=generatedCode;
+      current.redemptions.unshift({date:new Date().toISOString(),rewardId:reward.id,title:reward.title,points:reward.points,value:reward.value,type:reward.type,usedAt:new Date().toISOString(),usedDirectlyAtCheckout:true});
     }
   }
   loyalty[phoneKey]=current;saveLoyalty(loyalty);
   checkoutState.updatedAt=new Date().toISOString();checkoutState.pointsEarned=earned;persistCheckout();
-  const finalOrder={customer,address:checkoutState.address||{},deliveryType:checkoutState.deliveryType,payment:checkoutState.payment,subtotal,discount,total:finalTotal,couponCode:checkoutState.couponCode||'',couponRewardId:checkoutState.couponRewardId||'',pointsEarned:earned,pointsTotal:current.points,date:checkoutState.updatedAt};
+  const finalOrder={customer,address:checkoutState.address||{},deliveryType:checkoutState.deliveryType,payment:checkoutState.payment,subtotal,discount,total:finalTotal,couponCode:checkoutState.couponCode||'',redeemRewardId:checkoutState.redeemRewardId||'',redeemTitle:(selectedRedeem()?.title||''),pointsEarned:earned,pointsTotal:current.points,date:checkoutState.updatedAt};
   localStorage.setItem('srdogao_last_order',JSON.stringify(finalOrder));
   localStorage.setItem('srdogao_last_order_completed','1');
   saveCart([]);
@@ -326,7 +356,7 @@ document.getElementById('finishOrder').onclick=()=>{
   document.getElementById('pageTitle').textContent='Pedido finalizado';
   document.getElementById('pageSubtitle').textContent='Confira abaixo os dados do pedido.';
   const a=checkoutState.address||{};
-  document.getElementById('successInfo').innerHTML='<p><b>Cliente:</b> '+(customer.name||'-')+'</p><p><b>Telefone:</b> '+(customer.phone||'-')+'</p><p><b>Endereço:</b> '+[a.street,a.number,a.district,a.reference].filter(Boolean).join(', ')+'</p><p><b>Entrega:</b> '+(checkoutState.deliveryType==='pickup'?'Retirada':'Entrega')+'</p><p><b>Pagamento:</b> '+({pix:'Pix',card:'Cartão',cash:'Dinheiro'}[checkoutState.payment]||checkoutState.payment)+'</p><p><b>Subtotal:</b> '+money(subtotal)+'</p>'+(discount>0?'<p><b>Cupom:</b> '+checkoutState.couponCode+' (- '+money(discount)+')</p>':'')+'<p><b>Total:</b> '+money(finalTotal)+'</p>';
+  document.getElementById('successInfo').innerHTML='<p><b>Cliente:</b> '+(customer.name||'-')+'</p><p><b>Telefone:</b> '+(customer.phone||'-')+'</p><p><b>Endereço:</b> '+[a.street,a.number,a.district,a.reference].filter(Boolean).join(', ')+'</p><p><b>Entrega:</b> '+(checkoutState.deliveryType==='pickup'?'Retirada':'Entrega')+'</p><p><b>Pagamento:</b> '+({pix:'Pix',card:'Cartão',cash:'Dinheiro'}[checkoutState.payment]||checkoutState.payment)+'</p><p><b>Subtotal:</b> '+money(subtotal)+'</p>'+(couponValue>0?'<p><b>Cupom:</b> '+checkoutState.couponCode+' (- '+money(couponValue)+')</p>':'')+(selectedRedeem()?'<p><b>Resgate:</b> '+selectedRedeem().title+(redeemValue>0?' (- '+money(redeemValue)+')':'')+'</p>':'')+'<p><b>Total:</b> '+money(finalTotal)+'</p>';
   document.getElementById('pointsTotal').textContent=current.points;
   document.getElementById('pointsEarnedText').textContent='Neste pedido você ganhou '+earned+' ponto'+(earned===1?'':'s')+'.';
   document.getElementById('success').style.display='block';
@@ -335,7 +365,7 @@ document.getElementById('finishOrder').onclick=()=>{
 document.querySelectorAll('[data-back]').forEach(button=>button.onclick=()=>showStep(Number(button.dataset.back)));
 document.querySelectorAll('.option input').forEach(input=>input.addEventListener('change',syncOptions));
 
-loadAddress();loadCustomer();syncOptions();renderCouponTrigger();if(!showCompletedOrder()){renderCart();showStep(1);}
+loadAddress();loadCustomer();syncOptions();renderCouponTrigger();renderRedeemTrigger();if(!showCompletedOrder()){renderCart();showStep(1);}
 </script>
 </body>
 </html>
