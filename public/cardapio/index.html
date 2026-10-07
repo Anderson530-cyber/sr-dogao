@@ -1,5 +1,12 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Cardápio | Sr. Dogão</title><style>:root{--y:#ffd600;--r:#d70b13;--d:#35100b;--c:#fffaf0}*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:var(--c);color:var(--d)}header{background:var(--y);padding:6px 14px;position:sticky;top:0;z-index:5}.top{max-width:1150px;margin:auto;display:flex;align-items:center;gap:8px;min-height:56px}.logo-link{display:flex;align-items:center;flex:0 0 auto}.logo{width:66px;height:44px;object-fit:contain}.top-spacer{flex:1}.back{background:var(--r);color:#fff;text-decoration:none;padding:9px 14px;border-radius:20px;font-weight:800;white-space:nowrap}.cart-link{margin-left:4px}.back-link{margin-left:auto}.wrap{max-width:1150px;margin:auto;padding:32px 20px 110px}.wrap h1{margin:0 0 5px}.cats{display:flex;gap:8px;overflow:auto;padding:18px 0}.cats button{border:0;padding:11px 16px;border-radius:22px;font-weight:800;white-space:nowrap;cursor:pointer}.cats button.active{background:var(--r);color:#fff}.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}.item{background:#fff;border-radius:18px;padding:14px;display:grid;grid-template-columns:110px 1fr auto;gap:14px;align-items:center;box-shadow:0 6px 20px #4d160012}.item img{width:110px;height:95px;object-fit:contain;background:#fff6cf;border-radius:12px}.item h3{margin:0 0 5px}.item p{margin:0 0 8px;color:#765}.price{color:var(--r);font-weight:900}.add-wrap{position:relative;width:42px;height:42px}.add{border:0;background:var(--r);color:#fff;width:42px;height:42px;border-radius:50%;font-size:22px;cursor:pointer}.qty-badge{position:absolute;right:-7px;top:-9px;min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:var(--y);color:var(--d);border:2px solid #fff;display:grid;place-items:center;font-size:12px;font-weight:900;box-shadow:0 2px 6px #0002}.cart-badge{display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 6px;margin-left:5px;border-radius:999px;background:#fff;color:var(--r);font-size:12px;font-weight:900}.menu-total-bar{position:fixed;left:0;right:0;bottom:0;background:var(--y);border-top:1px solid #e5be00;box-shadow:0 -8px 24px #35100b22;z-index:40;display:none}.menu-total-bar.show{display:block}.menu-total-inner{max-width:1150px;margin:auto;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;gap:18px}.menu-total-copy strong,.menu-total-copy small{display:block}.menu-total-copy strong{font-size:1rem}.menu-total-copy small{margin-top:3px;color:#6f4d16}.menu-total-value{font-size:1.35rem;font-weight:1000;white-space:nowrap}.modal-bg{position:fixed;inset:0;background:#0009;display:none;align-items:center;justify-content:center;padding:18px;z-index:50}.modal-bg.open{display:flex}.custom-modal{width:min(620px,100%);max-height:88vh;overflow:auto;background:#fff;border-radius:22px;padding:20px;box-shadow:0 20px 55px #0005}.custom-head{display:flex;gap:14px;align-items:center;border-bottom:1px solid #eee1d7;padding-bottom:14px}.custom-head img{width:86px;height:76px;object-fit:contain;background:#fff6cf;border-radius:12px}.custom-head h2{margin:0 0 4px}.close{margin-left:auto;border:0;background:#f4e9e1;width:38px;height:38px;border-radius:50%;font-size:22px;cursor:pointer}.custom-section{padding:16px 0;border-bottom:1px solid #eee1d7}.custom-section h3{margin:0 0 10px}.choice{display:flex;align-items:center;gap:10px;padding:10px 0}.choice input{width:19px;height:19px;accent-color:var(--r)}.choice span{flex:1}.choice b{color:var(--r)}.obs{width:100%;min-height:84px;border:1px solid #ded1c6;border-radius:14px;padding:12px;font:inherit;resize:vertical}.custom-actions{display:flex;gap:10px;padding-top:16px}.custom-actions button{flex:1;border:0;border-radius:24px;padding:13px 16px;font-weight:900;cursor:pointer}.custom-actions .cancel{background:#f2e7df;color:var(--d)}.custom-actions .confirm{background:var(--r);color:#fff}@media(max-width:700px){header{padding:5px 10px}.top{min-height:48px;gap:6px}.logo{width:52px;height:34px}.back{padding:8px 11px;border-radius:18px;font-size:.9rem}.cart-badge{min-width:20px;height:20px;font-size:11px}.grid{grid-template-columns:1fr}.item{grid-template-columns:80px 1fr auto}.item img{width:80px;height:72px}.custom-modal{padding:16px}.custom-actions{position:sticky;bottom:-16px;background:#fff;padding-bottom:6px}}</style><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script></head><body><header><div class="top"><a class="logo-link" href="/"><img class="logo" src="/sr-dogao-logo.png" alt="Sr. Dogão"></a><a class="back cart-link" href="/carrinho/">🛒 Carrinho <span class="cart-badge" id="cartCount">0</span></a><span class="top-spacer"></span><a class="back back-link" href="/">← Voltar</a></div></header><main class="wrap"><h1>Cardápio Sr. Dogão</h1><p>Escolha seus favoritos e adicione ao carrinho.</p><div class="cats" id="cats"></div><div class="grid" id="grid">Carregando cardápio...</div></main>
+<!doctype html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Cardápio | Sr. Dogão</title><style>:root{--y:#ffd600;--r:#d70b13;--d:#35100b;--c:#fffaf0}*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:var(--c);color:var(--d)}header{background:var(--y);padding:6px 14px;position:sticky;top:0;z-index:5}.top{max-width:1150px;margin:auto;display:flex;align-items:center;gap:8px;min-height:56px}.logo-link{display:flex;align-items:center;flex:0 0 auto}.logo{width:66px;height:44px;object-fit:contain}.top-spacer{flex:1}.back{background:var(--r);color:#fff;text-decoration:none;padding:9px 14px;border-radius:20px;font-weight:800;white-space:nowrap}.cart-link{margin-left:4px}.back-link{margin-left:auto}.wrap{max-width:1150px;margin:auto;padding:32px 20px 165px}.wrap h1{margin:0 0 5px}.cats{display:flex;gap:8px;overflow:auto;padding:18px 0}.cats button{border:0;padding:11px 16px;border-radius:22px;font-weight:800;white-space:nowrap;cursor:pointer}.cats button.active{background:var(--r);color:#fff}.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}.item{background:#fff;border-radius:18px;padding:14px;display:grid;grid-template-columns:110px 1fr auto;gap:14px;align-items:center;box-shadow:0 6px 20px #4d160012}.item img{width:110px;height:95px;object-fit:contain;background:#fff6cf;border-radius:12px}.item h3{margin:0 0 5px}.item p{margin:0 0 8px;color:#765}.price{color:var(--r);font-weight:900}.add-wrap{position:relative;width:42px;height:42px}.add{border:0;background:var(--r);color:#fff;width:42px;height:42px;border-radius:50%;font-size:22px;cursor:pointer}.qty-badge{position:absolute;right:-7px;top:-9px;min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:var(--y);color:var(--d);border:2px solid #fff;display:grid;place-items:center;font-size:12px;font-weight:900;box-shadow:0 2px 6px #0002}.cart-badge{display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 6px;margin-left:5px;border-radius:999px;background:#fff;color:var(--r);font-size:12px;font-weight:900}.redeem-strip{position:fixed;left:0;right:0;bottom:68px;background:var(--r);color:#fff;z-index:41;display:none;border-top:1px solid #b40008}.redeem-strip.show{display:block}.redeem-strip-inner{max-width:1150px;margin:auto;min-height:44px;padding:7px 16px;display:flex;align-items:center;gap:8px;overflow-x:auto;scrollbar-width:none}.redeem-strip-inner::-webkit-scrollbar{display:none}.redeem-title{font-weight:1000;white-space:nowrap}.redeem-chip{border:1px solid #ffffff55;background:#ffffff16;color:#fff;border-radius:999px;padding:7px 11px;font-weight:900;white-space:nowrap;cursor:pointer}.redeem-chip.active{background:#fff;color:var(--r)}.redeem-login{border:0;background:#fff;color:var(--r)}.menu-total-bar{position:fixed;left:0;right:0;bottom:0;background:var(--y);border-top:1px solid #e5be00;box-shadow:0 -8px 24px #35100b22;z-index:40;display:none}.menu-total-bar.show{display:block}.menu-total-inner{max-width:1150px;margin:auto;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;gap:18px}.menu-total-copy strong,.menu-total-copy small{display:block}.menu-total-copy strong{font-size:1rem}.menu-total-copy small{margin-top:3px;color:#6f4d16}.menu-total-value{font-size:1.35rem;font-weight:1000;white-space:nowrap}.modal-bg{position:fixed;inset:0;background:#0009;display:none;align-items:center;justify-content:center;padding:18px;z-index:50}.modal-bg.open{display:flex}.custom-modal{width:min(620px,100%);max-height:88vh;overflow:auto;background:#fff;border-radius:22px;padding:20px;box-shadow:0 20px 55px #0005}.custom-head{display:flex;gap:14px;align-items:center;border-bottom:1px solid #eee1d7;padding-bottom:14px}.custom-head img{width:86px;height:76px;object-fit:contain;background:#fff6cf;border-radius:12px}.custom-head h2{margin:0 0 4px}.close{margin-left:auto;border:0;background:#f4e9e1;width:38px;height:38px;border-radius:50%;font-size:22px;cursor:pointer}.custom-section{padding:16px 0;border-bottom:1px solid #eee1d7}.custom-section h3{margin:0 0 10px}.choice{display:flex;align-items:center;gap:10px;padding:10px 0}.choice input{width:19px;height:19px;accent-color:var(--r)}.choice span{flex:1}.choice b{color:var(--r)}.obs{width:100%;min-height:84px;border:1px solid #ded1c6;border-radius:14px;padding:12px;font:inherit;resize:vertical}.custom-actions{display:flex;gap:10px;padding-top:16px}.custom-actions button{flex:1;border:0;border-radius:24px;padding:13px 16px;font-weight:900;cursor:pointer}.custom-actions .cancel{background:#f2e7df;color:var(--d)}.custom-actions .confirm{background:var(--r);color:#fff}@media(max-width:700px){header{padding:5px 10px}.top{min-height:48px;gap:6px}.logo{width:52px;height:34px}.back{padding:8px 11px;border-radius:18px;font-size:.9rem}.cart-badge{min-width:20px;height:20px;font-size:11px}.grid{grid-template-columns:1fr}.item{grid-template-columns:80px 1fr auto}.item img{width:80px;height:72px}.custom-modal{padding:16px}.custom-actions{position:sticky;bottom:-16px;background:#fff;padding-bottom:6px}}</style><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script></head><body><header><div class="top"><a class="logo-link" href="/"><img class="logo" src="/sr-dogao-logo.png" alt="Sr. Dogão"></a><a class="back cart-link" href="/carrinho/">🛒 Carrinho <span class="cart-badge" id="cartCount">0</span></a><span class="top-spacer"></span><a class="back back-link" href="/">← Voltar</a></div></header><main class="wrap"><h1>Cardápio Sr. Dogão</h1><p>Escolha seus favoritos e adicione ao carrinho.</p><div class="cats" id="cats"></div><div class="grid" id="grid">Carregando cardápio...</div></main>
+<div class="redeem-strip" id="redeemStrip"><div class="redeem-strip-inner"><span class="redeem-title">⭐ Resgates</span><div id="redeemStripContent"></div></div></div>
 <div class="menu-total-bar" id="menuTotalBar"><div class="menu-total-inner"><div class="menu-total-copy"><strong>Total com taxa de entrega</strong><small id="menuDeliveryDetail">Entrega calculada pelo CEP</small></div><div class="menu-total-value" id="menuTotalValue">R$ 0,00</div></div></div>
+<div class="modal-bg" id="quickRedeemModal"><div class="custom-modal">
+  <div class="custom-head"><div><h2 style="margin:0">⭐ Resgates e cupons</h2><small id="quickRedeemSubtitle">Use seus pontos direto no pedido.</small></div><button class="close" id="closeQuickRedeem" type="button">×</button></div>
+  <div class="custom-section" id="quickRedeemLogin"><h3>Consultar seus pontos</h3><input class="obs" id="quickRedeemId" inputmode="numeric" style="min-height:0;height:48px" placeholder="Telefone ou CPF"><button class="confirm" id="quickRedeemEnter" type="button" style="width:100%;margin-top:10px;border:0;border-radius:22px;padding:12px;font-weight:900;background:var(--r);color:#fff">Entrar</button><p id="quickRedeemError" style="color:#a33"></p></div>
+  <div class="custom-section" id="quickRedeemOptions" style="display:none"><div id="quickRedeemBalance" style="font-weight:900;margin-bottom:12px"></div><div id="quickRedeemList"></div></div>
+  <div class="custom-actions"><button class="cancel" id="cancelQuickRedeem" type="button">Voltar</button></div>
+</div></div>
 <div class="modal-bg" id="customModal"><div class="custom-modal">
   <div class="custom-head"><img id="customImg" src="" alt=""><div><h2 id="customName">Produto</h2><div class="price" id="customBasePrice"></div></div><button class="close" id="closeCustom" type="button">×</button></div>
   <div class="custom-section"><h3>Retirar ingredientes</h3><div id="removeOptions"><p style="color:#765">Nenhuma opção de retirada cadastrada para este produto.</p></div></div>
@@ -15,6 +22,16 @@ const money=v=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).
 const getCart=()=>JSON.parse(localStorage.getItem('srdogao_cart')||'[]');
 const saveCart=cart=>localStorage.setItem('srdogao_cart',JSON.stringify(cart));
 const getCheckout=()=>JSON.parse(localStorage.getItem('srdogao_checkout')||'{}');
+const getLoyalty=()=>JSON.parse(localStorage.getItem('srdogao_loyalty')||'{}');
+const normalizeId=v=>String(v||'').replace(/\D/g,'');
+const quickRewards=[
+  {id:'r5',points:10,title:'R$ 5 de desconto',value:5,type:'discount'},
+  {id:'r12',points:20,title:'R$ 12 de desconto',value:12,type:'discount'},
+  {id:'burger',points:30,title:'Hambúrguer',value:0,type:'product'},
+  {id:'r20',points:30,title:'R$ 20 de desconto',value:20,type:'discount'},
+  {id:'r35',points:50,title:'R$ 35 de desconto',value:35,type:'discount'}
+];
+let quickLoyaltyKey='';
 function preserveAddressForNewOrder(){
   const wasCompleted=localStorage.getItem('srdogao_last_order_completed')==='1',old=getCheckout();
   localStorage.removeItem('srdogao_last_order_completed');localStorage.removeItem('srdogao_last_order');
@@ -26,14 +43,43 @@ function preserveAddressForNewOrder(){
   if(old.address?.cep)fresh.deliveryType='delivery';
   localStorage.setItem('srdogao_checkout',JSON.stringify(fresh));
 }
+function activeQuickReward(checkout=getCheckout()){return quickRewards.find(r=>r.id===checkout.redeemRewardId)||null}
+function findLoyaltyByInput(value){
+  const id=normalizeId(value),loyalty=getLoyalty();
+  if(loyalty[id])return {key:id,account:loyalty[id]};
+  const match=Object.entries(loyalty).find(([k,a])=>normalizeId(a?.cpf||'')===id);
+  return match?{key:match[0],account:match[1]}:null;
+}
+function resolveQuickAccount(){
+  const checkout=getCheckout(),loyalty=getLoyalty();
+  if(checkout.redeemLoyaltyKey&&loyalty[checkout.redeemLoyaltyKey])return {key:checkout.redeemLoyaltyKey,account:loyalty[checkout.redeemLoyaltyKey]};
+  const customer=checkout.customer||JSON.parse(localStorage.getItem('srdogao_customer')||'{}');
+  const byPhone=normalizeId(customer.phone||'');
+  if(byPhone&&loyalty[byPhone])return {key:byPhone,account:loyalty[byPhone]};
+  const byCpf=normalizeId(customer.cpf||'');
+  if(byCpf){const match=Object.entries(loyalty).find(([k,a])=>normalizeId(a?.cpf||'')===byCpf);if(match)return {key:match[0],account:match[1]}}
+  return null;
+}
+function updateRedeemStrip(){
+  const cart=getCart(),strip=document.getElementById('redeemStrip'),box=document.getElementById('redeemStripContent');
+  if(!cart.length){strip.classList.remove('show');return}
+  const checkout=getCheckout(),active=activeQuickReward(checkout),account=resolveQuickAccount();
+  if(active){box.innerHTML='<button class="redeem-chip active" type="button" id="openQuickRedeem">Ativo: '+esc(active.title)+'</button>'}
+  else if(checkout.couponCode){box.innerHTML='<button class="redeem-chip active" type="button" id="openQuickRedeem">Cupom ativo</button>'}
+  else if(account){box.innerHTML='<button class="redeem-chip" type="button" id="openQuickRedeem">Resgatar • '+Number(account.account.points||0)+' pts</button>'}
+  else{box.innerHTML='<button class="redeem-chip redeem-login" type="button" id="openQuickRedeem">Entrar e resgatar</button>'}
+  document.getElementById('openQuickRedeem').onclick=openQuickRedeem;
+  strip.classList.add('show');
+}
 function updateMenuTotal(){
   const cart=getCart(),bar=document.getElementById('menuTotalBar');
-  if(!cart.length){bar.classList.remove('show');return}
+  if(!cart.length){bar.classList.remove('show');updateRedeemStrip();return}
   const subtotal=cart.reduce((s,x)=>s+(Number(x.price)||0)*(Number(x.qty)||0),0);
-  const checkout=getCheckout(),fee=checkout.deliveryType==='pickup'?0:Number(checkout.deliveryFee||0);
-  document.getElementById('menuTotalValue').textContent=money(subtotal+fee);
+  const checkout=getCheckout(),fee=checkout.deliveryType==='pickup'?0:Number(checkout.deliveryFee||0),reward=activeQuickReward(checkout);
+  const discount=reward&&reward.type==='discount'&&!checkout.couponCode?Math.min(Number(reward.value)||0,subtotal):0;
+  document.getElementById('menuTotalValue').textContent=money(Math.max(0,subtotal-discount)+fee);
   document.getElementById('menuDeliveryDetail').textContent=fee>0?'Inclui '+money(fee)+' de entrega':'Entrega grátis';
-  bar.classList.add('show');
+  bar.classList.add('show');updateRedeemStrip();
 }
 const itemQty=name=>getCart().filter(x=>x.name===name).reduce((sum,item)=>sum+(Number(item.qty)||0),0);
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -43,6 +89,55 @@ function updateCartCount(){
   document.getElementById('cartCount').textContent=total;
   updateMenuTotal();
 }
+function clearQuickRewardProduct(cart=getCart()){
+  return cart.filter(x=>!x.rewardItem);
+}
+function activateQuickReward(reward,key){
+  if(!reward||!key)return;
+  const loyalty=getLoyalty(),account=loyalty[key];
+  if(!account||Number(account.points||0)<reward.points)return;
+  if(!confirm('Ativar '+reward.title+' por '+reward.points+' pontos neste pedido?'))return;
+  const checkout=getCheckout();
+  let cart=clearQuickRewardProduct();
+  checkout.redeemRewardId=reward.id;
+  checkout.redeemLoyaltyKey=key;
+  checkout.couponCode='';
+  if(reward.type==='product'){
+    cart.push({cartId:'reward-'+Date.now(),rewardItem:true,rewardId:reward.id,name:reward.title+' (Resgate)',price:0,basePrice:0,qty:1,removals:[],additions:[],note:''});
+  }
+  saveCart(cart);localStorage.setItem('srdogao_checkout',JSON.stringify(checkout));
+  closeQuickRedeem();updateCartCount();render(currentCat);
+}
+function activateExistingCoupon(code,key){
+  const loyalty=getLoyalty(),account=loyalty[key],coupon=(account?.redemptions||[]).find(r=>r.code===code&&!r.usedAt&&Number(r.value)>0);
+  if(!coupon)return;
+  if(!confirm('Ativar '+coupon.title+' neste pedido?'))return;
+  const checkout=getCheckout();
+  checkout.couponCode=code;checkout.redeemRewardId='';checkout.redeemLoyaltyKey=key;
+  saveCart(clearQuickRewardProduct());localStorage.setItem('srdogao_checkout',JSON.stringify(checkout));
+  closeQuickRedeem();updateCartCount();render(currentCat);
+}
+function renderQuickRedeemAccount(key,account){
+  quickLoyaltyKey=key;
+  document.getElementById('quickRedeemLogin').style.display='none';
+  document.getElementById('quickRedeemOptions').style.display='block';
+  document.getElementById('quickRedeemBalance').textContent='Você tem '+Number(account.points||0)+' pontos';
+  const checkout=getCheckout(),balance=Number(account.points||0),coupons=(account.redemptions||[]).filter(r=>r.code&&!r.usedAt&&Number(r.value)>0);
+  let html='<h3>Resgatar com pontos</h3>';
+  html+=quickRewards.map(r=>{const missing=Math.max(0,r.points-balance),active=checkout.redeemRewardId===r.id;return '<button type="button" class="redeem-chip '+(active?'active':'')+'" data-quick-reward="'+r.id+'" '+(missing?'disabled style="opacity:.45;cursor:not-allowed"':'')+'>'+esc(r.title)+' • '+r.points+' pts'+(missing?' • faltam '+missing:'')+'</button>'}).join(' ');
+  if(coupons.length){html+='<h3 style="margin-top:18px">Cupons disponíveis</h3>'+coupons.map(cp=>'<button type="button" class="redeem-chip '+(checkout.couponCode===cp.code?'active':'')+'" data-quick-coupon="'+esc(cp.code)+'">'+esc(cp.title)+' • '+money(cp.value)+'</button>').join(' ')}
+  document.getElementById('quickRedeemList').innerHTML=html;
+  document.querySelectorAll('[data-quick-reward]').forEach(b=>b.onclick=()=>activateQuickReward(quickRewards.find(r=>r.id===b.dataset.quickReward),key));
+  document.querySelectorAll('[data-quick-coupon]').forEach(b=>b.onclick=()=>activateExistingCoupon(b.dataset.quickCoupon,key));
+}
+function openQuickRedeem(){
+  const modal=document.getElementById('quickRedeemModal'),resolved=resolveQuickAccount();
+  document.getElementById('quickRedeemError').textContent='';
+  if(resolved)renderQuickRedeemAccount(resolved.key,resolved.account);
+  else{document.getElementById('quickRedeemLogin').style.display='block';document.getElementById('quickRedeemOptions').style.display='none'}
+  modal.classList.add('open');
+}
+function closeQuickRedeem(){document.getElementById('quickRedeemModal').classList.remove('open')}
 function parseOptions(raw=''){
   const remove=[],add=[];
   String(raw||'').split(/\n|;/).map(x=>x.trim()).filter(Boolean).forEach(line=>{
@@ -116,6 +211,10 @@ async function load(){
   const requested=new URLSearchParams(location.search).get('categoria')||'';
   render(names[requested]?requested:'');
 }
+document.getElementById('quickRedeemEnter').onclick=()=>{const found=findLoyaltyByInput(document.getElementById('quickRedeemId').value);if(!found){document.getElementById('quickRedeemError').textContent='Nenhum saldo encontrado para este telefone ou CPF.';return}renderQuickRedeemAccount(found.key,found.account)};
+document.getElementById('closeQuickRedeem').onclick=closeQuickRedeem;
+document.getElementById('cancelQuickRedeem').onclick=closeQuickRedeem;
+document.getElementById('quickRedeemModal').addEventListener('click',e=>{if(e.target.id==='quickRedeemModal')closeQuickRedeem()});
 document.getElementById('closeCustom').onclick=closeCustom;
 document.getElementById('cancelCustom').onclick=closeCustom;
 document.getElementById('confirmCustom').onclick=confirmCustom;
