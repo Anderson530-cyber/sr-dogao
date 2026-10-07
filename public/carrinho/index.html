@@ -88,8 +88,16 @@ header{background:var(--y);position:sticky;top:0;z-index:10;box-shadow:0 2px 14p
 <label class="option" data-option="delivery"><input type="radio" name="deliveryType" value="delivery"><span><b>🛵 Entrega</b><small>Receber no endereço informado. A taxa já foi calculada pelo CEP.</small></span></label>
 <label class="option" data-option="pickup"><input type="radio" name="deliveryType" value="pickup"><span><b>🏪 Retirada</b><small>Retirar o pedido no local. Sem taxa de entrega.</small></span></label>
 </div>
+<div class="field" id="timingField" style="margin-top:18px">
+<label>Quando deseja receber?</label>
+<div class="options" id="timingOptions">
+<label class="option" id="timingNowOption"><input type="radio" name="orderTiming" value="now"><span><b>Agora</b><small>Preparar assim que o pedido for confirmado.</small></span></label>
+<label class="option"><input type="radio" name="orderTiming" value="scheduled"><span><b>🕒 Agendar</b><small>Escolher um horário disponível.</small></span></label>
+</div>
+<div id="scheduleBox" style="display:none;margin-top:10px"><label for="scheduledFor">Horário</label><select id="scheduledFor"></select><small class="muted" id="scheduleHint"></small></div>
+</div>
 <div class="actions-row"><button class="secondary" type="button" data-back="3">Voltar</button><button class="primary" id="saveDelivery" type="button">Continuar</button></div>
-<div class="message" id="deliveryMessage">Escolha uma forma de entrega para continuar.</div>
+<div class="message" id="deliveryMessage">Escolha a entrega e quando deseja receber para continuar.</div>
 </div>
 </section>
 
@@ -154,6 +162,7 @@ const getCart=()=>JSON.parse(localStorage.getItem('srdogao_cart')||'[]');
 const saveCart=cart=>localStorage.setItem('srdogao_cart',JSON.stringify(cart));
 let currentStep=1;
 let checkoutState=JSON.parse(localStorage.getItem('srdogao_checkout')||'{}');
+let siteSettings={},storeOpen=true;
 const orderCompleted=()=>getCart().length===0&&localStorage.getItem('srdogao_last_order_completed')==='1';
 
 let trackingTimer=null,driverMap=null,driverMarker=null;
@@ -186,7 +195,9 @@ async function createRemoteOrder(order){
     p_discount:order.discount||0,
     p_total:order.total||0,
     p_coupon_code:order.couponCode||null,
-    p_redeem_title:order.redeemTitle||null
+    p_redeem_title:order.redeemTitle||null,
+    p_order_timing:order.orderTiming||'now',
+    p_scheduled_for:order.scheduledFor||null
   });
   if(error)throw error;
   if(order.deliveryCoords?.lat!=null&&order.deliveryCoords?.lng!=null){
@@ -289,8 +300,45 @@ async function loadCheckoutSettings(){
   const {data}=await trackingDb.from('srdogao_settings').select('value').eq('key','site').maybeSingle();
   siteSettings=data?.value||{};storeOpen=computeStoreOpen();
   const status=document.getElementById('checkoutStatus');
-  if(!storeOpen){status.style.display='block';status.textContent='🔒 Estamos fechados no momento. Você pode revisar o carrinho, mas não é possível confirmar pedidos agora.'}
+  if(!storeOpen){status.style.display='block';status.textContent='🕒 Estamos fechados no momento. Você pode montar o pedido normalmente e agendar a entrega.'}
   else status.style.display='none';
+  renderTimingOptions();
+}
+function localDateKey(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function atMinutes(date,mins){const d=new Date(date);d.setHours(Math.floor(mins/60)%24,mins%60,0,0);return d}
+function buildScheduleSlots(){
+  const open=timeMinutes(siteSettings.openTime||'18:00')??1080,close=timeMinutes(siteSettings.closeTime||'23:00')??1380;
+  const lead=Math.max(0,Number(siteSettings.scheduleLeadMinutes||60)),interval=Math.max(15,Number(siteSettings.scheduleInterval||30)),prep=Math.max(0,Number(siteSettings.prepTime||40));
+  const now=new Date(),slots=[];
+  for(let day=0;day<3;day++){
+    const base=new Date(now);base.setDate(now.getDate()+day);base.setHours(0,0,0,0);
+    let first=open+lead;
+    if(day===0&&storeOpen){const nowM=now.getHours()*60+now.getMinutes();first=Math.max(open+lead,Math.ceil((nowM+prep)/interval)*interval)}
+    if(day===0&&!storeOpen){const nowM=now.getHours()*60+now.getMinutes();if(nowM>=close)continue}
+    const effectiveClose=close>open?close:1440;
+    for(let mins=Math.ceil(first/interval)*interval;mins<=effectiveClose;mins+=interval){
+      if(mins>=1440)break;
+      const d=atMinutes(base,mins);if(d<=now)continue;
+      slots.push({iso:d.toISOString(),label:(day===0?'Hoje':day===1?'Amanhã':d.toLocaleDateString('pt-BR'))+' às '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')});
+    }
+  }
+  return slots;
+}
+function renderTimingOptions(){
+  const allowed=siteSettings.scheduledOrders!==false,nowOption=document.getElementById('timingNowOption'),box=document.getElementById('scheduleBox'),select=document.getElementById('scheduledFor'),hint=document.getElementById('scheduleHint');
+  if(!nowOption||!select)return;
+  nowOption.style.display=storeOpen?'flex':'none';
+  if(!allowed){
+    if(!storeOpen){hint.textContent='Agendamento indisponível no momento.'}
+    return;
+  }
+  const slots=buildScheduleSlots();
+  select.innerHTML=slots.map(s=>'<option value="'+s.iso+'">'+s.label+'</option>').join('');
+  if(checkoutState.scheduledFor&&slots.some(s=>s.iso===checkoutState.scheduledFor))select.value=checkoutState.scheduledFor;
+  if(!storeOpen){checkoutState.orderTiming='scheduled';const r=document.querySelector('input[name="orderTiming"][value="scheduled"]');if(r)r.checked=true;box.style.display='block'}
+  else if(!checkoutState.orderTiming)checkoutState.orderTiming='now';
+  hint.textContent=!storeOpen?'Primeiro horário disponível considera '+Number(siteSettings.scheduleLeadMinutes||60)+' min após a abertura.':'Você também pode escolher um horário para mais tarde.';
+  syncOptions();
 }
 function cartSubtotal(){return getCart().reduce((sum,item)=>sum+(Number(item.price)||0)*(Number(item.qty)||0),0)}
 function currentDeliveryFee(){return checkoutState.deliveryType==='pickup'?0:Math.max(0,Number(checkoutState.deliveryFee||0))}
@@ -313,7 +361,7 @@ function updateSummary(){
   if(r){redeemLine.style.display='flex';document.getElementById('redeemLabel').textContent=r.title}else{redeemLine.style.display='none'}
   document.getElementById('total').textContent=money(Math.max(0,subtotal-discount)+(delivery||0));
   const minOrder=Math.max(0,Number(siteSettings.minOrder||0)),missing=Math.max(0,minOrder-subtotal),btn=document.getElementById('goAddress');
-  if(btn){btn.disabled=!storeOpen||missing>0;btn.textContent=!storeOpen?'Loja fechada':(missing>0?'Faltam '+money(missing)+' para o pedido mínimo':'Continuar')}
+  if(btn){btn.disabled=missing>0;btn.textContent=missing>0?'Faltam '+money(missing)+' para o pedido mínimo':'Continuar'}
 }
 function renderCart(){
   const cart=getCart(),empty=document.getElementById('empty'),area=document.getElementById('checkoutArea');
@@ -359,6 +407,8 @@ function persistCheckout(){localStorage.setItem('srdogao_checkout',JSON.stringif
 function syncOptions(){
   if(checkoutState.deliveryType){const radio=document.querySelector('input[name="deliveryType"][value="'+checkoutState.deliveryType+'"]');if(radio)radio.checked=true}
   if(checkoutState.payment){const radio=document.querySelector('input[name="payment"][value="'+checkoutState.payment+'"]');if(radio)radio.checked=true}
+  if(checkoutState.orderTiming){const radio=document.querySelector('input[name="orderTiming"][value="'+checkoutState.orderTiming+'"]');if(radio)radio.checked=true}
+  const scheduleBox=document.getElementById('scheduleBox');if(scheduleBox)scheduleBox.style.display=checkoutState.orderTiming==='scheduled'?'block':'none';
   document.querySelectorAll('.option').forEach(option=>option.classList.toggle('active',Boolean(option.querySelector('input:checked'))));
 }
 function loadAddress(){
@@ -544,7 +594,6 @@ function openRedeemModal(){pendingRedeemId=checkoutState.redeemRewardId||'';rend
 function closeRedeemModal(){document.getElementById('redeemModal').classList.remove('open')}
 document.getElementById('goAddress').onclick=()=>{
   const subtotal=cartSubtotal(),minOrder=Math.max(0,Number(siteSettings.minOrder||0));
-  if(!storeOpen)return;
   if(subtotal<minOrder)return;
   showStep(2)
 };
@@ -561,8 +610,18 @@ document.getElementById('saveCustomer').onclick=()=>{
   msg.style.display='none';checkoutState.customer=customer;persistCheckout();localStorage.setItem('srdogao_customer',JSON.stringify(customer));showStep(4);
 };
 document.querySelectorAll('input[name="deliveryType"]').forEach(radio=>radio.onchange=()=>{checkoutState.deliveryType=radio.value;persistCheckout();syncOptions();updateSummary()});
+document.querySelectorAll('input[name="orderTiming"]').forEach(radio=>radio.onchange=()=>{checkoutState.orderTiming=radio.value;if(radio.value==='now')checkoutState.scheduledFor='';persistCheckout();renderTimingOptions()});
+document.getElementById('scheduledFor').onchange=e=>{checkoutState.scheduledFor=e.target.value;persistCheckout()};
 document.getElementById('saveDelivery').onclick=()=>{
-  const msg=document.getElementById('deliveryMessage');if(!checkoutState.deliveryType){msg.style.display='block';return}msg.style.display='none';showStep(5);
+  const msg=document.getElementById('deliveryMessage');
+  if(!checkoutState.deliveryType){msg.textContent='Escolha uma forma de entrega.';msg.style.display='block';return}
+  if(!storeOpen&&siteSettings.scheduledOrders===false){msg.textContent='A loja está fechada e não está aceitando agendamentos agora.';msg.style.display='block';return}
+  if(!checkoutState.orderTiming)checkoutState.orderTiming=storeOpen?'now':'scheduled';
+  if(checkoutState.orderTiming==='scheduled'){
+    const select=document.getElementById('scheduledFor');checkoutState.scheduledFor=select.value||checkoutState.scheduledFor||'';
+    if(!checkoutState.scheduledFor){msg.textContent='Escolha um horário disponível para o agendamento.';msg.style.display='block';return}
+  }
+  persistCheckout();msg.style.display='none';showStep(5);
 };
 document.querySelectorAll('input[name="payment"]').forEach(radio=>radio.onchange=()=>{checkoutState.payment=radio.value;persistCheckout();syncOptions()});
 function paymentLabel(){return ({pix:'Pix',card:'Cartão',cash:'Dinheiro'}[checkoutState.payment]||checkoutState.payment||'-')}
@@ -573,7 +632,8 @@ function orderDiscountData(){
 function renderReview(){
   const cart=getCart(),a=checkoutState.address||{},customer=checkoutState.customer||{},r=selectedRedeem(),d=orderDiscountData();
   document.getElementById('reviewItems').innerHTML=cart.map(x=>{const details=[];if(Array.isArray(x.removals)&&x.removals.length)details.push('Retirar: '+x.removals.join(', '));if(Array.isArray(x.additions)&&x.additions.length)details.push('Adicionar: '+x.additions.map(a=>a.name).join(', '));if(x.note)details.push('Obs.: '+x.note);return '<div class="review-item"><span>'+x.qty+'× '+x.name+(details.length?'<br><small>'+details.join(' • ')+'</small>':'')+'</span><b>'+money(x.price*x.qty)+'</b></div>'}).join('')+(r&&r.type==='product'&&!cart.some(x=>x.rewardItem&&x.rewardId===r.id)?'<div class="review-item"><span>⭐ Resgate: '+r.title+'</span><b>R$ 0,00</b></div>':'');
-  document.getElementById('reviewDelivery').innerHTML='<div class="review-line"><span><b>'+(checkoutState.deliveryType==='pickup'?'Retirada':'Entrega')+'</b><br><small>'+([a.street,a.number,a.district,a.city?(a.city+(a.state?' - '+a.state:'')):'',a.cep,a.reference].filter(Boolean).join(', ')||'-')+'</small></span></div><div class="review-line"><span>Cliente</span><b>'+(customer.name||'-')+'</b></div><div class="review-line"><span>Telefone</span><b>'+(customer.phone||'-')+'</b></div>';
+  const timingLabel=checkoutState.orderTiming==='scheduled'&&checkoutState.scheduledFor?new Date(checkoutState.scheduledFor).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'Assim que possível';
+  document.getElementById('reviewDelivery').innerHTML='<div class="review-line"><span><b>'+(checkoutState.deliveryType==='pickup'?'Retirada':'Entrega')+'</b><br><small>'+([a.street,a.number,a.district,a.city?(a.city+(a.state?' - '+a.state:'')):'',a.cep,a.reference].filter(Boolean).join(', ')||'-')+'</small></span></div><div class="review-line"><span>Quando</span><b>'+timingLabel+'</b></div><div class="review-line"><span>Cliente</span><b>'+(customer.name||'-')+'</b></div><div class="review-line"><span>Telefone</span><b>'+(customer.phone||'-')+'</b></div>';
   document.getElementById('reviewPayment').innerHTML='<div class="review-line"><span>Forma de pagamento</span><b>'+paymentLabel()+'</b></div>'+(checkoutState.couponCode?'<div class="review-line"><span>Cupom</span><b>'+checkoutState.couponCode+'</b></div>':'')+(r?'<div class="review-line"><span>Resgate</span><b>'+r.title+'</b></div>':'');
   document.getElementById('reviewTotals').innerHTML='<div class="review-line"><span>Subtotal</span><b>'+money(d.subtotal)+'</b></div><div class="review-line"><span>Entrega</span><b>'+(d.delivery===0?'Grátis':money(d.delivery))+'</b></div>'+(d.discount?'<div class="review-line"><span>Descontos</span><b>- '+money(d.discount)+'</b></div>':'')+'<div class="review-line"><span><b>Total</b></span><b>'+money(d.total)+'</b></div>';
 }
@@ -619,7 +679,7 @@ document.getElementById('applyRedeem').onclick=()=>{
   closeRedeemModal();
 };
 
-document.getElementById('finishOrder').onclick=async()=>{if(!storeOpen)return;
+document.getElementById('finishOrder').onclick=async()=>{if(!storeOpen&&checkoutState.orderTiming!=='scheduled')return;
   if(orderCompleted()){showCompletedOrder();return}
   if('Notification' in window&&Notification.permission==='default'){try{await Notification.requestPermission()}catch(e){}}
   const finishBtn=document.getElementById('finishOrder');finishBtn.disabled=true;finishBtn.textContent='Confirmando...';
@@ -666,7 +726,7 @@ document.getElementById('finishOrder').onclick=async()=>{if(!storeOpen)return;
   current.history.unshift({date:new Date().toISOString(),amount:subtotal,points:earned});
   loyalty[phoneKey]=current;saveLoyalty(loyalty);
   checkoutState.updatedAt=new Date().toISOString();checkoutState.pointsEarned=earned;persistCheckout();
-  const finalOrder={remoteId:remoteOrder?.id||'',trackingToken:remoteOrder?.public_token||'',deliveryPin:remoteOrder?.delivery_pin||'',customer,address:checkoutState.address||{},deliveryType:checkoutState.deliveryType,payment:checkoutState.payment,items:cart,subtotal,deliveryFee:delivery,discount,total:finalTotal,couponCode:checkoutState.couponCode||'',redeemRewardId:checkoutState.redeemRewardId||'',redeemTitle:(selectedRedeem()?.title||''),pointsEarned:earned,pointsTotal:current.points,status:'confirmed',date:checkoutState.updatedAt};
+  const finalOrder={remoteId:remoteOrder?.id||'',trackingToken:remoteOrder?.public_token||'',deliveryPin:remoteOrder?.delivery_pin||'',customer,address:checkoutState.address||{},deliveryType:checkoutState.deliveryType,orderTiming:checkoutState.orderTiming||'now',scheduledFor:checkoutState.scheduledFor||'',payment:checkoutState.payment,items:cart,subtotal,deliveryFee:delivery,discount,total:finalTotal,couponCode:checkoutState.couponCode||'',redeemRewardId:checkoutState.redeemRewardId||'',redeemTitle:(selectedRedeem()?.title||''),pointsEarned:earned,pointsTotal:current.points,status:'confirmed',date:checkoutState.updatedAt};
   localStorage.setItem('srdogao_last_order',JSON.stringify(finalOrder));
   const history=JSON.parse(localStorage.getItem('srdogao_order_history')||'[]');
   history.unshift({...finalOrder,loyaltyKey:checkoutState.redeemLoyaltyKey||phoneKey});
@@ -693,7 +753,7 @@ document.querySelectorAll('[data-back]').forEach(button=>button.onclick=()=>show
 document.querySelectorAll('.option input').forEach(input=>input.addEventListener('change',syncOptions));
 
 if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});
-(async()=>{await Promise.all([ensureCheckoutDeliveryFee(),loadCheckoutSettings()]);loadAddress();loadCustomer();syncOptions();renderCouponTrigger();renderRedeemTrigger();if(!showCompletedOrder()){renderCart();showStep(1);}})();
+(async()=>{await Promise.all([ensureCheckoutDeliveryFee(),loadCheckoutSettings()]);loadAddress();loadCustomer();renderTimingOptions();syncOptions();renderCouponTrigger();renderRedeemTrigger();if(!showCompletedOrder()){renderCart();showStep(1);}})();
 </script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </body>
