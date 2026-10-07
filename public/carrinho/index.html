@@ -26,7 +26,7 @@ header{background:var(--y);position:sticky;top:0;z-index:10;box-shadow:0 2px 14p
 <body>
 <header><div class="top"><a href="/"><img class="logo" src="/sr-dogao-logo.png" alt="Sr. Dogão"></a><div class="title">Finalizar pedido</div><a class="back" href="/">← Voltar</a></div></header>
 <main class="wrap">
-<div class="head"><div><h1 id="pageTitle">Carrinho</h1><p id="pageSubtitle">Confira seu pedido antes de continuar.</p></div></div>
+<div class="head"><div><h1 id="pageTitle">Carrinho</h1><p id="pageSubtitle">Confira seu pedido antes de continuar.</p></div></div><div id="checkoutStatus" class="message" style="display:none;margin:0 0 16px"></div>
 <div class="steps" id="steps">
 <div class="step-pill active" data-step-pill="1">1. Carrinho</div>
 <div class="step-pill" data-step-pill="2">2. Endereço</div>
@@ -277,6 +277,21 @@ function showCompletedOrder(){
   return true;
 }
 
+function timeMinutes(hm){const [h,m]=String(hm||'').split(':').map(Number);return Number.isFinite(h)&&Number.isFinite(m)?h*60+m:null}
+function computeStoreOpen(){
+  if(siteSettings.ordersOpen===false)return false;
+  const open=timeMinutes(siteSettings.openTime),close=timeMinutes(siteSettings.closeTime);if(open==null||close==null)return true;
+  const parts=new Intl.DateTimeFormat('en-GB',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit',hour12:false}).formatToParts(new Date());
+  const h=Number(parts.find(x=>x.type==='hour')?.value||0),m=Number(parts.find(x=>x.type==='minute')?.value||0),now=h*60+m;
+  return close>open?(now>=open&&now<close):(now>=open||now<close);
+}
+async function loadCheckoutSettings(){
+  const {data}=await trackingDb.from('srdogao_settings').select('value').eq('key','site').maybeSingle();
+  siteSettings=data?.value||{};storeOpen=computeStoreOpen();
+  const status=document.getElementById('checkoutStatus');
+  if(!storeOpen){status.style.display='block';status.textContent='🔒 Estamos fechados no momento. Você pode revisar o carrinho, mas não é possível confirmar pedidos agora.'}
+  else status.style.display='none';
+}
 function cartSubtotal(){return getCart().reduce((sum,item)=>sum+(Number(item.price)||0)*(Number(item.qty)||0),0)}
 function currentDeliveryFee(){return checkoutState.deliveryType==='pickup'?0:Math.max(0,Number(checkoutState.deliveryFee||0))}
 async function ensureCheckoutDeliveryFee(){
@@ -297,6 +312,8 @@ function updateSummary(){
   const redeemLine=document.getElementById('redeemLine'),r=selectedRedeem();
   if(r){redeemLine.style.display='flex';document.getElementById('redeemLabel').textContent=r.title}else{redeemLine.style.display='none'}
   document.getElementById('total').textContent=money(Math.max(0,subtotal-discount)+(delivery||0));
+  const minOrder=Math.max(0,Number(siteSettings.minOrder||0)),missing=Math.max(0,minOrder-subtotal),btn=document.getElementById('goAddress');
+  if(btn){btn.disabled=!storeOpen||missing>0;btn.textContent=!storeOpen?'Loja fechada':(missing>0?'Faltam '+money(missing)+' para o pedido mínimo':'Continuar')}
 }
 function renderCart(){
   const cart=getCart(),empty=document.getElementById('empty'),area=document.getElementById('checkoutArea');
@@ -525,7 +542,12 @@ function renderRedeemModal(){
 }
 function openRedeemModal(){pendingRedeemId=checkoutState.redeemRewardId||'';renderRedeemModal();document.getElementById('redeemModal').classList.add('open')}
 function closeRedeemModal(){document.getElementById('redeemModal').classList.remove('open')}
-document.getElementById('goAddress').onclick=()=>showStep(2);
+document.getElementById('goAddress').onclick=()=>{
+  const subtotal=cartSubtotal(),minOrder=Math.max(0,Number(siteSettings.minOrder||0));
+  if(!storeOpen)return;
+  if(subtotal<minOrder)return;
+  showStep(2)
+};
 document.getElementById('saveAddress').onclick=()=>{
   const address={cep:document.getElementById('cep').value.trim(),city:document.getElementById('city').value.trim(),state:document.getElementById('state').value.trim(),street:document.getElementById('street').value.trim(),number:document.getElementById('number').value.trim(),district:document.getElementById('district').value.trim(),reference:document.getElementById('reference').value.trim()};
   const msg=document.getElementById('addressMessage');
@@ -597,7 +619,7 @@ document.getElementById('applyRedeem').onclick=()=>{
   closeRedeemModal();
 };
 
-document.getElementById('finishOrder').onclick=async()=>{
+document.getElementById('finishOrder').onclick=async()=>{if(!storeOpen)return;
   if(orderCompleted()){showCompletedOrder();return}
   if('Notification' in window&&Notification.permission==='default'){try{await Notification.requestPermission()}catch(e){}}
   const finishBtn=document.getElementById('finishOrder');finishBtn.disabled=true;finishBtn.textContent='Confirmando...';
@@ -646,6 +668,9 @@ document.getElementById('finishOrder').onclick=async()=>{
   checkoutState.updatedAt=new Date().toISOString();checkoutState.pointsEarned=earned;persistCheckout();
   const finalOrder={remoteId:remoteOrder?.id||'',trackingToken:remoteOrder?.public_token||'',deliveryPin:remoteOrder?.delivery_pin||'',customer,address:checkoutState.address||{},deliveryType:checkoutState.deliveryType,payment:checkoutState.payment,items:cart,subtotal,deliveryFee:delivery,discount,total:finalTotal,couponCode:checkoutState.couponCode||'',redeemRewardId:checkoutState.redeemRewardId||'',redeemTitle:(selectedRedeem()?.title||''),pointsEarned:earned,pointsTotal:current.points,status:'confirmed',date:checkoutState.updatedAt};
   localStorage.setItem('srdogao_last_order',JSON.stringify(finalOrder));
+  const history=JSON.parse(localStorage.getItem('srdogao_order_history')||'[]');
+  history.unshift({...finalOrder,loyaltyKey:checkoutState.redeemLoyaltyKey||phoneKey});
+  localStorage.setItem('srdogao_order_history',JSON.stringify(history.slice(0,20)));
   localStorage.setItem('srdogao_last_order_completed','1');
   saveCart([]);
   document.querySelectorAll('.step-content').forEach(section=>section.classList.add('hidden'));
@@ -668,7 +693,7 @@ document.querySelectorAll('[data-back]').forEach(button=>button.onclick=()=>show
 document.querySelectorAll('.option input').forEach(input=>input.addEventListener('change',syncOptions));
 
 if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});
-(async()=>{await ensureCheckoutDeliveryFee();loadAddress();loadCustomer();syncOptions();renderCouponTrigger();renderRedeemTrigger();if(!showCompletedOrder()){renderCart();showStep(1);}})();
+(async()=>{await Promise.all([ensureCheckoutDeliveryFee(),loadCheckoutSettings()]);loadAddress();loadCustomer();syncOptions();renderCouponTrigger();renderRedeemTrigger();if(!showCompletedOrder()){renderCart();showStep(1);}})();
 </script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </body>
