@@ -1,17 +1,35 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#ffd600"><title>Meus pontos | Sr. Dogão</title><style>:root{--y:#ffd600;--r:#d70b13;--d:#35100b;--c:#fffaf0;--muted:#78635a}*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--c);color:var(--d)}a{text-decoration:none;color:inherit}header{background:var(--y);padding:10px 18px}.top{max-width:900px;margin:auto;display:flex;align-items:center;gap:18px}.logo{width:110px;height:60px;object-fit:contain}.back{margin-left:auto;background:var(--r);color:#fff;padding:11px 16px;border-radius:22px;font-weight:900}.wrap{max-width:720px;margin:auto;padding:34px 18px}.card{background:#fff;border:1px solid #ecded3;border-radius:22px;box-shadow:0 8px 28px #4d160012;padding:22px}.field{display:grid;gap:6px;margin:16px 0}.field label{font-weight:900}.field input{border:1px solid #ded1c6;border-radius:14px;padding:13px 14px;font-size:1rem}.btn{width:100%;border:0;background:var(--r);color:#fff;padding:14px 18px;border-radius:26px;font-weight:900;cursor:pointer}.result{display:none}.points{display:flex;align-items:center;justify-content:space-between;background:#fff6c9;border-radius:18px;padding:18px;margin:18px 0}.points strong{font-size:2.2rem;color:var(--r)}.history{margin-top:18px}.row{display:flex;justify-content:space-between;gap:16px;padding:13px 0;border-bottom:1px solid #eee}.muted{color:var(--muted)}.note{margin-top:14px;background:#fff8db;border:1px solid #ecd77d;padding:13px;border-radius:14px}.redeem-title{margin:26px 0 10px}.rewards{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.reward{border:1px solid #eaded3;border-radius:16px;padding:16px;background:#fff}.reward h3{margin:0 0 6px}.reward p{margin:0 0 12px;color:var(--muted)}.reward-cost{font-weight:900;color:var(--r);margin-bottom:10px}.reward button{width:100%;border:0;border-radius:22px;padding:11px 14px;font-weight:900;cursor:pointer;background:var(--r);color:#fff}.reward button:disabled{background:#d8cec8;color:#8e8179;cursor:not-allowed}.coupon{margin-top:14px;padding:14px;border-radius:14px;background:#f3fff5;border:1px solid #b9e3bf;display:none}.coupon code{display:inline-block;margin-top:6px;font-size:1.15rem;font-weight:900;color:#166b2c}.redeem-history{margin-top:20px}.redeemed{color:#a33;font-weight:900}@media(max-width:620px){.rewards{grid-template-columns:1fr}}</style></head><body><header><div class="top"><a href="/"><img class="logo" src="/sr-dogao-logo.png" alt="Sr. Dogão"></a><b>Programa de pontos</b><a class="back" href="/">← Voltar</a></div></header><main class="wrap"><div class="card" id="login"><h1>Meus pontos</h1><p class="muted">Entre com o telefone ou CPF cadastrado no pedido.</p><div class="field"><label for="loginId">Telefone ou CPF</label><input id="loginId" inputmode="numeric" placeholder="Telefone ou CPF"></div><button class="btn" id="enter">Entrar</button><p id="error" class="muted"></p></div><div class="card result" id="result"><h1 id="name">Meus pontos</h1><div class="points"><span>Saldo atual</span><strong id="total">0</strong></div><p>A cada R$ 10,00 em compras você ganha 1 ponto.</p><div class="note">A regra de expiração dos pontos ainda está sendo configurada. Quando for definida, a data de validade aparecerá aqui.</div><h2 class="redeem-title">Resgatar pontos</h2>
-<p class="muted">Escolha uma recompensa disponível para o seu saldo.</p>
+<!doctype html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#ffd600"><title>Meus pontos | Sr. Dogão</title><style>:root{--y:#ffd600;--r:#d70b13;--d:#35100b;--c:#fffaf0;--muted:#78635a}*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--c);color:var(--d)}a{text-decoration:none;color:inherit}header{background:var(--y);padding:10px 18px}.top{max-width:900px;margin:auto;display:flex;align-items:center;gap:18px}.logo{width:110px;height:60px;object-fit:contain}.back{margin-left:auto;background:var(--r);color:#fff;padding:11px 16px;border-radius:22px;font-weight:900}.wrap{max-width:720px;margin:auto;padding:34px 18px}.card{background:#fff;border:1px solid #ecded3;border-radius:22px;box-shadow:0 8px 28px #4d160012;padding:22px}.field{display:grid;gap:6px;margin:16px 0}.field label{font-weight:900}.field input{border:1px solid #ded1c6;border-radius:14px;padding:13px 14px;font-size:1rem}.btn{width:100%;border:0;background:var(--r);color:#fff;padding:14px 18px;border-radius:26px;font-weight:900;cursor:pointer}.result{display:none}.points{display:flex;align-items:center;justify-content:space-between;background:#fff6c9;border-radius:18px;padding:18px;margin:18px 0}.points strong{font-size:2.2rem;color:var(--r)}.history{margin-top:18px}.row{display:flex;justify-content:space-between;gap:16px;padding:13px 0;border-bottom:1px solid #eee}.muted{color:var(--muted)}.note{margin-top:14px;background:#fff8db;border:1px solid #ecd77d;padding:13px;border-radius:14px}.redeem-title{margin:26px 0 10px}.rewards{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.reward{border:1px solid #eaded3;border-radius:16px;padding:16px;background:#fff}.reward h3{margin:0 0 6px}.reward p{margin:0 0 12px;color:var(--muted)}.reward-cost{font-weight:900;color:var(--r);margin-bottom:10px}.reward button{width:100%;border:0;border-radius:22px;padding:11px 14px;font-weight:900;cursor:pointer;background:var(--r);color:#fff}.reward button:disabled{background:#d8cec8;color:#8e8179;cursor:not-allowed}.coupon{margin-top:14px;padding:14px;border-radius:14px;background:#f3fff5;border:1px solid #b9e3bf;display:none}.coupon code{display:inline-block;margin-top:6px;font-size:1.15rem;font-weight:900;color:#166b2c}.redeem-history{margin-top:20px}.redeemed{color:#a33;font-weight:900}.points-tabs{display:flex;gap:10px;margin:18px 0}.points-tabs button{flex:1;border:1px solid #e5d7cb;background:#fff;padding:12px 14px;border-radius:22px;font-weight:900;cursor:pointer}.points-tabs button.active{background:var(--r);color:#fff;border-color:var(--r)}.tab-panel{display:none}.tab-panel.active{display:block}.catalog{display:grid;gap:10px}.catalog-head,.catalog-row{display:grid;grid-template-columns:1.5fr .7fr .7fr;gap:10px;align-items:center}.catalog-head{font-size:.82rem;color:var(--muted);font-weight:900;padding:0 12px}.catalog-row{border:1px solid #eaded3;border-radius:15px;padding:13px 12px;background:#fff}.catalog-row strong{font-size:.98rem}.catalog-points{font-weight:900;color:var(--r)}.catalog-missing{font-weight:900}.catalog-missing.ok{color:#238348}.catalog-missing.warn{color:#a35d00}@media(max-width:620px){.rewards{grid-template-columns:1fr}.catalog-head,.catalog-row{grid-template-columns:1.25fr .7fr .7fr;font-size:.9rem}}</style></head><body><header><div class="top"><a href="/"><img class="logo" src="/sr-dogao-logo.png" alt="Sr. Dogão"></a><b>Programa de pontos</b><a class="back" href="/">← Voltar</a></div></header><main class="wrap"><div class="card" id="login"><h1>Meus pontos</h1><p class="muted">Entre com o telefone ou CPF cadastrado no pedido.</p><div class="field"><label for="loginId">Telefone ou CPF</label><input id="loginId" inputmode="numeric" placeholder="Telefone ou CPF"></div><button class="btn" id="enter">Entrar</button><p id="error" class="muted"></p></div><div class="card result" id="result"><h1 id="name">Meus pontos</h1>
+<div class="points-tabs"><button class="active" type="button" data-tab="pointsPanel">Meus pontos</button><button type="button" data-tab="redeemPanel">Resgates</button></div>
+
+<div class="tab-panel active" id="pointsPanel">
+<div class="points"><span>Saldo atual</span><strong id="total">0</strong></div>
+<p>A cada R$ 10,00 em compras você ganha 1 ponto.</p>
+<div class="note">A regra de expiração dos pontos ainda está sendo configurada. Quando for definida, a data de validade aparecerá aqui.</div>
+<div class="history"><h2>Histórico de pontos</h2><div id="history"></div></div>
+<div class="redeem-history"><h2>Resgates realizados</h2><div id="redeemHistory"></div></div>
+</div>
+
+<div class="tab-panel" id="redeemPanel">
+<h2>Opções de resgate</h2>
+<p class="muted">Veja quanto custa cada recompensa e quantos pontos faltam para liberar.</p>
+<div class="catalog">
+<div class="catalog-head"><span>Resgate</span><span>Pontos</span><span>Faltam</span></div>
+<div id="rewardCatalog"></div>
+</div>
+<h2 class="redeem-title">Resgatar agora</h2>
 <div class="rewards" id="rewards"></div>
 <div class="coupon" id="coupon"></div>
-<div class="history"><h2>Histórico de pontos</h2><div id="history"></div></div>
-<div class="redeem-history"><h2>Resgates</h2><div id="redeemHistory"></div></div>
+</div>
+
 <button class="btn" id="logout" style="margin-top:18px">Consultar outro telefone</button></div></main><script>
 const normalize=v=>(v||'').replace(/\D/g,'');
 const money=v=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v);
 const rewards=[
-  {id:'r5',points:10,title:'R$ 5 de desconto',description:'Use R$ 5 de desconto em um próximo pedido.',value:5},
-  {id:'r12',points:20,title:'R$ 12 de desconto',description:'Use R$ 12 de desconto em um próximo pedido.',value:12},
-  {id:'r20',points:30,title:'R$ 20 de desconto',description:'Use R$ 20 de desconto em um próximo pedido.',value:20},
-  {id:'r35',points:50,title:'R$ 35 de desconto',description:'Use R$ 35 de desconto em um próximo pedido.',value:35}
+  {id:'r5',points:10,title:'R$ 5 de desconto',description:'Use R$ 5 de desconto em um próximo pedido.',value:5,type:'discount'},
+  {id:'burger',points:30,title:'Hambúrguer',description:'Resgate 1 hambúrguer.',value:0,type:'product'},
+  {id:'r12',points:20,title:'R$ 12 de desconto',description:'Use R$ 12 de desconto em um próximo pedido.',value:12,type:'discount'},
+  {id:'r20',points:30,title:'R$ 20 de desconto',description:'Use R$ 20 de desconto em um próximo pedido.',value:20,type:'discount'},
+  {id:'r35',points:50,title:'R$ 35 de desconto',description:'Use R$ 35 de desconto em um próximo pedido.',value:35,type:'discount'}
 ];
 const getLoyalty=()=>JSON.parse(localStorage.getItem('srdogao_loyalty')||'{}');
 const saveLoyalty=data=>localStorage.setItem('srdogao_loyalty',JSON.stringify(data));
@@ -23,7 +41,9 @@ function renderAccount(data){
   document.getElementById('history').innerHTML=(data.history||[]).map(h=>'<div class="row"><span>'+new Date(h.date).toLocaleDateString('pt-BR')+'<br><small class="muted">'+money(h.amount)+'</small></span><b>+'+h.points+' ponto'+(h.points===1?'':'s')+'</b></div>').join('')||'<p class="muted">Nenhum lançamento ainda.</p>';
   const redemptions=data.redemptions||[];
   document.getElementById('redeemHistory').innerHTML=redemptions.length?redemptions.map(r=>'<div class="row"><span>'+new Date(r.date).toLocaleDateString('pt-BR')+'<br><small class="muted">'+r.title+'</small></span><span class="redeemed">-'+r.points+' pontos</span></div>').join(''):'<p class="muted">Nenhum resgate ainda.</p>';
-  document.getElementById('rewards').innerHTML=rewards.map(r=>'<div class="reward"><h3>'+r.title+'</h3><p>'+r.description+'</p><div class="reward-cost">'+r.points+' pontos</div><button type="button" data-reward="'+r.id+'" '+((data.points||0)<r.points?'disabled':'')+'>Resgatar</button></div>').join('');
+  const balance=Number(data.points||0);
+  document.getElementById('rewardCatalog').innerHTML=rewards.map(r=>{const missing=Math.max(0,r.points-balance);return '<div class="catalog-row"><strong>'+r.title+'</strong><span class="catalog-points">'+r.points+' pts</span><span class="catalog-missing '+(missing===0?'ok':'warn')+'">'+(missing===0?'Disponível':missing+' pts')+'</span></div>'}).join('');
+  document.getElementById('rewards').innerHTML=rewards.map(r=>'<div class="reward"><h3>'+r.title+'</h3><p>'+r.description+'</p><div class="reward-cost">'+r.points+' pontos</div><button type="button" data-reward="'+r.id+'" '+(balance<r.points?'disabled':'')+'>Resgatar</button></div>').join('');
   document.querySelectorAll('[data-reward]').forEach(btn=>btn.onclick=()=>redeem(btn.dataset.reward));
 }
 
@@ -62,12 +82,13 @@ function redeem(id){
   loyalty[currentKey]=data;
   saveLoyalty(loyalty);
   const coupon=document.getElementById('coupon');
-  coupon.innerHTML='<b>Resgate realizado!</b><br>Seu código é:<br><code>'+code+'</code><br><small>Guarde este código para usar no próximo pedido.</small>';
+  coupon.innerHTML='<b>Resgate realizado!</b><br>'+((reward.type==='product')?'Apresente este código para retirar seu resgate:':'Seu código de desconto é:')+'<br><code>'+code+'</code><br><small>Guarde este código para usar no próximo pedido.</small>';
   coupon.style.display='block';
   renderAccount(data);
   window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});
 }
 
+document.querySelectorAll('[data-tab]').forEach(btn=>btn.onclick=()=>{document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b===btn));document.querySelectorAll('.tab-panel').forEach(p=>p.classList.toggle('active',p.id===btn.dataset.tab))});
 document.getElementById('enter').onclick=show;
 document.getElementById('loginId').addEventListener('keydown',e=>{if(e.key==='Enter')show()});
 document.getElementById('logout').onclick=()=>{currentKey='';document.getElementById('result').style.display='none';document.getElementById('login').style.display='block';document.getElementById('loginId').value='';document.getElementById('error').textContent='';document.getElementById('coupon').style.display='none'};
