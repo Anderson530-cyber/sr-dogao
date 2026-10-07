@@ -42,7 +42,7 @@ async function loadOrders(){
   const active=orders.filter(o=>!['delivered','cancelled'].includes(o.status));
   if(!active.length){box.innerHTML='<p class="help">Nenhum pedido em andamento.</p>';return}
   box.innerHTML=active.map(o=>{
-    const a=o.address||{},items=Array.isArray(o.items)?o.items:[],addr=[a.street,a.number,a.district,a.reference].filter(Boolean).join(', ');
+    const a=o.address||{},items=Array.isArray(o.items)?o.items:[],addr=[a.street,a.number,a.district,a.city?(a.city+(a.state?' - '+a.state:'')):'',a.cep,a.reference].filter(Boolean).join(', ');
     const next=o.status==='confirmed'?'preparing':o.status==='preparing'?'ready':'';
     return '<div class="order-card"><div class="order-top"><div><h4>'+o.customer_name+'</h4><small>'+new Date(o.created_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})+' • '+(o.customer_phone||'')+'</small></div><span class="status-pill">'+(orderStatusLabels[o.status]||o.status)+'</span></div><div class="order-items">'+items.map(i=>(i.qty||1)+'× '+i.name).join(' • ')+'</div><small>'+addr+'</small><div class="order-actions">'+(next?'<button class="mini primary-mini" onclick="setOrderStatus(\''+o.id+'\',\''+next+'\')">'+(next==='preparing'?'Iniciar preparo':'Pronto para entrega')+'</button>':'')+(o.status==='ready'?'<span class="help">Aguardando entregador assumir.</span>':'')+(o.status==='out_for_delivery'?'<span class="help">Entregador: '+(o.driver_name||'em rota')+'</span>':'')+'</div></div>'
   }).join('');
