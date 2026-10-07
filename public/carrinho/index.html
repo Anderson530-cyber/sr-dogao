@@ -60,6 +60,7 @@ header{background:var(--y);position:sticky;top:0;z-index:10;box-shadow:0 2px 14p
 <div class="field"><label for="number">Número</label><input id="number" inputmode="numeric" placeholder="Ex.: 123"></div>
 <div class="field"><label for="district">Bairro</label><input id="district" placeholder="Ex.: Centro"></div>
 <div class="field"><label for="reference">Complemento / referência</label><textarea id="reference" required placeholder="Apartamento, bloco, ponto de referência..."></textarea></div>
+<div class="field"><label>Localização exata da entrega</label><button class="secondary" id="captureDeliveryLocation" type="button">📍 Usar minha localização atual</button><small class="muted" id="deliveryLocationStatus">Opcional. Use se você estiver no endereço onde o pedido será entregue; isso melhora o aviso de chegada.</small></div>
 <div class="actions-row"><button class="secondary" type="button" data-back="1">Voltar</button><button class="primary" id="saveAddress" type="button">Continuar</button></div>
 <div class="message" id="addressMessage">Preencha rua, número, bairro e complemento / referência para continuar.</div>
 </div>
@@ -166,6 +167,9 @@ async function createRemoteOrder(order){
     p_redeem_title:order.redeemTitle||null
   });
   if(error)throw error;
+  if(order.deliveryCoords?.lat!=null&&order.deliveryCoords?.lng!=null){
+    await trackingDb.rpc('srdogao_set_order_destination',{p_token:data.public_token,p_lat:order.deliveryCoords.lat,p_lng:order.deliveryCoords.lng});
+  }
   return data;
 }
 function showDriverMap(lat,lng){
@@ -291,6 +295,7 @@ function syncOptions(){
 }
 function loadAddress(){
   const saved=checkoutState.address||{};
+  if(checkoutState.deliveryCoords){const s=document.getElementById('deliveryLocationStatus');if(s)s.textContent='✅ Localização da entrega já confirmada.';}
   document.getElementById('street').value=saved.street||'';
   document.getElementById('number').value=saved.number||'';
   document.getElementById('district').value=saved.district||'';
@@ -299,6 +304,16 @@ function loadAddress(){
   if(legacy&&!saved.street){document.getElementById('street').value=legacy}
 }
 
+document.getElementById('captureDeliveryLocation').onclick=()=>{
+  const status=document.getElementById('deliveryLocationStatus');
+  if(!navigator.geolocation){status.textContent='Seu aparelho não permite acessar a localização.';return}
+  status.textContent='Obtendo localização...';
+  navigator.geolocation.getCurrentPosition(pos=>{
+    checkoutState.deliveryCoords={lat:pos.coords.latitude,lng:pos.coords.longitude,accuracy:pos.coords.accuracy};
+    persistCheckout();
+    status.textContent='✅ Localização da entrega confirmada.';
+  },()=>{status.textContent='Não foi possível obter sua localização. Você pode continuar sem ela.'},{enableHighAccuracy:true,timeout:12000,maximumAge:30000});
+};
 function normalizePhone(v){return (v||'').replace(/\D/g,'')}
 function loadCustomer(){
   const saved=checkoutState.customer||JSON.parse(localStorage.getItem('srdogao_customer')||'{}');
@@ -463,7 +478,7 @@ document.getElementById('finishOrder').onclick=async()=>{
   try{
     remoteOrder=await createRemoteOrder({
       customer,address:checkoutState.address||{},deliveryType:checkoutState.deliveryType,payment:checkoutState.payment,
-      items:cart,subtotal,discount,total:finalTotal,couponCode:checkoutState.couponCode||'',redeemTitle:(selectedRedeem()?.title||'')
+      items:cart,deliveryCoords:checkoutState.deliveryCoords||null,subtotal,discount,total:finalTotal,couponCode:checkoutState.couponCode||'',redeemTitle:(selectedRedeem()?.title||'')
     });
   }catch(error){
     finishBtn.disabled=false;finishBtn.textContent='Confirmar pedido';
