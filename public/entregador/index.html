@@ -45,7 +45,7 @@ const $=q=>document.querySelector(q);
 let watchId=null,lastSent=0,profile=null,currentMineOrders=[],autoArrivalSent=new Set();
 
 function toast(t){const x=$('#toast');x.textContent=t;x.style.display='block';setTimeout(()=>x.style.display='none',2200)}
-function addr(a={}){return [a.street,a.number,a.district,a.reference].filter(Boolean).join(', ')}
+function addr(a={}){return [a.street,a.number,a.district,a.city?(a.city+(a.state?' - '+a.state:'')):'',a.cep,a.reference].filter(Boolean).join(', ')}
 function money(v){return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(v)||0)}
 async function sendPush(event,orderId=null){
   try{await sb.functions.invoke('srdogao-delivery-push',{body:{event,order_id:orderId}})}catch(e){}
@@ -73,7 +73,7 @@ async function loadOrders(){
   if(error){toast('Não foi possível carregar as entregas');return}
   const orders=Array.isArray(data)?data:[],mine=orders.filter(o=>o.driver_id),ready=orders.filter(o=>!o.driver_id);currentMineOrders=mine;
   $('#multiNote').classList.toggle('hidden',mine.length<2);
-  if(mine.length>=2)$('#multiNote').textContent='🛵 Você está com '+mine.length+' entregas na rota. Os clientes serão avisados quando houver outras entregas antes deles.';
+  if(mine.length>=2)$('#multiNote').textContent='🛵 Você está com outras entregas na rota. Os clientes serão avisados que existem outras entregas no caminho.';
   $('#myOrders').innerHTML=mine.length?mine.map((o,i)=>orderCard(o,true,i)).join(''):'<div class="empty">Nenhuma entrega em rota.</div>';
   $('#readyOrders').innerHTML=ready.length?ready.map(o=>orderCard(o,false)).join(''):'<div class="empty">Nenhum pedido liberado no momento.</div>';
   bind();
