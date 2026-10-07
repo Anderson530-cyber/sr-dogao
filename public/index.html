@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#ffd600"><title>Sr. Dogão | É bom pra mais de metro!</title>
+<meta name="theme-color" content="#ffd600"><title>Sr. Dogão | É bom pra mais de metro!</title><link rel="manifest" href="/manifest.webmanifest"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default">
 <style>
 :root{--yellow:#ffd600;--yellow2:#ffea00;--red:#d70b13;--dark:#35100b;--cream:#fffaf0;--white:#fff}
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:Arial,Helvetica,sans-serif;color:var(--dark);background:var(--cream)}a{text-decoration:none;color:inherit}
@@ -75,4 +75,4 @@ $('#faqBtn').onclick=e=>{e.preventDefault();$('#infoTitle').textContent='Dúvida
 $$('[data-soon]').forEach(el=>el.onclick=e=>{e.preventDefault();const name=el.dataset.soon||'Esta área';$('#soonTitle').textContent=name;$('#soonBody').innerHTML='<p>Esta área ainda está sendo configurada. Em breve estará disponível.</p>';openModal('#soonModal')});
 renderCart();
 loadStoreProducts();
-</script></body></html>
+if("serviceWorker" in navigator)navigator.serviceWorker.register("/sw.js").catch(()=>{});</script></body></html>
