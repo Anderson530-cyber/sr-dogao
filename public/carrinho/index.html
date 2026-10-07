@@ -129,10 +129,11 @@ const getCart=()=>JSON.parse(localStorage.getItem('srdogao_cart')||'[]');
 const saveCart=cart=>localStorage.setItem('srdogao_cart',JSON.stringify(cart));
 let currentStep=1;
 let checkoutState=JSON.parse(localStorage.getItem('srdogao_checkout')||'{}');
-const orderCompleted=()=>localStorage.getItem('srdogao_last_order_completed')==='1';
+const orderCompleted=()=>getCart().length===0&&localStorage.getItem('srdogao_last_order_completed')==='1';
 
 
 function showCompletedOrder(){
+  if(getCart().length>0){localStorage.removeItem('srdogao_last_order_completed');localStorage.removeItem('srdogao_last_order');return false}
   const saved=JSON.parse(localStorage.getItem('srdogao_last_order')||'null');
   if(!saved)return false;
   document.getElementById('empty').hidden=true;
