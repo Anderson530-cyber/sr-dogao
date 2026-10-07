@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#ffd600">
+<title>Carrinho | Sr. Dogão</title>
+<style>
+:root{--y:#ffd600;--r:#d70b13;--d:#35100b;--c:#fffaf0;--w:#fff;--muted:#7a655d}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--c);color:var(--d)}
+a{text-decoration:none;color:inherit}
+header{background:var(--y);position:sticky;top:0;z-index:10;box-shadow:0 2px 14px #6b2c0015}
+.top{max-width:1120px;margin:auto;min-height:82px;padding:10px 20px;display:flex;align-items:center;gap:18px}
+.logo{width:118px;height:62px;object-fit:contain}.title{font-size:1.15rem;font-weight:900}.back{margin-left:auto;background:var(--r);color:#fff;padding:12px 18px;border-radius:24px;font-weight:900}
+.wrap{max-width:1120px;margin:auto;padding:34px 20px 54px}.head{display:flex;align-items:end;justify-content:space-between;gap:16px;margin-bottom:22px}.head h1{margin:0;font-size:2rem}.head p{margin:6px 0 0;color:var(--muted)}
+.layout{display:grid;grid-template-columns:1.5fr .8fr;gap:22px}.panel{background:#fff;border-radius:22px;box-shadow:0 8px 26px #4d160012;border:1px solid #f0e2d6}
+.items{padding:8px 18px}.item{display:grid;grid-template-columns:1fr auto auto;gap:16px;align-items:center;padding:18px 0;border-bottom:1px solid #f1e7de}.item:last-child{border-bottom:0}.item h3{margin:0 0 5px;font-size:1.05rem}.item small{color:var(--muted)}.qty{display:flex;align-items:center;gap:8px;background:#fff7d6;border-radius:999px;padding:5px}.qty button{border:0;width:32px;height:32px;border-radius:50%;background:var(--y);font-size:1.1rem;font-weight:900;cursor:pointer}.qty span{min-width:22px;text-align:center;font-weight:900}.price{font-weight:900;color:var(--r);min-width:88px;text-align:right}.remove{border:0;background:transparent;color:#a44;font-weight:800;cursor:pointer;padding:4px 0;margin-top:6px}
+.summary{padding:22px;position:sticky;top:104px}.summary h2{margin:0 0 18px}.line{display:flex;justify-content:space-between;gap:12px;padding:9px 0;color:var(--muted)}.total{display:flex;justify-content:space-between;gap:12px;border-top:1px solid #eaded3;margin-top:8px;padding-top:18px;font-size:1.25rem;font-weight:1000}.checkout{width:100%;border:0;background:var(--r);color:#fff;padding:15px 18px;border-radius:28px;font-weight:900;font-size:1rem;margin-top:18px;cursor:pointer}.continue{display:block;text-align:center;margin-top:12px;font-weight:800;color:var(--r)}
+.empty{padding:48px 24px;text-align:center}.empty .icon{font-size:3rem}.empty h2{margin:12px 0 6px}.empty p{color:var(--muted);margin:0 0 20px}.empty a{display:inline-block;background:var(--r);color:#fff;padding:13px 22px;border-radius:26px;font-weight:900}
+.notice{display:none;margin-top:16px;background:#fff4bf;border:1px solid #ecd264;padding:13px 15px;border-radius:14px;font-weight:800}
+@media(max-width:760px){.title{display:none}.top{min-height:72px}.logo{width:100px;height:54px}.wrap{padding:24px 14px 40px}.layout{grid-template-columns:1fr}.summary{position:static}.item{grid-template-columns:1fr auto}.price{grid-column:2}.qty{grid-row:1/3;grid-column:2}.item .price{display:none}}
+</style>
+</head>
+<body>
+<header><div class="top"><a href="/"><img class="logo" src="/sr-dogao-logo.png" alt="Sr. Dogão"></a><div class="title">Seu carrinho</div><a class="back" href="/">← Voltar</a></div></header>
+<main class="wrap">
+<div class="head"><div><h1>Carrinho</h1><p>Confira seu pedido antes de continuar.</p></div></div>
+<div id="empty" class="panel empty" hidden><div class="icon">🛒</div><h2>Seu carrinho está vazio</h2><p>Adicione seus favoritos para continuar.</p><a href="/cardapio/">Ver cardápio</a></div>
+<div id="content" class="layout">
+<section class="panel items" id="items"></section>
+<aside class="panel summary">
+<h2>Resumo do pedido</h2>
+<div class="line"><span>Subtotal</span><strong id="subtotal">R$ 0,00</strong></div>
+<div class="line"><span>Entrega</span><strong>A calcular</strong></div>
+<div class="total"><span>Total</span><span id="total">R$ 0,00</span></div>
+<button class="checkout" id="checkout" type="button">Continuar pedido</button>
+<a class="continue" href="/cardapio/">Adicionar mais itens</a>
+<div class="notice" id="notice">A finalização do pedido ainda está sendo configurada.</div>
+</aside>
+</div>
+</main>
+<script>
+const money=v=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v);
+const getCart=()=>JSON.parse(localStorage.getItem('srdogao_cart')||'[]');
+const saveCart=cart=>localStorage.setItem('srdogao_cart',JSON.stringify(cart));
+function render(){
+  const cart=getCart();
+  const empty=document.getElementById('empty');
+  const content=document.getElementById('content');
+  if(!cart.length){empty.hidden=false;content.style.display='none';return}
+  empty.hidden=true;content.style.display='';
+  document.getElementById('items').innerHTML=cart.map((x,i)=>'<div class="item"><div><h3>'+x.name+'</h3><small>'+money(x.price)+' cada</small><br><button class="remove" data-remove="'+i+'">Remover</button></div><div class="qty"><button data-minus="'+i+'">−</button><span>'+x.qty+'</span><button data-plus="'+i+'">+</button></div><div class="price">'+money(x.price*x.qty)+'</div></div>').join('');
+  const subtotal=cart.reduce((a,x)=>a+x.price*x.qty,0);
+  document.getElementById('subtotal').textContent=money(subtotal);
+  document.getElementById('total').textContent=money(subtotal);
+  document.querySelectorAll('[data-plus]').forEach(b=>b.onclick=()=>change(+b.dataset.plus,1));
+  document.querySelectorAll('[data-minus]').forEach(b=>b.onclick=()=>change(+b.dataset.minus,-1));
+  document.querySelectorAll('[data-remove]').forEach(b=>b.onclick=()=>remove(+b.dataset.remove));
+}
+function change(i,d){const cart=getCart();cart[i].qty+=d;if(cart[i].qty<=0)cart.splice(i,1);saveCart(cart);render()}
+function remove(i){const cart=getCart();cart.splice(i,1);saveCart(cart);render()}
+document.getElementById('checkout').onclick=()=>{document.getElementById('notice').style.display='block'};
+render();
+</script>
+</body>
+</html>
