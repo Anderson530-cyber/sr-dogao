@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#ffd600">
+<link rel="manifest" href="/entregador/manifest.webmanifest">
+<title>Entregador | Sr. Dogão</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--y:#ffd600;--r:#d70b13;--d:#35100b;--bg:#fffaf0;--muted:#76635c;--line:#eaded3}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--d)}button,input{font:inherit}.hidden{display:none!important}
+header{background:var(--y);padding:12px 16px;position:sticky;top:0;z-index:5;box-shadow:0 2px 14px #0001}.top{max-width:760px;margin:auto;display:flex;align-items:center;gap:12px}.logo{width:92px;height:52px;object-fit:contain}.top b{font-size:1.05rem}.top button{margin-left:auto}
+.wrap{max-width:760px;margin:auto;padding:20px 14px 42px}.card{background:#fff;border:1px solid var(--line);border-radius:20px;padding:18px;box-shadow:0 8px 24px #4d160010;margin-bottom:14px}
+.field{width:100%;border:1px solid #dacdc3;border-radius:14px;padding:13px 14px;margin:7px 0}.btn{border:0;border-radius:24px;padding:12px 16px;font-weight:900;cursor:pointer}.primary{background:var(--r);color:#fff}.secondary{background:#f5e7dc;color:var(--d)}.yellow{background:var(--y);color:var(--d)}.full{width:100%}.muted{color:var(--muted)}
+.order{border:1px solid var(--line);border-radius:17px;padding:15px;margin-top:12px}.order h3{margin:0 0 5px}.pill{display:inline-block;padding:5px 9px;border-radius:999px;background:#fff3c2;font-size:.78rem;font-weight:900}.meta{display:grid;gap:6px;margin:10px 0}.items{font-size:.92rem;color:#594942}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.actions .btn{flex:1}.route-note{background:#fff4bd;border:1px solid #e7ce64;border-radius:15px;padding:13px;margin-bottom:14px}.gps{display:flex;align-items:center;gap:9px}.dot{width:11px;height:11px;border-radius:50%;background:#aaa}.dot.on{background:#20a45a}.pinrow{display:flex;gap:8px;margin-top:10px}.pinrow input{flex:1;text-align:center;letter-spacing:.25rem;font-size:1.2rem;font-weight:900}.empty{text-align:center;padding:24px;color:var(--muted)}.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#35100b;color:#fff;padding:12px 16px;border-radius:999px;display:none;z-index:20}
+</style>
+</head>
+<body>
+<header><div class="top"><img class="logo" src="/sr-dogao-logo.png" alt="Sr. Dogão"><b>Entregador</b><button class="btn secondary hidden" id="logout">Sair</button></div></header>
+<main class="wrap">
+<section class="card" id="loginCard">
+<h2>Acesso do entregador</h2>
+<p class="muted">Entre com o acesso criado pelo administrador.</p>
+<input class="field" id="email" type="email" placeholder="E-mail">
+<input class="field" id="password" type="password" placeholder="Senha">
+<button class="btn primary full" id="loginBtn">Entrar</button>
+<p class="muted" id="loginMsg"></p>
+</section>
+
+<section id="app" class="hidden">
+<div class="card"><div style="display:flex;align-items:center;justify-content:space-between;gap:12px"><div><h2 style="margin:0">Minhas entregas</h2><p class="muted" id="driverName" style="margin:5px 0 0"></p></div><button class="btn yellow" id="refresh">Atualizar</button></div></div>
+<div class="route-note hidden" id="multiNote"></div>
+<div class="card"><div class="gps"><span class="dot" id="gpsDot"></span><div><b>Localização em tempo real</b><div class="muted" id="gpsText">Desativada</div></div></div><button class="btn primary full" id="startGps" style="margin-top:12px">Iniciar rastreamento</button></div>
+<div class="card"><h2 style="margin-top:0">Em rota</h2><div id="myOrders"></div></div>
+<div class="card"><h2 style="margin-top:0">Disponíveis para entrega</h2><div id="readyOrders"></div></div>
+</section>
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL='https://dlccdfwteekecjiwybfr.supabase.co',SUPABASE_KEY='sb_publishable_izc2on9Gie9UC5iCHSjaBQ_5ItuscE2';
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const $=q=>document.querySelector(q);
+let watchId=null,lastSent=0,profile=null;
+
+function toast(t){const x=$('#toast');x.textContent=t;x.style.display='block';setTimeout(()=>x.style.display='none',2200)}
+function addr(a={}){return [a.street,a.number,a.district,a.reference].filter(Boolean).join(', ')}
+function money(v){return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(v)||0)}
+
+async function loadProfile(){
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session)return false;
+  const {data}=await sb.from('srdogao_delivery_drivers').select('name,active').eq('user_id',session.user.id).maybeSingle();
+  if(!data?.active){await sb.auth.signOut();$('#loginMsg').textContent='Este usuário não está habilitado como entregador.';return false}
+  profile=data;$('#driverName').textContent=data.name;return true;
+}
+async function enter(){
+  if(!(await loadProfile()))return;
+  $('#loginCard').classList.add('hidden');$('#app').classList.remove('hidden');$('#logout').classList.remove('hidden');
+  await loadOrders();
+}
+async function loadOrders(){
+  const {data,error}=await sb.rpc('srdogao_driver_orders');
+  if(error){toast('Não foi possível carregar as entregas');return}
+  const orders=Array.isArray(data)?data:[],mine=orders.filter(o=>o.driver_id),ready=orders.filter(o=>!o.driver_id);
+  $('#multiNote').classList.toggle('hidden',mine.length<2);
+  if(mine.length>=2)$('#multiNote').textContent='🛵 Você está com '+mine.length+' entregas na rota. Os clientes serão avisados quando houver outras entregas antes deles.';
+  $('#myOrders').innerHTML=mine.length?mine.map((o,i)=>orderCard(o,true,i)).join(''):'<div class="empty">Nenhuma entrega em rota.</div>';
+  $('#readyOrders').innerHTML=ready.length?ready.map(o=>orderCard(o,false)).join(''):'<div class="empty">Nenhum pedido liberado no momento.</div>';
+  bind();
+}
+function orderCard(o,mine,index=0){
+  const items=(o.items||[]).map(x=>(x.qty||1)+'× '+x.name).join(' • ');
+  if(!mine)return '<div class="order"><span class="pill">Pronto</span><h3>'+o.customer_name+'</h3><div class="meta"><span>📍 '+addr(o.address)+'</span><span>💰 '+money(o.total)+'</span></div><div class="items">'+items+'</div><div class="actions"><button class="btn primary" data-claim="'+o.id+'">Assumir entrega</button></div></div>';
+  return '<div class="order"><span class="pill">Entrega '+(index+1)+'</span><h3>'+o.customer_name+'</h3><div class="meta"><span>📍 '+addr(o.address)+'</span><span>📞 '+(o.customer_phone||'-')+'</span><span>💳 '+(o.payment||'-')+' • '+money(o.total)+'</span></div><div class="items">'+items+'</div><div class="actions"><button class="btn yellow" data-arriving="'+o.id+'">Avisar chegada (~1 min)</button></div><div class="pinrow"><input class="field" id="pin-'+o.id+'" inputmode="numeric" maxlength="4" placeholder="PIN"><button class="btn primary" data-deliver="'+o.id+'">Confirmar entrega</button></div></div>';
+}
+function bind(){
+  document.querySelectorAll('[data-claim]').forEach(b=>b.onclick=async()=>{b.disabled=true;const {data,error}=await sb.rpc('srdogao_driver_claim_order',{p_order_id:b.dataset.claim});if(error||!data){toast('Não foi possível assumir');b.disabled=false;return}toast('Entrega adicionada à sua rota');await loadOrders()});
+  document.querySelectorAll('[data-arriving]').forEach(b=>b.onclick=async()=>{const {data,error}=await sb.rpc('srdogao_driver_mark_arriving',{p_order_id:b.dataset.arriving});if(error||!data)return toast('Não foi possível avisar');toast('Cliente avisado: chegando em cerca de 1 minuto')});
+  document.querySelectorAll('[data-deliver]').forEach(b=>b.onclick=async()=>{const pin=$('#pin-'+b.dataset.deliver).value.replace(/\D/g,'');if(pin.length!==4)return toast('Digite o PIN de 4 dígitos');b.disabled=true;const {data,error}=await sb.rpc('srdogao_driver_confirm_delivery',{p_order_id:b.dataset.deliver,p_pin:pin});if(error||!data){toast('PIN incorreto');b.disabled=false;return}toast('Entrega confirmada');await loadOrders()});
+}
+function startGps(){
+  if(!navigator.geolocation)return toast('Localização não suportada neste celular');
+  if(watchId!==null)return;
+  $('#startGps').textContent='Rastreamento ativo';$('#startGps').disabled=true;
+  watchId=navigator.geolocation.watchPosition(async pos=>{
+    $('#gpsDot').classList.add('on');$('#gpsText').textContent='Compartilhando sua localização';
+    const now=Date.now();if(now-lastSent<5000)return;lastSent=now;
+    await sb.rpc('srdogao_driver_update_location',{p_lat:pos.coords.latitude,p_lng:pos.coords.longitude});
+  },err=>{$('#gpsText').textContent='Permita o acesso à localização';toast('Ative a localização para iniciar as entregas')},{enableHighAccuracy:true,maximumAge:3000,timeout:12000});
+}
+
+$('#loginBtn').onclick=async()=>{const email=$('#email').value.trim(),password=$('#password').value;if(!email||!password)return;$('#loginBtn').disabled=true;const {error}=await sb.auth.signInWithPassword({email,password});$('#loginBtn').disabled=false;if(error){$('#loginMsg').textContent='E-mail ou senha inválidos.';return}await enter()};
+$('#logout').onclick=async()=>{if(watchId!==null)navigator.geolocation.clearWatch(watchId);await sb.auth.signOut();location.reload()};
+$('#refresh').onclick=loadOrders;$('#startGps').onclick=startGps;
+enter();
+</script>
+</body>
+</html>
