@@ -6,61 +6,174 @@
 <meta name="theme-color" content="#ffd600">
 <title>Carrinho | Sr. Dogão</title>
 <style>
-:root{--y:#ffd600;--r:#d70b13;--d:#35100b;--c:#fffaf0;--w:#fff;--muted:#7a655d}
-*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--c);color:var(--d)}
-a{text-decoration:none;color:inherit}
-header{background:var(--y);position:sticky;top:0;z-index:10;box-shadow:0 2px 14px #6b2c0015}
-.top{max-width:1120px;margin:auto;min-height:82px;padding:10px 20px;display:flex;align-items:center;gap:18px}
-.logo{width:118px;height:62px;object-fit:contain}.title{font-size:1.15rem;font-weight:900}.back{margin-left:auto;background:var(--r);color:#fff;padding:12px 18px;border-radius:24px;font-weight:900}
-.wrap{max-width:1120px;margin:auto;padding:34px 20px 54px}.head{display:flex;align-items:end;justify-content:space-between;gap:16px;margin-bottom:22px}.head h1{margin:0;font-size:2rem}.head p{margin:6px 0 0;color:var(--muted)}
-.layout{display:grid;grid-template-columns:1.5fr .8fr;gap:22px}.panel{background:#fff;border-radius:22px;box-shadow:0 8px 26px #4d160012;border:1px solid #f0e2d6}
-.items{padding:8px 18px}.item{display:grid;grid-template-columns:1fr auto auto;gap:16px;align-items:center;padding:18px 0;border-bottom:1px solid #f1e7de}.item:last-child{border-bottom:0}.item h3{margin:0 0 5px;font-size:1.05rem}.item small{color:var(--muted)}.qty{display:flex;align-items:center;gap:8px;background:#fff7d6;border-radius:999px;padding:5px}.qty button{border:0;width:32px;height:32px;border-radius:50%;background:var(--y);font-size:1.1rem;font-weight:900;cursor:pointer}.qty span{min-width:22px;text-align:center;font-weight:900}.price{font-weight:900;color:var(--r);min-width:88px;text-align:right}.remove{border:0;background:transparent;color:#a44;font-weight:800;cursor:pointer;padding:4px 0;margin-top:6px}
-.summary{padding:22px;position:sticky;top:104px}.summary h2{margin:0 0 18px}.line{display:flex;justify-content:space-between;gap:12px;padding:9px 0;color:var(--muted)}.total{display:flex;justify-content:space-between;gap:12px;border-top:1px solid #eaded3;margin-top:8px;padding-top:18px;font-size:1.25rem;font-weight:1000}.checkout{width:100%;border:0;background:var(--r);color:#fff;padding:15px 18px;border-radius:28px;font-weight:900;font-size:1rem;margin-top:18px;cursor:pointer}.continue{display:block;text-align:center;margin-top:12px;font-weight:800;color:var(--r)}
+:root{--y:#ffd600;--r:#d70b13;--d:#35100b;--c:#fffaf0;--w:#fff;--muted:#7a655d;--line:#eee1d7}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--c);color:var(--d)}a{text-decoration:none;color:inherit}button,input,textarea{font:inherit}
+header{background:var(--y);position:sticky;top:0;z-index:10;box-shadow:0 2px 14px #6b2c0015}.top{max-width:1120px;margin:auto;min-height:82px;padding:10px 20px;display:flex;align-items:center;gap:18px}.logo{width:118px;height:62px;object-fit:contain}.title{font-size:1.15rem;font-weight:900}.back{margin-left:auto;background:var(--r);color:#fff;padding:12px 18px;border-radius:24px;font-weight:900}
+.wrap{max-width:1120px;margin:auto;padding:34px 20px 54px}.head{display:flex;align-items:end;justify-content:space-between;gap:16px;margin-bottom:20px}.head h1{margin:0;font-size:2rem}.head p{margin:6px 0 0;color:var(--muted)}
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:22px}.step-pill{background:#fff;border:1px solid var(--line);border-radius:16px;padding:12px;text-align:center;font-weight:900;color:#8b756c}.step-pill.active{background:var(--y);color:var(--d);border-color:#e6bf00}.step-pill.done{background:#fff6c9;color:#6b5300}
+.layout{display:grid;grid-template-columns:1.5fr .8fr;gap:22px}.panel{background:#fff;border-radius:22px;box-shadow:0 8px 26px #4d160012;border:1px solid #f0e2d6}.items{padding:8px 18px}.item{display:grid;grid-template-columns:1fr auto auto;gap:16px;align-items:center;padding:18px 0;border-bottom:1px solid #f1e7de}.item:last-child{border-bottom:0}.item h3{margin:0 0 5px;font-size:1.05rem}.item small{color:var(--muted)}.qty{display:flex;align-items:center;gap:8px;background:#fff7d6;border-radius:999px;padding:5px}.qty button{border:0;width:32px;height:32px;border-radius:50%;background:var(--y);font-size:1.1rem;font-weight:900;cursor:pointer}.qty span{min-width:22px;text-align:center;font-weight:900}.price{font-weight:900;color:var(--r);min-width:88px;text-align:right}.remove{border:0;background:transparent;color:#a44;font-weight:800;cursor:pointer;padding:4px 0;margin-top:6px}
+.summary{padding:22px;position:sticky;top:104px}.summary h2{margin:0 0 18px}.line{display:flex;justify-content:space-between;gap:12px;padding:9px 0;color:var(--muted)}.total{display:flex;justify-content:space-between;gap:12px;border-top:1px solid #eaded3;margin-top:8px;padding-top:18px;font-size:1.25rem;font-weight:1000}.primary{width:100%;border:0;background:var(--r);color:#fff;padding:15px 18px;border-radius:28px;font-weight:900;font-size:1rem;margin-top:18px;cursor:pointer}.secondary{width:100%;border:1px solid #ead8cc;background:#fff;color:var(--d);padding:13px 18px;border-radius:28px;font-weight:900;margin-top:10px;cursor:pointer}.continue{display:block;text-align:center;margin-top:12px;font-weight:800;color:var(--r)}
+.checkout-box{padding:22px}.checkout-box h2{margin:0 0 6px}.checkout-box .intro{margin:0 0 18px;color:var(--muted)}.field{display:grid;gap:6px;margin:12px 0}.field label{font-weight:800}.field input,.field textarea{width:100%;border:1px solid #dfd2c8;border-radius:14px;padding:13px 14px;background:#fff}.field textarea{min-height:80px;resize:vertical}.options{display:grid;gap:10px;margin-top:14px}.option{border:1px solid #e5d9cf;border-radius:16px;padding:14px;display:flex;align-items:center;gap:12px;cursor:pointer}.option input{accent-color:var(--r);width:18px;height:18px}.option.active{border-color:#e0b900;background:#fff8d7}.option b{display:block}.option small{display:block;color:var(--muted);margin-top:3px}.actions-row{display:flex;gap:10px;margin-top:18px}.actions-row .primary,.actions-row .secondary{margin:0}.message{display:none;margin-top:16px;background:#fff4bf;border:1px solid #ecd264;padding:14px 15px;border-radius:14px;font-weight:800}.success{display:none;text-align:center;padding:36px 18px}.success .icon{font-size:3rem}.success h2{margin:10px 0 6px}.success p{color:var(--muted);max-width:520px;margin:0 auto 18px}.success a{display:inline-block;background:var(--r);color:#fff;padding:13px 22px;border-radius:24px;font-weight:900}
 .empty{padding:48px 24px;text-align:center}.empty .icon{font-size:3rem}.empty h2{margin:12px 0 6px}.empty p{color:var(--muted);margin:0 0 20px}.empty a{display:inline-block;background:var(--r);color:#fff;padding:13px 22px;border-radius:26px;font-weight:900}
-.notice{display:none;margin-top:16px;background:#fff4bf;border:1px solid #ecd264;padding:13px 15px;border-radius:14px;font-weight:800}
-@media(max-width:760px){.title{display:none}.top{min-height:72px}.logo{width:100px;height:54px}.wrap{padding:24px 14px 40px}.layout{grid-template-columns:1fr}.summary{position:static}.item{grid-template-columns:1fr auto}.price{grid-column:2}.qty{grid-row:1/3;grid-column:2}.item .price{display:none}}
+.hidden{display:none!important}
+@media(max-width:760px){.title{display:none}.top{min-height:72px}.logo{width:100px;height:54px}.wrap{padding:24px 14px 40px}.steps{grid-template-columns:repeat(2,1fr)}.layout{grid-template-columns:1fr}.summary{position:static}.item{grid-template-columns:1fr auto}.qty{grid-row:1/3;grid-column:2}.item .price{display:none}.actions-row{flex-direction:column}}
 </style>
 </head>
 <body>
-<header><div class="top"><a href="/"><img class="logo" src="/sr-dogao-logo.png" alt="Sr. Dogão"></a><div class="title">Seu carrinho</div><a class="back" href="/">← Voltar</a></div></header>
+<header><div class="top"><a href="/"><img class="logo" src="/sr-dogao-logo.png" alt="Sr. Dogão"></a><div class="title">Finalizar pedido</div><a class="back" href="/">← Voltar</a></div></header>
 <main class="wrap">
-<div class="head"><div><h1>Carrinho</h1><p>Confira seu pedido antes de continuar.</p></div></div>
+<div class="head"><div><h1 id="pageTitle">Carrinho</h1><p id="pageSubtitle">Confira seu pedido antes de continuar.</p></div></div>
+<div class="steps" id="steps">
+<div class="step-pill active" data-step-pill="1">1. Carrinho</div>
+<div class="step-pill" data-step-pill="2">2. Endereço</div>
+<div class="step-pill" data-step-pill="3">3. Entrega</div>
+<div class="step-pill" data-step-pill="4">4. Pagamento</div>
+</div>
+
 <div id="empty" class="panel empty" hidden><div class="icon">🛒</div><h2>Seu carrinho está vazio</h2><p>Adicione seus favoritos para continuar.</p><a href="/cardapio/">Ver cardápio</a></div>
-<div id="content" class="layout">
+
+<div id="checkoutArea">
+<section id="step1" class="step-content">
+<div class="layout">
 <section class="panel items" id="items"></section>
 <aside class="panel summary">
 <h2>Resumo do pedido</h2>
 <div class="line"><span>Subtotal</span><strong id="subtotal">R$ 0,00</strong></div>
-<div class="line"><span>Entrega</span><strong>A calcular</strong></div>
+<div class="line"><span>Entrega</span><strong id="deliveryLabel">A calcular</strong></div>
 <div class="total"><span>Total</span><span id="total">R$ 0,00</span></div>
-<button class="checkout" id="checkout" type="button">Continuar pedido</button>
+<button class="primary" id="goAddress" type="button">Continuar</button>
 <a class="continue" href="/cardapio/">Adicionar mais itens</a>
-<div class="notice" id="notice">A finalização do pedido ainda está sendo configurada.</div>
 </aside>
 </div>
+</section>
+
+<section id="step2" class="step-content hidden">
+<div class="panel checkout-box">
+<h2>Endereço</h2><p class="intro">Informe onde deseja receber seu pedido.</p>
+<div class="field"><label for="street">Rua / Avenida</label><input id="street" autocomplete="street-address" placeholder="Ex.: Rua das Flores"></div>
+<div class="field"><label for="number">Número</label><input id="number" inputmode="numeric" placeholder="Ex.: 123"></div>
+<div class="field"><label for="district">Bairro</label><input id="district" placeholder="Ex.: Centro"></div>
+<div class="field"><label for="reference">Complemento / referência</label><textarea id="reference" placeholder="Apartamento, bloco, ponto de referência..."></textarea></div>
+<div class="actions-row"><button class="secondary" type="button" data-back="1">Voltar</button><button class="primary" id="saveAddress" type="button">Continuar</button></div>
+<div class="message" id="addressMessage">Preencha rua, número e bairro para continuar.</div>
+</div>
+</section>
+
+<section id="step3" class="step-content hidden">
+<div class="panel checkout-box">
+<h2>Forma de entrega</h2><p class="intro">Escolha como deseja receber o pedido.</p>
+<div class="options">
+<label class="option" data-option="delivery"><input type="radio" name="deliveryType" value="delivery"><span><b>🛵 Entrega</b><small>Receber no endereço informado. Taxa calculada na próxima etapa.</small></span></label>
+<label class="option" data-option="pickup"><input type="radio" name="deliveryType" value="pickup"><span><b>🏪 Retirada</b><small>Retirar o pedido no local. Sem taxa de entrega.</small></span></label>
+</div>
+<div class="actions-row"><button class="secondary" type="button" data-back="2">Voltar</button><button class="primary" id="saveDelivery" type="button">Continuar</button></div>
+<div class="message" id="deliveryMessage">Escolha uma forma de entrega para continuar.</div>
+</div>
+</section>
+
+<section id="step4" class="step-content hidden">
+<div class="panel checkout-box">
+<h2>Pagamento</h2><p class="intro">Escolha como deseja pagar.</p>
+<div class="options">
+<label class="option" data-pay="pix"><input type="radio" name="payment" value="pix"><span><b>⚡ Pix</b><small>Pagamento rápido pelo celular.</small></span></label>
+<label class="option" data-pay="card"><input type="radio" name="payment" value="card"><span><b>💳 Cartão</b><small>Cartão de crédito ou débito.</small></span></label>
+<label class="option" data-pay="cash"><input type="radio" name="payment" value="cash"><span><b>💵 Dinheiro</b><small>Pagamento na entrega ou retirada.</small></span></label>
+</div>
+<div class="actions-row"><button class="secondary" type="button" data-back="3">Voltar</button><button class="primary" id="finishOrder" type="button">Finalizar pedido</button></div>
+<div class="message" id="paymentMessage">Escolha uma forma de pagamento para continuar.</div>
+</div>
+</section>
+
+<section id="success" class="panel success">
+<div class="icon">✅</div><h2>Pedido preparado para finalização</h2>
+<p>O fluxo do carrinho já está funcionando. A integração que envia o pedido e processa o pagamento ainda está sendo configurada.</p>
+<a href="/">Voltar para o início</a>
+</section>
+</div>
 </main>
+
 <script>
-const money=v=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v);
+const money=value=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(value);
 const getCart=()=>JSON.parse(localStorage.getItem('srdogao_cart')||'[]');
 const saveCart=cart=>localStorage.setItem('srdogao_cart',JSON.stringify(cart));
-function render(){
-  const cart=getCart();
-  const empty=document.getElementById('empty');
-  const content=document.getElementById('content');
-  if(!cart.length){empty.hidden=false;content.style.display='none';return}
-  empty.hidden=true;content.style.display='';
-  document.getElementById('items').innerHTML=cart.map((x,i)=>'<div class="item"><div><h3>'+x.name+'</h3><small>'+money(x.price)+' cada</small><br><button class="remove" data-remove="'+i+'">Remover</button></div><div class="qty"><button data-minus="'+i+'">−</button><span>'+x.qty+'</span><button data-plus="'+i+'">+</button></div><div class="price">'+money(x.price*x.qty)+'</div></div>').join('');
-  const subtotal=cart.reduce((a,x)=>a+x.price*x.qty,0);
+let currentStep=1;
+let checkoutState=JSON.parse(localStorage.getItem('srdogao_checkout')||'{}');
+
+function cartSubtotal(){return getCart().reduce((sum,item)=>sum+(Number(item.price)||0)*(Number(item.qty)||0),0)}
+function updateSummary(){
+  const subtotal=cartSubtotal();
+  const delivery=checkoutState.deliveryType==='pickup'?0:null;
   document.getElementById('subtotal').textContent=money(subtotal);
-  document.getElementById('total').textContent=money(subtotal);
-  document.querySelectorAll('[data-plus]').forEach(b=>b.onclick=()=>change(+b.dataset.plus,1));
-  document.querySelectorAll('[data-minus]').forEach(b=>b.onclick=()=>change(+b.dataset.minus,-1));
-  document.querySelectorAll('[data-remove]').forEach(b=>b.onclick=()=>remove(+b.dataset.remove));
+  document.getElementById('deliveryLabel').textContent=delivery===0?'Grátis':'A calcular';
+  document.getElementById('total').textContent=money(subtotal+(delivery||0));
 }
-function change(i,d){const cart=getCart();cart[i].qty+=d;if(cart[i].qty<=0)cart.splice(i,1);saveCart(cart);render()}
-function remove(i){const cart=getCart();cart.splice(i,1);saveCart(cart);render()}
-document.getElementById('checkout').onclick=()=>{document.getElementById('notice').style.display='block'};
-render();
+function renderCart(){
+  const cart=getCart(),empty=document.getElementById('empty'),area=document.getElementById('checkoutArea');
+  if(!cart.length){empty.hidden=false;area.classList.add('hidden');document.getElementById('steps').classList.add('hidden');return}
+  empty.hidden=true;area.classList.remove('hidden');document.getElementById('steps').classList.remove('hidden');
+  document.getElementById('items').innerHTML=cart.map((item,index)=>'<div class="item"><div><h3>'+item.name+'</h3><small>'+money(item.price)+' cada</small><br><button class="remove" type="button" data-remove="'+index+'">Remover</button></div><div class="qty"><button type="button" data-minus="'+index+'">−</button><span>'+item.qty+'</span><button type="button" data-plus="'+index+'">+</button></div><div class="price">'+money(item.price*item.qty)+'</div></div>').join('');
+  document.querySelectorAll('[data-plus]').forEach(button=>button.onclick=()=>changeQty(Number(button.dataset.plus),1));
+  document.querySelectorAll('[data-minus]').forEach(button=>button.onclick=()=>changeQty(Number(button.dataset.minus),-1));
+  document.querySelectorAll('[data-remove]').forEach(button=>button.onclick=()=>removeItem(Number(button.dataset.remove)));
+  updateSummary();
+}
+function changeQty(index,delta){const cart=getCart();if(!cart[index])return;cart[index].qty+=delta;if(cart[index].qty<=0)cart.splice(index,1);saveCart(cart);renderCart()}
+function removeItem(index){const cart=getCart();cart.splice(index,1);saveCart(cart);renderCart()}
+function showStep(step){
+  currentStep=step;
+  document.querySelectorAll('.step-content').forEach(section=>section.classList.add('hidden'));
+  document.getElementById('success').style.display='none';
+  const target=document.getElementById('step'+step);if(target)target.classList.remove('hidden');
+  document.querySelectorAll('[data-step-pill]').forEach(pill=>{
+    const n=Number(pill.dataset.stepPill);pill.classList.toggle('active',n===step);pill.classList.toggle('done',n<step);
+  });
+  const titles={1:['Carrinho','Confira seu pedido antes de continuar.'],2:['Endereço','Informe os dados para entrega.'],3:['Forma de entrega','Escolha entrega ou retirada.'],4:['Pagamento','Escolha como deseja pagar.']};
+  document.getElementById('pageTitle').textContent=titles[step][0];
+  document.getElementById('pageSubtitle').textContent=titles[step][1];
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function persistCheckout(){localStorage.setItem('srdogao_checkout',JSON.stringify(checkoutState))}
+function syncOptions(){
+  if(checkoutState.deliveryType){const radio=document.querySelector('input[name="deliveryType"][value="'+checkoutState.deliveryType+'"]');if(radio)radio.checked=true}
+  if(checkoutState.payment){const radio=document.querySelector('input[name="payment"][value="'+checkoutState.payment+'"]');if(radio)radio.checked=true}
+  document.querySelectorAll('.option').forEach(option=>option.classList.toggle('active',Boolean(option.querySelector('input:checked'))));
+}
+function loadAddress(){
+  const saved=checkoutState.address||{};
+  document.getElementById('street').value=saved.street||'';
+  document.getElementById('number').value=saved.number||'';
+  document.getElementById('district').value=saved.district||'';
+  document.getElementById('reference').value=saved.reference||'';
+  const legacy=localStorage.getItem('srdogao_address');
+  if(legacy&&!saved.street){document.getElementById('street').value=legacy}
+}
+
+document.getElementById('goAddress').onclick=()=>showStep(2);
+document.getElementById('saveAddress').onclick=()=>{
+  const address={street:document.getElementById('street').value.trim(),number:document.getElementById('number').value.trim(),district:document.getElementById('district').value.trim(),reference:document.getElementById('reference').value.trim()};
+  const msg=document.getElementById('addressMessage');
+  if(!address.street||!address.number||!address.district){msg.style.display='block';return}
+  msg.style.display='none';checkoutState.address=address;persistCheckout();localStorage.setItem('srdogao_address',[address.street,address.number,address.district].join(', '));showStep(3);
+};
+document.querySelectorAll('input[name="deliveryType"]').forEach(radio=>radio.onchange=()=>{checkoutState.deliveryType=radio.value;persistCheckout();syncOptions();updateSummary()});
+document.getElementById('saveDelivery').onclick=()=>{
+  const msg=document.getElementById('deliveryMessage');if(!checkoutState.deliveryType){msg.style.display='block';return}msg.style.display='none';showStep(4);
+};
+document.querySelectorAll('input[name="payment"]').forEach(radio=>radio.onchange=()=>{checkoutState.payment=radio.value;persistCheckout();syncOptions()});
+document.getElementById('finishOrder').onclick=()=>{
+  const msg=document.getElementById('paymentMessage');if(!checkoutState.payment){msg.style.display='block';return}msg.style.display='none';
+  checkoutState.updatedAt=new Date().toISOString();persistCheckout();
+  document.querySelectorAll('.step-content').forEach(section=>section.classList.add('hidden'));
+  document.querySelectorAll('[data-step-pill]').forEach(pill=>{pill.classList.remove('active');pill.classList.add('done')});
+  document.getElementById('pageTitle').textContent='Pedido';
+  document.getElementById('pageSubtitle').textContent='Fluxo preparado para integração.';
+  document.getElementById('success').style.display='block';
+  window.scrollTo({top:0,behavior:'smooth'});
+};
+document.querySelectorAll('[data-back]').forEach(button=>button.onclick=()=>showStep(Number(button.dataset.back)));
+document.querySelectorAll('.option input').forEach(input=>input.addEventListener('change',syncOptions));
+
+loadAddress();syncOptions();renderCart();showStep(1);
 </script>
 </body>
 </html>
