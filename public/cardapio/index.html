@@ -39,7 +39,7 @@ function isFavorite(id){return getFavorites().includes(String(id))}
 function timeMinutes(hm){const [h,m]=String(hm||'').split(':').map(Number);return Number.isFinite(h)&&Number.isFinite(m)?h*60+m:null}
 function computeStoreOpen(){
   if(siteSettings.ordersOpen===false)return false;
-  const open=timeMinutes(siteSettings.openTime),close=timeMinutes(siteSettings.closeTime);if(open==null||close==null)return true;
+  const open=timeMinutes(siteSettings.openTime||'18:00'),close=timeMinutes(siteSettings.closeTime||'23:00');
   const parts=new Intl.DateTimeFormat('en-GB',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit',hour12:false}).formatToParts(new Date());
   const h=Number(parts.find(x=>x.type==='hour')?.value||0),m=Number(parts.find(x=>x.type==='minute')?.value||0),now=h*60+m;
   return close>open?(now>=open&&now<close):(now>=open||now<close);
