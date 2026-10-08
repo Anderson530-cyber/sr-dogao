@@ -205,17 +205,31 @@ async function createRemoteOrder(order){
   }
   return data;
 }
+let driverMarkerAnimation=null,driverMapFollow=true;
 function showDriverMap(lat,lng){
-  const box=document.getElementById('driverMap');if(!box||typeof L==='undefined')return;
+  const box=document.getElementById('driverMap');
+  if(!box||typeof L==='undefined'||!Number.isFinite(lat)||!Number.isFinite(lng))return;
   box.classList.add('show');
   if(!driverMap){
     driverMap=L.map('driverMap').setView([lat,lng],16);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(driverMap);
-    driverMarker=L.marker([lat,lng]).addTo(driverMap).bindPopup('Seu entregador');
-  }else{
-    driverMarker.setLatLng([lat,lng]);driverMap.setView([lat,lng],16);
+    // O marcador usa a mesma logo oficial do Sr. Dogão exibida no aplicativo.
+    const logoIcon=L.icon({iconUrl:'/sr-dogao-logo.png',iconSize:[58,58],iconAnchor:[29,29],popupAnchor:[0,-30],className:'srdogao-driver-logo'});
+    driverMarker=L.marker([lat,lng],{icon:logoIcon}).addTo(driverMap).bindPopup('Seu entregador Sr. Dogão');
+    driverMap.on('dragstart zoomstart',()=>{driverMapFollow=false});
+    setTimeout(()=>driverMap.invalidateSize(),100);
+    return;
   }
-  setTimeout(()=>driverMap.invalidateSize(),100);
+  if(driverMarkerAnimation!==null)cancelAnimationFrame(driverMarkerAnimation);
+  const from=driverMarker.getLatLng(),start=performance.now(),duration=1400;
+  function animate(now){
+    const t=Math.min(1,(now-start)/duration),ease=t*t*(3-2*t);
+    driverMarker.setLatLng([from.lat+(lat-from.lat)*ease,from.lng+(lng-from.lng)*ease]);
+    if(t<1)driverMarkerAnimation=requestAnimationFrame(animate);
+    else driverMarkerAnimation=null;
+  }
+  driverMarkerAnimation=requestAnimationFrame(animate);
+  if(driverMapFollow)driverMap.panTo([lat,lng],{animate:true,duration:1.4});
 }
 function customerNotify(token,key,title,body){
   const storageKey='srdogao_notice_'+token+'_'+key;
@@ -242,7 +256,8 @@ function renderDeliveryTracking(data,token,pin){
     customerNotify(token,'delivered','Pedido entregue',message.replace('✅ ',''));
   }
   notice.textContent=message;notice.classList.toggle('show',Boolean(message));
-  if(data.driver_lat!=null&&data.driver_lng!=null)showDriverMap(Number(data.driver_lat),Number(data.driver_lng));
+  if(data.status!=='delivered'&&data.driver_lat!=null&&data.driver_lng!=null)showDriverMap(Number(data.driver_lat),Number(data.driver_lng));
+  else if(data.status==='delivered'){document.getElementById('driverMap')?.classList.remove('show');if(driverMarkerAnimation!==null)cancelAnimationFrame(driverMarkerAnimation);driverMarkerAnimation=null;}
 }
 async function refreshTracking(token,pin){
   if(!token)return;
