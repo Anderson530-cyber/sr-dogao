@@ -289,7 +289,7 @@ function openQuickCart(){renderQuickCart();document.getElementById('quickCartMod
 function closeQuickCart(){document.getElementById('quickCartModal').classList.remove('open')}
 function render(cat=''){
   currentCat=cat;
-  document.getElementById('cats').innerHTML='<button class="'+(!cat?'active':'')+'" data-c="">Todos</button>'+Object.entries(names).map(([k,v])=>'<button class="'+(cat===k?'active':'')+'" data-c="'+k+'"><span class="cat-icon">'+({hotdogs:'🌭',hamburguer:'🍔',barca:'🍟',combos:'🥤',porcoes:'🍟',bebidas:'🥤',sobremesas:'🍨',promocoes:'🏷️'}[k]||'🍽️')+'</span>'+v+'</button>').join('');
+  document.getElementById('cats').innerHTML='<button class="'+(!cat?'active':'')+'" data-c=""><span class="cat-icon">🍽️</span>Todos</button>'+Object.entries(names).map(([k,v])=>'<button class="'+(cat===k?'active':'')+'" data-c="'+k+'"><span class="cat-icon">'+({hotdogs:'🌭',hamburguer:'🍔',barca:'🍟',combos:'🥤',porcoes:'🍟',bebidas:'🥤',sobremesas:'🍨',promocoes:'🏷️'}[k]||'🍽️')+'</span>'+v+'</button>').join('');
   document.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>{const cat=b.dataset.c;const url=cat?'/cardapio/?categoria='+encodeURIComponent(cat):'/cardapio/';history.replaceState(null,'',url);render(cat)});
   let list=cat?products.filter(p=>p.category===cat):products;
   if(searchTerm)list=list.filter(p=>(p.name+' '+(p.description||'')+' '+(p.info||'')).toLowerCase().includes(searchTerm));
