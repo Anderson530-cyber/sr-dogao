@@ -22,7 +22,7 @@ header{background:var(--y);padding:12px 16px;position:sticky;top:0;z-index:5;box
 <section class="card" id="loginCard">
 <h2>Acesso do entregador</h2>
 <p class="muted">Entre com o acesso criado pelo administrador.</p>
-<input class="field" id="email" type="email" placeholder="E-mail">
+<input class="field" id="username" type="text" autocapitalize="none" autocomplete="username" placeholder="Nome de usuário">
 <input class="field" id="password" type="password" placeholder="Senha">
 <button class="btn primary full" id="loginBtn">Entrar</button>
 <p class="muted" id="loginMsg"></p>
@@ -129,7 +129,7 @@ function startGps(){
   },err=>{$('#gpsText').textContent='Permita o acesso à localização';toast('Ative a localização para iniciar as entregas')},{enableHighAccuracy:true,maximumAge:3000,timeout:12000});
 }
 
-$('#loginBtn').onclick=async()=>{const email=$('#email').value.trim(),password=$('#password').value;if(!email||!password)return;$('#loginBtn').disabled=true;const {error}=await sb.auth.signInWithPassword({email,password});$('#loginBtn').disabled=false;if(error){$('#loginMsg').textContent='E-mail ou senha inválidos.';return}await enter()};
+$('#loginBtn').onclick=async()=>{const username=$('#username').value.trim().toLowerCase(),password=$('#password').value;if(!username||!password){$('#loginMsg').textContent='Informe usuário e senha.';return}if(!/^[a-z0-9][a-z0-9._-]{2,29}$/.test(username)){$('#loginMsg').textContent='Nome de usuário inválido.';return}const email=username+'@entregador.srdogao.internal';$('#loginBtn').disabled=true;const {error}=await sb.auth.signInWithPassword({email,password});$('#loginBtn').disabled=false;if(error){$('#loginMsg').textContent='Usuário ou senha inválidos.';return}await enter()};
 $('#logout').onclick=async()=>{if(watchId!==null)navigator.geolocation.clearWatch(watchId);await sb.auth.signOut();location.reload()};
 $('#refresh').onclick=loadOrders;$('#startGps').onclick=startGps;
 enter();
