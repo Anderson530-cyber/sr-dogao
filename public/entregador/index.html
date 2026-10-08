@@ -13,7 +13,7 @@
 header{background:var(--y);padding:12px 16px;position:sticky;top:0;z-index:5;box-shadow:0 2px 14px #0001}.top{max-width:760px;margin:auto;display:flex;align-items:center;gap:12px}.logo{width:92px;height:52px;object-fit:contain}.top b{font-size:1.05rem}.top button{margin-left:auto}
 .wrap{max-width:760px;margin:auto;padding:20px 14px 42px}.card{background:#fff;border:1px solid var(--line);border-radius:20px;padding:18px;box-shadow:0 8px 24px #4d160010;margin-bottom:14px}
 .field{width:100%;border:1px solid #dacdc3;border-radius:14px;padding:13px 14px;margin:7px 0}.btn{border:0;border-radius:24px;padding:12px 16px;font-weight:900;cursor:pointer}.primary{background:var(--r);color:#fff}.secondary{background:#f5e7dc;color:var(--d)}.yellow{background:var(--y);color:var(--d)}.full{width:100%}.muted{color:var(--muted)}
-.order{border:1px solid var(--line);border-radius:17px;padding:15px;margin-top:12px}.order h3{margin:0 0 5px}.pill{display:inline-block;padding:5px 9px;border-radius:999px;background:#fff3c2;font-size:.78rem;font-weight:900}.meta{display:grid;gap:6px;margin:10px 0}.items{font-size:.92rem;color:#594942}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.actions .btn{flex:1}.route-note{background:#fff4bd;border:1px solid #e7ce64;border-radius:15px;padding:13px;margin-bottom:14px}.gps{display:flex;align-items:center;gap:9px}.dot{width:11px;height:11px;border-radius:50%;background:#aaa}.dot.on{background:#20a45a}.pinrow{display:flex;gap:8px;margin-top:10px}.pinrow input{flex:1;text-align:center;letter-spacing:.25rem;font-size:1.2rem;font-weight:900}.empty{text-align:center;padding:24px;color:var(--muted)}.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#35100b;color:#fff;padding:12px 16px;border-radius:999px;display:none;z-index:20}
+.order{border:1px solid var(--line);border-radius:17px;padding:15px;margin-top:12px}.order h3{margin:0 0 5px}.pill{display:inline-block;padding:5px 9px;border-radius:999px;background:#fff3c2;font-size:.78rem;font-weight:900}.meta{display:grid;gap:6px;margin:10px 0}.items{font-size:.92rem;color:#594942}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.actions .btn{flex:1;text-align:center;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}.validation-msg{font-weight:800;font-size:.93rem;margin:10px 0 0}.pinrow.hidden{display:none}.route-note{background:#fff4bd;border:1px solid #e7ce64;border-radius:15px;padding:13px;margin-bottom:14px}.gps{display:flex;align-items:center;gap:9px}.dot{width:11px;height:11px;border-radius:50%;background:#aaa}.dot.on{background:#20a45a}.pinrow{display:flex;gap:8px;margin-top:10px}.pinrow input{flex:1;text-align:center;letter-spacing:.25rem;font-size:1.2rem;font-weight:900}.empty{text-align:center;padding:24px;color:var(--muted)}.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#35100b;color:#fff;padding:12px 16px;border-radius:999px;display:none;z-index:20}
 </style>
 </head>
 <body>
@@ -42,10 +42,11 @@ header{background:var(--y);padding:12px 16px;position:sticky;top:0;z-index:5;box
 const SUPABASE_URL='https://dlccdfwteekecjiwybfr.supabase.co',SUPABASE_KEY='sb_publishable_izc2on9Gie9UC5iCHSjaBQ_5ItuscE2';
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const $=q=>document.querySelector(q);
-let watchId=null,lastSent=0,profile=null,currentMineOrders=[],autoArrivalSent=new Set();
+let watchId=null,lastSent=0,profile=null,currentMineOrders=[],autoArrivalSent=new Set(),deliveryStages=new Map();
 
 function toast(t){const x=$('#toast');x.textContent=t;x.style.display='block';setTimeout(()=>x.style.display='none',2200)}
 function addr(a={}){return [a.street,a.number,a.district,a.city?(a.city+(a.state?' - '+a.state:'')):'',a.cep,a.reference].filter(Boolean).join(', ')}
+function safeHtml(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function money(v){return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(v)||0)}
 async function sendPush(event,orderId=null){
   try{await sb.functions.invoke('srdogao-delivery-push',{body:{event,order_id:orderId}})}catch(e){}
@@ -79,14 +80,33 @@ async function loadOrders(){
   bind();
 }
 function orderCard(o,mine,index=0){
-  const items=(o.items||[]).map(x=>(x.qty||1)+'× '+x.name).join(' • ');
-  if(!mine)return '<div class="order"><span class="pill">Pronto</span><h3>'+o.customer_name+'</h3><div class="meta"><span>📍 '+addr(o.address)+'</span><span>💰 '+money(o.total)+'</span></div><div class="items">'+items+'</div><div class="actions"><button class="btn primary" data-claim="'+o.id+'">Assumir entrega</button></div></div>';
-  return '<div class="order"><span class="pill">Entrega '+(index+1)+'</span><h3>'+o.customer_name+'</h3><div class="meta"><span>📍 '+addr(o.address)+'</span><span>📞 '+(o.customer_phone||'-')+'</span><span>💳 '+(o.payment||'-')+' • '+money(o.total)+'</span></div><div class="items">'+items+'</div><div class="actions"><button class="btn yellow" data-arriving="'+o.id+'">Avisar chegada (~1 min)</button></div><div class="pinrow"><input class="field" id="pin-'+o.id+'" inputmode="numeric" maxlength="4" placeholder="PIN"><button class="btn primary" data-deliver="'+o.id+'">Confirmar entrega</button></div></div>';
+  const items=(o.items||[]).map(x=>safeHtml(x.qty||1)+'× '+safeHtml(x.name)).join(' • ');
+  const id=safeHtml(o.id),address=addr(o.address),phone=String(o.customer_phone||'').replace(/[^\d+]/g,'');
+  if(!mine)return '<div class="order"><span class="pill">Pronto</span><h3>'+safeHtml(o.customer_name)+'</h3><div class="meta"><span>📍 '+safeHtml(address)+'</span><span>💰 '+money(o.total)+'</span></div><div class="items">'+items+'</div><div class="actions"><button class="btn primary" data-claim="'+id+'">Assumir entrega</button></div></div>';
+  const stage=deliveryStages.get(String(o.id))||'selected';
+  const maps='https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(address)+'&travelmode=driving';
+  const contact=phone?'https://wa.me/'+phone.replace(/\D/g,''):'';
+  const controls=stage==='selected'?'<button class="btn primary full" data-start="'+id+'">Entregar</button>':
+    stage==='onway'?'<button class="btn primary full" data-arriving="'+id+'">Cheguei</button>':
+    '<button class="btn primary full" data-finish="'+id+'">Finalizar entrega</button>';
+  const pinBox='<div class="pinrow hidden" id="confirm-'+id+'"><input class="field" id="pin-'+id+'" inputmode="numeric" maxlength="4" autocomplete="one-time-code" placeholder="Código de 4 dígitos" aria-label="Código de confirmação"><button class="btn primary" data-deliver="'+id+'">Validar código</button></div><p class="validation-msg" id="result-'+id+'" role="status" aria-live="polite"></p>';
+  return '<div class="order"><span class="pill">Entrega '+(index+1)+'</span><h3>'+safeHtml(o.customer_name)+'</h3><div class="meta"><span>📍 '+safeHtml(address)+'</span><span>📞 '+safeHtml(o.customer_phone||'-')+'</span><span>💳 '+safeHtml(o.payment||'-')+' • '+money(o.total)+'</span></div><div class="items">'+items+'</div><div class="actions"><a class="btn yellow" href="'+safeHtml(maps)+'" target="_blank" rel="noopener noreferrer">🗺️ Mapas</a>'+(contact?'<a class="btn secondary" href="'+safeHtml(contact)+'" target="_blank" rel="noopener noreferrer">📞 Entrar em contato</a>':'<button class="btn secondary" disabled>Contato indisponível</button>')+'</div><div class="actions">'+controls+'</div>'+pinBox+'</div>';
 }
 function bind(){
   document.querySelectorAll('[data-claim]').forEach(b=>b.onclick=async()=>{b.disabled=true;const {data,error}=await sb.rpc('srdogao_driver_claim_order',{p_order_id:b.dataset.claim});if(error||!data){toast('Não foi possível assumir');b.disabled=false;return}toast('Entrega adicionada à sua rota');await sendPush('route_update');await loadOrders()});
-  document.querySelectorAll('[data-arriving]').forEach(b=>b.onclick=async()=>{const {data,error}=await sb.rpc('srdogao_driver_mark_arriving',{p_order_id:b.dataset.arriving});if(error||!data)return toast('Não foi possível avisar');await sendPush('arriving',b.dataset.arriving);toast('Cliente avisado: chegando em cerca de 1 minuto')});
-  document.querySelectorAll('[data-deliver]').forEach(b=>b.onclick=async()=>{const pin=$('#pin-'+b.dataset.deliver).value.replace(/\D/g,'');if(pin.length!==4)return toast('Digite o PIN de 4 dígitos');b.disabled=true;const {data,error}=await sb.rpc('srdogao_driver_confirm_delivery',{p_order_id:b.dataset.deliver,p_pin:pin});if(error||!data){toast('PIN incorreto');b.disabled=false;return}await sendPush('delivered',b.dataset.deliver);await sendPush('route_update');toast('Entrega confirmada');await loadOrders()});
+  document.querySelectorAll('[data-start]').forEach(b=>b.onclick=async()=>{deliveryStages.set(b.dataset.start,'onway');await sendPush('route_update',b.dataset.start);toast('Entrega a caminho');await loadOrders()});
+  document.querySelectorAll('[data-arriving]').forEach(b=>b.onclick=async()=>{b.disabled=true;const {data,error}=await sb.rpc('srdogao_driver_mark_arriving',{p_order_id:b.dataset.arriving});if(error||!data){toast('Não foi possível avisar a chegada');b.disabled=false;return}deliveryStages.set(b.dataset.arriving,'arrived');await sendPush('arriving',b.dataset.arriving);toast('Cliente avisado da chegada');await loadOrders()});
+  document.querySelectorAll('[data-finish]').forEach(b=>b.onclick=()=>{b.classList.add('hidden');$('#confirm-'+b.dataset.finish).classList.remove('hidden');$('#pin-'+b.dataset.finish).focus()});
+  document.querySelectorAll('[data-deliver]').forEach(b=>b.onclick=async()=>{
+    const id=b.dataset.deliver,pin=$('#pin-'+id).value.replace(/\D/g,''),result=$('#result-'+id);
+    if(pin.length!==4){result.textContent='Digite o código de 4 dígitos.';result.style.color='#b42318';return}
+    b.disabled=true;result.textContent='Validando código...';result.style.color='';
+    const {data,error}=await sb.rpc('srdogao_driver_confirm_delivery',{p_order_id:id,p_pin:pin});
+    if(error||!data){result.textContent='✕ Código incorreto. Verifique com o cliente e digite novamente.';result.style.color='#b42318';$('#pin-'+id).value='';b.disabled=false;$('#pin-'+id).focus();return}
+    result.textContent='✓ Código validado com sucesso!';result.style.color='#16803c';
+    deliveryStages.delete(id);await sendPush('delivered',id);await sendPush('route_update');toast('✓ Entrega concluída com sucesso!');
+    setTimeout(()=>loadOrders(),1600);
+  });
 }
 function startGps(){
   if(!navigator.geolocation)return toast('Localização não suportada neste celular');
