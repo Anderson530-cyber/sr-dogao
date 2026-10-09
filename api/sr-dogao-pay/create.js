@@ -32,7 +32,7 @@ export default async function handler(req,res) {
    customer,billingType:'PIX',value:Number(reservation.amount_cents)/100,
    dueDate:new Date(Date.now()+86400000).toISOString().slice(0,10),
    externalReference:reservation.payment_id,
-   description:'Sr. Dogão pedido '+orderId
+   description:'Dogão Pay - pedido '+orderId
   }});
   if(typeof payment.id!=='string') throw new Error('missing_payment_id');
   await db('srdogao_pay_payments',{method:'PATCH',
