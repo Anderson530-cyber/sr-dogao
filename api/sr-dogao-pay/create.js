@@ -12,9 +12,7 @@ export default async function handler(req,res) {
  if(typeof orderId!=='string'||!uuid.test(orderId)||typeof token!=='string'||!uuid.test(token))
   return res.status(400).json({error:'invalid_credentials'});
  
- // Customer mapping must be a trusted server-side Asaas customer ID.
- const customer=process.env.DOGAO_PAY_ASAAS_CUSTOMER_ID;
- if(!customer||!process.env.ASAAS_API_KEY) return res.status(503).json({error:'asaas_production_not_configured'});
+ if(!process.env.ASAAS_API_KEY) return res.status(503).json({error:'asaas_production_not_configured'});
  let reservation;
  try {
   const rows=await db('rpc/srdogao_pay_reserve',{method:'POST',body:{
@@ -27,8 +25,16 @@ export default async function handler(req,res) {
   return res.status(409).json({error:'order_unavailable_or_payment_exists'});
  }
  try {
+  const orders=await db('srdogao_orders',{query:'?id=eq.'+encodeURIComponent(orderId)+'&select=id,customer_name,customer_phone'});
+  const order=orders?.[0];
+  if(!order?.customer_name||!order?.customer_phone) throw new Error('missing_customer');
+  const customerResponse=await asaasRequest('/customers',{method:'POST',body:{
+   name:order.customer_name,mobilePhone:String(order.customer_phone).replace(/\\D/g,''),
+   externalReference:'dogao-order-'+orderId
+  }});
+  if(!customerResponse?.id)throw new Error('missing_customer_id');
   const payment=await asaasRequest('/payments',{method:'POST',body:{
-   customer,billingType:method,value:Number(reservation.amount_cents)/100,
+   customer:customerResponse.id,billingType:method,value:Number(reservation.amount_cents)/100,
    dueDate:new Date(Date.now()+86400000).toISOString().slice(0,10),
    externalReference:reservation.payment_id,
    description:'Dogão Pay - pedido '+orderId
