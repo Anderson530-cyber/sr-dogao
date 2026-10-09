@@ -12,7 +12,7 @@ export async function asaasRequest(path, { method = 'GET', body } = {}) {
  if (!path.startsWith('/') || path.startsWith('//')) throw new Error('INVALID_PATH');
  const response = await fetch(BASE[environment()] + path, {
   method,
-  headers: { 'access_token': key, 'Content-Type': 'application/json', 'User-Agent': 'SrDogaoPay/0.1' },
+  headers: { 'access_token': key, 'Content-Type': 'application/json', 'User-Agent': 'DogaoPay/0.1' },
   ...(body === undefined ? {} : { body: JSON.stringify(body) })
  });
  const data = await response.json().catch(() => ({}));
