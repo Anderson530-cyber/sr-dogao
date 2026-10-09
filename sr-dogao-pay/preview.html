@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sr. Dogão Pay — Prévia</title>
+<style>
+:root{font-family:Arial,Helvetica,sans-serif;color:#321b13;background:#fff9ed}*{box-sizing:border-box}
+body{margin:0;min-height:100vh}.top{background:#ffdb00;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:4px solid #e6b700}
+.brand{font-weight:900;font-size:1.15rem}.tag{font-size:.75rem;font-weight:800;border:1px solid #8a5b00;border-radius:20px;padding:6px 10px}
+main{width:min(100% - 28px,500px);margin:35px auto 60px}.card{background:white;border:1px solid #f1e4d1;border-radius:24px;padding:24px;box-shadow:0 12px 40px #45200014}
+h1{font-size:1.65rem;margin:0 0 8px}p{line-height:1.5}.muted{color:#725d4f;font-size:.9rem}
+.total{background:#fff5d7;border-radius:16px;padding:18px;display:flex;justify-content:space-between;align-items:center;margin:20px 0}
+.total strong{font-size:1.4rem}.tabs{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:22px}
+button{font:inherit;cursor:pointer}.tab{padding:16px 10px;border:2px solid #e7ddd0;border-radius:14px;background:#fff;font-weight:800}.tab[aria-selected=true]{border-color:#d71920;background:#fff3f3;color:#b40c13}
+.panel{border:1px solid #f0e5d7;border-radius:16px;padding:20px;text-align:center;min-height:225px}.qr{width:152px;height:152px;margin:10px auto;border:2px dashed #d5c7b5;border-radius:14px;display:grid;place-items:center;color:#8b7b6b;background:#fffdf9;font-size:2.8rem}
+.action{border:0;border-radius:13px;padding:15px 18px;background:#d71920;color:#fff;font-weight:900;width:100%;margin-top:15px}.action:disabled{background:#b9aea5;cursor:not-allowed}
+.note{font-size:.84rem;color:#786458;text-align:center;margin-top:16px}.secure{display:flex;justify-content:center;gap:8px;align-items:center;font-size:.85rem;color:#6e584a;margin-top:18px}
+[hidden]{display:none!important}@media(max-width:420px){.card{padding:18px}.total{padding:14px}}
+</style></head><body>
+<header class="top"><div class="brand">🌭 Sr. Dogão <span style="color:#d71920">Pay</span></div><span class="tag">PRÉVIA • SEM COBRANÇAS</span></header>
+<main><section class="card" aria-labelledby="title">
+<h1 id="title">Pagamento do pedido</h1><p class="muted">Escolha como deseja pagar. Esta é uma prévia visual; nenhum pagamento será iniciado.</p>
+<div class="total"><span>Total do pedido</span><strong>—</strong></div>
+<div class="tabs" role="tablist" aria-label="Forma de pagamento">
+<button class="tab" type="button" role="tab" id="pix-tab" aria-controls="pix-panel" aria-selected="true">▦ Pix</button>
+<button class="tab" type="button" role="tab" id="card-tab" aria-controls="card-panel" aria-selected="false">▤ Cartão de crédito</button>
+</div>
+<div class="panel" id="pix-panel" role="tabpanel" aria-labelledby="pix-tab">
+<strong>Pague com Pix</strong><div class="qr" aria-label="QR Code ilustrativo, não utilizável">▦</div>
+<p class="muted">O QR Code real e o código copia e cola aparecerão aqui quando a integração estiver ativada.</p>
+<button class="action" disabled>Copiar código Pix</button>
+</div>
+<div class="panel" id="card-panel" role="tabpanel" aria-labelledby="card-tab" hidden>
+<div style="font-size:3rem;margin:18px 0">💳</div><strong>Pague com cartão de crédito</strong>
+<p class="muted">Você será direcionado ao ambiente seguro do Asaas. Os dados do cartão não serão armazenados pelo Sr. Dogão.</p>
+<button class="action" disabled>Ir para pagamento seguro</button>
+</div>
+<div class="secure">🔒 Pagamento seguro • Processamento pelo Asaas</div>
+</section><p class="note">Protótipo de interface. Não compartilhe informações de cartão nesta página.</p></main>
+<script>
+const tabs=[document.getElementById('pix-tab'),document.getElementById('card-tab')];
+const panels=[document.getElementById('pix-panel'),document.getElementById('card-panel')];
+tabs.forEach((tab,i)=>tab.addEventListener('click',()=>{tabs.forEach((t,j)=>t.setAttribute('aria-selected',String(i===j)));panels.forEach((p,j)=>p.hidden=i!==j)}));
+</script></body></html>
