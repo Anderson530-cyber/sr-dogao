@@ -30,5 +30,5 @@ export default async function handler(req,res){
    return res.status(200).json({method:'PIX',status:charge.status,qr_code:qr.encodedImage||null,copy_paste:qr.payload||null,expires_at:qr.expirationDate||null});
   }
   return res.status(409).json({error:'unsupported_method'});
- }catch(error){console.error('Dogao Pay recovery stage:',stage,'error:',error?.message);return res.status(503).json({error:'recovery_unavailable',stage});}
+ }catch(error){console.error('Dogao Pay recovery stage:',stage,'error:',error?.message);return res.status(503).json({error:'recovery_unavailable',stage,reason:/^DATABASE_(HTTP_\d{3}|NOT_CONFIGURED|INVALID_RESPONSE)$/.test(error?.message||'')?error.message:'server_error'});}
 }
