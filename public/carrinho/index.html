@@ -107,7 +107,6 @@ header{background:var(--y);position:sticky;top:0;z-index:10;box-shadow:0 2px 14p
 <div class="options">
 <label class="option" data-pay="pix"><input type="radio" name="payment" value="pix"><span><b>⚡ Pix</b><small>Pagamento rápido pelo celular.</small></span></label>
 <label class="option" data-pay="card"><input type="radio" name="payment" value="card"><span><b>💳 Cartão</b><small>Cartão de crédito ou débito.</small></span></label>
-<label class="option" data-pay="cash"><input type="radio" name="payment" value="cash"><span><b>💵 Dinheiro</b><small>Pagamento na entrega ou retirada.</small></span></label>
 </div>
 <div class="coupon-area">
 <h3>Cupom de desconto</h3>
@@ -162,6 +161,8 @@ const getCart=()=>JSON.parse(localStorage.getItem('srdogao_cart')||'[]');
 const saveCart=cart=>localStorage.setItem('srdogao_cart',JSON.stringify(cart));
 let currentStep=1;
 let checkoutState=JSON.parse(localStorage.getItem('srdogao_checkout')||'{}');
+// Métodos legados não podem continuar selecionados após a remoção de dinheiro.
+if(!['pix','card'].includes(checkoutState.payment)){checkoutState.payment='';localStorage.setItem('srdogao_checkout',JSON.stringify(checkoutState));}
 let siteSettings={},storeOpen=true;
 const orderCompleted=()=>getCart().length===0&&localStorage.getItem('srdogao_last_order_completed')==='1';
 
@@ -293,7 +294,7 @@ function showCompletedOrder(){
   document.getElementById('pageTitle').textContent='Pedido finalizado';
   document.getElementById('pageSubtitle').textContent='Este pedido já foi concluído.';
   const a=saved.address||{}, customer=saved.customer||{};
-  document.getElementById('successInfo').innerHTML='<p><b>Cliente:</b> '+(customer.name||'-')+'</p><p><b>Telefone:</b> '+(customer.phone||'-')+'</p><p><b>Endereço:</b> '+[a.street,a.number,a.district,a.city?(a.city+(a.state?' - '+a.state:'')):'',a.cep,a.reference].filter(Boolean).join(', ')+'</p><p><b>Entrega:</b> '+(saved.deliveryType==='pickup'?'Retirada':'Entrega')+'</p><p><b>Pagamento:</b> '+({pix:'Pix',card:'Cartão',cash:'Dinheiro'}[saved.payment]||saved.payment)+'</p><p><b>Subtotal:</b> '+money(saved.subtotal!=null?saved.subtotal:saved.total||0)+'</p>'+(saved.couponCode?'<p><b>Cupom:</b> '+saved.couponCode+'</p>':'')+(saved.redeemTitle?'<p><b>Resgate:</b> '+saved.redeemTitle+'</p>':'')+(saved.discount?'<p><b>Desconto total:</b> - '+money(saved.discount)+'</p>':'')+'<p><b>Total:</b> '+money(saved.total||0)+'</p>';
+  document.getElementById('successInfo').innerHTML='<p><b>Cliente:</b> '+(customer.name||'-')+'</p><p><b>Telefone:</b> '+(customer.phone||'-')+'</p><p><b>Endereço:</b> '+[a.street,a.number,a.district,a.city?(a.city+(a.state?' - '+a.state:'')):'',a.cep,a.reference].filter(Boolean).join(', ')+'</p><p><b>Entrega:</b> '+(saved.deliveryType==='pickup'?'Retirada':'Entrega')+'</p><p><b>Pagamento:</b> '+({pix:'Pix',card:'Cartão'}[saved.payment]||saved.payment)+'</p><p><b>Subtotal:</b> '+money(saved.subtotal!=null?saved.subtotal:saved.total||0)+'</p>'+(saved.couponCode?'<p><b>Cupom:</b> '+saved.couponCode+'</p>':'')+(saved.redeemTitle?'<p><b>Resgate:</b> '+saved.redeemTitle+'</p>':'')+(saved.discount?'<p><b>Desconto total:</b> - '+money(saved.discount)+'</p>':'')+'<p><b>Total:</b> '+money(saved.total||0)+'</p>';
   document.getElementById('pointsTotal').textContent=saved.pointsTotal||0;
   document.getElementById('pointsEarnedText').textContent='Neste pedido você ganhou '+(saved.pointsEarned||0)+' ponto'+((saved.pointsEarned||0)===1?'':'s')+'.';
   document.getElementById('success').style.display='block';
@@ -640,7 +641,7 @@ document.getElementById('saveDelivery').onclick=()=>{
   persistCheckout();msg.style.display='none';showStep(5);
 };
 document.querySelectorAll('input[name="payment"]').forEach(radio=>radio.onchange=()=>{checkoutState.payment=radio.value;persistCheckout();syncOptions()});
-function paymentLabel(){return ({pix:'Pix',card:'Cartão',cash:'Dinheiro'}[checkoutState.payment]||checkoutState.payment||'-')}
+function paymentLabel(){return ({pix:'Pix',card:'Cartão'}[checkoutState.payment]||checkoutState.payment||'-')}
 function orderDiscountData(){
   const subtotal=cartSubtotal(),delivery=currentDeliveryFee(),selectedReward=selectedRedeem(),couponValue=couponDiscount(),redeemValue=(selectedReward&&selectedReward.type==='discount'&&!checkoutState.couponCode)?redeemDiscount():0;
   return {subtotal,delivery,couponValue,redeemValue,discount:couponValue+redeemValue,total:Math.max(0,subtotal-couponValue-redeemValue)+delivery};
@@ -661,7 +662,7 @@ function renderTracking(status){
 }
 document.getElementById('reviewOrder').onclick=()=>{
   const msg=document.getElementById('paymentMessage');
-  if(!checkoutState.payment){msg.style.display='block';return}
+  if(!['pix','card'].includes(checkoutState.payment)){msg.textContent='Escolha Pix ou cartão para continuar.';msg.style.display='block';return}
   msg.style.display='none';showStep(6);
 };
 document.querySelectorAll('[data-edit-step]').forEach(btn=>btn.onclick=()=>showStep(Number(btn.dataset.editStep)));
@@ -695,7 +696,14 @@ document.getElementById('applyRedeem').onclick=()=>{
   closeRedeemModal();
 };
 
-document.getElementById('finishOrder').onclick=async()=>{if(!storeOpen&&checkoutState.orderTiming!=='scheduled')return;
+document.getElementById('finishOrder').onclick=async()=>{
+  // Segurança: não criar pedido confirmado nem conceder pontos antes da confirmação
+  // de pagamento pelo gateway. A integração real de cobrança ainda não está ativa.
+  const reviewMsg=document.getElementById('reviewMessage');
+  reviewMsg.textContent='Pagamento online ainda indisponível. Seu pedido não foi enviado nem cobrado. Aguarde a liberação do Pix ou cartão.';
+  reviewMsg.style.display='block';
+  return;
+  if(!storeOpen&&checkoutState.orderTiming!=='scheduled')return;
   if(orderCompleted()){showCompletedOrder();return}
   if('Notification' in window&&Notification.permission==='default'){try{await Notification.requestPermission()}catch(e){}}
   const finishBtn=document.getElementById('finishOrder');finishBtn.disabled=true;finishBtn.textContent='Confirmando...';
@@ -754,7 +762,7 @@ document.getElementById('finishOrder').onclick=async()=>{if(!storeOpen&&checkout
   document.getElementById('pageTitle').textContent='Pedido finalizado';
   document.getElementById('pageSubtitle').textContent='Confira abaixo os dados do pedido.';
   const a=checkoutState.address||{};
-  document.getElementById('successInfo').innerHTML='<p><b>Cliente:</b> '+(customer.name||'-')+'</p><p><b>Telefone:</b> '+(customer.phone||'-')+'</p><p><b>Endereço:</b> '+[a.street,a.number,a.district,a.city?(a.city+(a.state?' - '+a.state:'')):'',a.cep,a.reference].filter(Boolean).join(', ')+'</p><p><b>Entrega:</b> '+(checkoutState.deliveryType==='pickup'?'Retirada':'Entrega')+'</p><p><b>Pagamento:</b> '+({pix:'Pix',card:'Cartão',cash:'Dinheiro'}[checkoutState.payment]||checkoutState.payment)+'</p><p><b>Subtotal:</b> '+money(subtotal)+'</p>'+(couponValue>0?'<p><b>Cupom:</b> '+checkoutState.couponCode+' (- '+money(couponValue)+')</p>':'')+(selectedRedeem()?'<p><b>Resgate:</b> '+selectedRedeem().title+(redeemValue>0?' (- '+money(redeemValue)+')':'')+'</p>':'')+'<p><b>Total:</b> '+money(finalTotal)+'</p>';
+  document.getElementById('successInfo').innerHTML='<p><b>Cliente:</b> '+(customer.name||'-')+'</p><p><b>Telefone:</b> '+(customer.phone||'-')+'</p><p><b>Endereço:</b> '+[a.street,a.number,a.district,a.city?(a.city+(a.state?' - '+a.state:'')):'',a.cep,a.reference].filter(Boolean).join(', ')+'</p><p><b>Entrega:</b> '+(checkoutState.deliveryType==='pickup'?'Retirada':'Entrega')+'</p><p><b>Pagamento:</b> '+({pix:'Pix',card:'Cartão'}[checkoutState.payment]||checkoutState.payment)+'</p><p><b>Subtotal:</b> '+money(subtotal)+'</p>'+(couponValue>0?'<p><b>Cupom:</b> '+checkoutState.couponCode+' (- '+money(couponValue)+')</p>':'')+(selectedRedeem()?'<p><b>Resgate:</b> '+selectedRedeem().title+(redeemValue>0?' (- '+money(redeemValue)+')':'')+'</p>':'')+'<p><b>Total:</b> '+money(finalTotal)+'</p>';
   document.getElementById('pointsTotal').textContent=current.points;
   document.getElementById('pointsEarnedText').textContent='Neste pedido você ganhou '+earned+' ponto'+(earned===1?'':'s')+'.';
   document.getElementById('success').style.display='block';
