@@ -716,7 +716,19 @@ document.getElementById('finishOrder').onclick=async()=>{
         if(!pending?.id||!pending?.token)throw Error('missing');
         const response=await fetch('/api/sr-dogao-pay/recover?orderId='+encodeURIComponent(pending.id)+'&token='+encodeURIComponent(pending.token),{cache:'no-store'});
         const result=await response.json();if(!response.ok)throw Error('unavailable');
-        if(result.method==='CREDIT_CARD'&&result.checkout_url){
+        if(result.can_resume===true&&result.status==='not_created'){
+          const method=checkoutState.payment==='card'?'CREDIT_CARD':'PIX';
+          const chargeResponse=await fetch('/api/sr-dogao-pay/create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({orderId:pending.id,token:pending.token,method})});
+          const charge=await chargeResponse.json();
+          if(!chargeResponse.ok)throw Error('charge_failed');
+          if(method==='CREDIT_CARD'&&charge.checkout_url){window.open(charge.checkout_url,'_blank','noopener,noreferrer');reviewMsg.textContent='Pagamento seguro aberto. Aguarde a confirmação.';}
+          else if(method==='PIX'&&charge.copy_paste){
+            reviewMsg.textContent='Dogão Pay — Pix do pedido pendente:';
+            const input=document.createElement('textarea');input.readOnly=true;input.value=charge.copy_paste;input.style.cssText='display:block;width:100%;min-height:90px;margin-top:10px';reviewMsg.appendChild(input);
+            const copy=document.createElement('button');copy.type='button';copy.textContent='Copiar Pix';copy.style.cssText='display:block;margin:10px 0;padding:12px';copy.onclick=()=>navigator.clipboard?.writeText(charge.copy_paste);reviewMsg.appendChild(copy);
+            if(charge.qr_code){const img=document.createElement('img');img.alt='QR Code Pix';img.src='data:image/png;base64,'+charge.qr_code;img.style.cssText='display:block;max-width:230px;width:100%;margin:10px auto';reviewMsg.appendChild(img);}
+          }else throw Error('unavailable');
+        }else if(result.method==='CREDIT_CARD'&&result.checkout_url){
           window.open(result.checkout_url,'_blank','noopener,noreferrer');
           reviewMsg.textContent='Pagamento anterior aberto. Não crie outra cobrança.';
         }else if(result.method==='PIX'&&result.copy_paste){
