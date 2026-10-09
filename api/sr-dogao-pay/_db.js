@@ -6,7 +6,7 @@ export async function db(table, { method='GET', query='', body } = {}) {
   method,headers:{ apikey:key,Authorization:'Bearer '+key,'Content-Type':'application/json',Prefer:'return=representation' },
   ...(body===undefined?{}:{body:JSON.stringify(body)})
  });
- if(!response.ok) throw new Error('DATABASE_REQUEST_FAILED');
+ if(!response.ok) throw new Error('DATABASE_HTTP_'+response.status);
  const raw=await response.text();
  if(!raw) return null;
  try { return JSON.parse(raw); } catch { throw new Error('DATABASE_INVALID_RESPONSE'); }
