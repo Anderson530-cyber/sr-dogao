@@ -760,7 +760,23 @@ document.querySelectorAll('[data-back]').forEach(button=>button.onclick=()=>show
 document.querySelectorAll('.option input').forEach(input=>input.addEventListener('change',syncOptions));
 
 if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});
-(async()=>{await Promise.all([ensureCheckoutDeliveryFee(),loadCheckoutSettings()]);loadAddress();loadCustomer();renderTimingOptions();syncOptions();renderCouponTrigger();renderRedeemTrigger();if(!showCompletedOrder()){renderCart();showStep(1);}})();
+// O carrinho deve aparecer imediatamente, mesmo sem conexão com o Supabase.
+(function initializeCart(){
+  try{
+    renderCart();
+    if(!showCompletedOrder())showStep(1);
+  }catch(error){
+    console.error('Dogão: erro ao carregar carrinho',error);
+    const panel=document.getElementById('items');
+    if(panel)panel.textContent='Não foi possível carregar os itens. Recarregue a página.';
+  }
+  Promise.allSettled([ensureCheckoutDeliveryFee(),loadCheckoutSettings()]).then(()=>{
+    try{
+      loadAddress();loadCustomer();renderTimingOptions();syncOptions();renderCouponTrigger();renderRedeemTrigger();
+      if(!orderCompleted()){renderCart();updateSummary();}
+    }catch(error){console.error('Dogão: erro ao atualizar informações do pedido',error);}
+  });
+})();
 </script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </body>
