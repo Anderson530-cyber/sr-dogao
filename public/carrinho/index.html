@@ -705,8 +705,31 @@ document.getElementById('finishOrder').onclick=async()=>{
   }
   const cart=getCart();if(!cart.length)return;
   if(localStorage.getItem('dogao_pending_payment')){
-    reviewMsg.textContent='Já existe uma tentativa de pagamento deste pedido. Para evitar cobrança duplicada, consulte o restaurante antes de tentar novamente.';
-    reviewMsg.style.display='block';return;
+    reviewMsg.textContent='Já existe um pagamento em andamento. Use Recuperar pagamento para consultar a mesma cobrança.';
+    const recoverButton=document.createElement('button');
+    recoverButton.type='button';recoverButton.textContent='Recuperar pagamento';
+    recoverButton.style.cssText='display:block;margin-top:12px;padding:12px;border-radius:10px';
+    recoverButton.onclick=async()=>{
+      recoverButton.disabled=true;
+      try{
+        const pending=JSON.parse(localStorage.getItem('dogao_pending_payment')||'null');
+        if(!pending?.id||!pending?.token)throw Error('missing');
+        const response=await fetch('/api/sr-dogao-pay/recover?orderId='+encodeURIComponent(pending.id)+'&token='+encodeURIComponent(pending.token),{cache:'no-store'});
+        const result=await response.json();if(!response.ok)throw Error('unavailable');
+        if(result.method==='CREDIT_CARD'&&result.checkout_url){
+          window.open(result.checkout_url,'_blank','noopener,noreferrer');
+          reviewMsg.textContent='Pagamento anterior aberto. Não crie outra cobrança.';
+        }else if(result.method==='PIX'&&result.copy_paste){
+          reviewMsg.textContent='Pix do pagamento anterior:';
+          const input=document.createElement('textarea');input.readOnly=true;input.value=result.copy_paste;
+          input.style.cssText='display:block;width:100%;min-height:90px;margin-top:10px';
+          reviewMsg.appendChild(input);
+          if(result.qr_code){const img=document.createElement('img');img.alt='QR Code Pix';img.src='data:image/png;base64,'+result.qr_code;img.style.cssText='display:block;max-width:230px;width:100%;margin:10px auto';reviewMsg.appendChild(img);}
+        }else throw Error('unavailable');
+      }catch{reviewMsg.textContent='Não foi possível recuperar o pagamento anterior. Entre em contato com o restaurante para conferir a cobrança.';}
+      finally{recoverButton.disabled=false;}
+    };
+    reviewMsg.appendChild(recoverButton);reviewMsg.style.display='block';return;
   }
   finishBtn.disabled=true;finishBtn.textContent='Preparando pagamento...';
   const showError=(message)=>{reviewMsg.textContent=message;reviewMsg.style.display='block';finishBtn.disabled=false;finishBtn.textContent='Confirmar pedido';};
