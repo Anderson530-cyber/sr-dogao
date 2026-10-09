@@ -16,7 +16,16 @@ export default async function handler(req,res){
   const rows=await db('srdogao_pay_payments',{query:'?order_id=eq.'+encodeURIComponent(orderId)+'&select=id,asaas_payment_id,billing_type,status&order=created_at.desc&limit=1'});
   const p=rows?.[0];
   if(!p){if(orders[0].status==='pending_payment')return res.status(200).json({method:null,status:'not_created',can_resume:true});return res.status(409).json({error:'order_not_pending'});}
-  if(!p.asaas_payment_id)return res.status(409).json({error:'payment_needs_reconciliation'});
+  if(!p.asaas_payment_id){
+   stage='provider_reconciliation';
+   const search=await asaasRequest('/payments?externalReference='+encodeURIComponent(p.id)+'&limit=10');
+   const matches=(Array.isArray(search?.data)?search.data:[]).filter(c=>c.externalReference===p.id&&typeof c.id==='string');
+   if(matches.length!==1)return res.status(409).json({error:matches.length?'multiple_provider_charges':'payment_needs_reconciliation'});
+   const verified=await asaasRequest('/payments/'+encodeURIComponent(matches[0].id));
+   if(verified.id!==matches[0].id||verified.externalReference!==p.id||Math.round(Number(verified.value)*100)!==Number((await db('srdogao_pay_payments',{query:'?id=eq.'+encodeURIComponent(p.id)+'&select=amount_cents'}))?.[0]?.amount_cents))return res.status(409).json({error:'provider_mismatch'});
+   await db('srdogao_pay_payments',{method:'PATCH',query:'?id=eq.'+encodeURIComponent(p.id)+'&asaas_payment_id=is.null',body:{asaas_payment_id:verified.id}});
+   p.asaas_payment_id=verified.id;
+  }
   stage='provider_payment_lookup';
   const charge=await asaasRequest('/payments/'+encodeURIComponent(p.asaas_payment_id));
   if(charge.id!==p.asaas_payment_id||charge.externalReference!==p.id)return res.status(409).json({error:'provider_mismatch'});
