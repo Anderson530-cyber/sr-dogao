@@ -769,6 +769,10 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch
   try{
     renderCart();
     if(!showCompletedOrder())showStep(1);
+    if(localStorage.getItem('dogao_pending_payment')){
+      const notice=document.getElementById('reviewMessage');
+      if(notice){notice.textContent='Existe um pagamento anterior em andamento. Não gere outro pedido antes de confirmar a situação com o restaurante.';notice.style.display='block';}
+    }
   }catch(error){
     console.error('Dogão: erro ao carregar carrinho',error);
     const panel=document.getElementById('items');
