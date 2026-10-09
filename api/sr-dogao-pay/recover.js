@@ -13,7 +13,7 @@ export default async function handler(req,res){
   if(!orders?.length)return res.status(404).json({error:'not_found'});
   const rows=await db('srdogao_pay_payments',{query:'?order_id=eq.'+encodeURIComponent(orderId)+'&select=id,asaas_payment_id,billing_type,status&order=created_at.desc&limit=1'});
   const p=rows?.[0];
-  if(!p)return res.status(404).json({error:'no_payment'});
+  if(!p){if(orders[0].status==='pending_payment')return res.status(200).json({method:null,status:'not_created',can_resume:true});return res.status(409).json({error:'order_not_pending'});}
   if(!p.asaas_payment_id)return res.status(409).json({error:'payment_needs_reconciliation'});
   const charge=await asaasRequest('/payments/'+encodeURIComponent(p.asaas_payment_id));
   if(charge.id!==p.asaas_payment_id||charge.externalReference!==p.id)return res.status(409).json({error:'provider_mismatch'});
