@@ -697,25 +697,64 @@ document.getElementById('applyRedeem').onclick=()=>{
 };
 
 document.getElementById('finishOrder').onclick=async()=>{
-  // Dogão Pay: uma cobrança só pode ser iniciada quando o servidor estiver habilitado.
-  // Nunca marque o pedido como pago a partir de uma resposta do navegador.
   const reviewMsg=document.getElementById('reviewMessage');
-  reviewMsg.style.display='none';
   const finishBtn=document.getElementById('finishOrder');
   if(finishBtn.disabled)return;
   if(!['pix','card'].includes(checkoutState.payment)){
-    reviewMsg.textContent='Escolha Pix ou cartão.';reviewMsg.style.display='block';return;
+    reviewMsg.textContent='Selecione Pix ou cartão.';reviewMsg.style.display='block';return;
   }
+  const cart=getCart();if(!cart.length)return;
+  finishBtn.disabled=true;finishBtn.textContent='Preparando pagamento...';
+  const showError=(message)=>{reviewMsg.textContent=message;reviewMsg.style.display='block';finishBtn.disabled=false;finishBtn.textContent='Confirmar pedido';};
   try{
-    const response=await fetch('/api/sr-dogao-pay/status',{cache:'no-store'});
-    const state=await response.json();
-    if(!response.ok||state.payments_enabled!==true)throw new Error('not_ready');
-  }catch{
-    reviewMsg.textContent='Dogão Pay está finalizando a configuração. Nenhum pedido foi enviado nem cobrado.';
-    reviewMsg.style.display='block';return;
-  }
-  reviewMsg.textContent='Pagamento em implantação: ainda não é possível concluir este pedido. Nenhuma cobrança foi realizada.';
-  reviewMsg.style.display='block';return;
+    const readyResponse=await fetch('/api/sr-dogao-pay/status',{cache:'no-store'});
+    const ready=await readyResponse.json();
+    if(!readyResponse.ok||ready.payments_enabled!==true)throw new Error('not_ready');
+    const d=orderDiscountData();
+    if(d.total<=0)throw new Error('invalid_total');
+    const customer=checkoutState.customer||{};
+    const remote=await createRemoteOrder({customer,address:checkoutState.address||{},deliveryType:checkoutState.deliveryType,
+      payment:checkoutState.payment,items:cart,deliveryCoords:checkoutState.deliveryCoords||null,
+      subtotal:d.subtotal,discount:d.discount,total:d.total,couponCode:checkoutState.couponCode||'',
+      redeemTitle:selectedRedeem()?.title||'',orderTiming:checkoutState.orderTiming||'now',scheduledFor:checkoutState.scheduledFor||null});
+    if(!remote?.id||!remote?.public_token)throw new Error('order_creation_failed');
+    localStorage.setItem('dogao_pending_payment',JSON.stringify({id:remote.id,token:remote.public_token}));
+    const chargeResponse=await fetch('/api/sr-dogao-pay/create',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({orderId:remote.id,token:remote.public_token,method:checkoutState.payment==='pix'?'PIX':'CREDIT_CARD'})});
+    const charge=await chargeResponse.json();
+    if(!chargeResponse.ok)throw new Error('charge_failed');
+    if(checkoutState.payment==='card'){
+      if(!charge.checkout_url||!charge.checkout_url.startsWith('https://'))throw new Error('checkout_unavailable');
+      reviewMsg.innerHTML='Pagamento seguro do Dogão Pay aberto. Após pagar, retorne para acompanhar a confirmação.';
+      reviewMsg.style.display='block';
+      window.open(charge.checkout_url,'_blank','noopener,noreferrer');
+    }else{
+      const wrap=document.createElement('div');wrap.style.cssText='padding:18px;background:#fff;border:1px solid #eee;border-radius:14px;margin-top:12px;overflow-wrap:anywhere';
+      const title=document.createElement('strong');title.textContent='Dogão Pay — Pix';wrap.appendChild(title);
+      if(charge.qr_code){const img=document.createElement('img');img.alt='QR Code Pix';img.style.cssText='display:block;max-width:230px;width:100%;margin:12px auto';img.src='data:image/png;base64,'+charge.qr_code;wrap.appendChild(img);}
+      if(charge.copy_paste){const input=document.createElement('textarea');input.readOnly=true;input.value=charge.copy_paste;input.style.cssText='width:100%;min-height:95px';wrap.appendChild(input);const copy=document.createElement('button');copy.type='button';copy.textContent='Copiar Pix';copy.onclick=()=>navigator.clipboard?.writeText(charge.copy_paste);wrap.appendChild(copy);}
+      reviewMsg.replaceChildren(wrap);reviewMsg.style.display='block';
+    }
+    finishBtn.textContent='Aguardando pagamento';
+    const check=async()=>{
+      try{
+        const r=await fetch('/api/sr-dogao-pay/order-status?orderId='+encodeURIComponent(remote.id)+'&token='+encodeURIComponent(remote.public_token),{cache:'no-store'});
+        if(!r.ok)return false;const state=await r.json();
+        if(state.order_status!=='confirmed'||!['confirmed','received'].includes(state.payment_status))return false;
+        localStorage.removeItem('dogao_pending_payment');
+        const finalOrder={remoteId:remote.id,trackingToken:remote.public_token,deliveryPin:remote.delivery_pin||'',customer,
+          address:checkoutState.address||{},deliveryType:checkoutState.deliveryType,payment:checkoutState.payment,
+          items:cart,subtotal:d.subtotal,discount:d.discount,total:d.total,pointsEarned:0,pointsTotal:0,status:'confirmed',date:new Date().toISOString()};
+        localStorage.setItem('srdogao_last_order',JSON.stringify(finalOrder));saveCart([]);
+        showCompletedOrder();return true;
+      }catch{return false;}
+    };
+    if(await check())return;
+    const timer=setInterval(async()=>{if(await check())clearInterval(timer);},5000);
+    setTimeout(()=>clearInterval(timer),15*60*1000);
+  }catch(error){showError(error.message==='not_ready'?'Dogão Pay ainda não está habilitado. Nenhuma cobrança foi realizada.':
+    'Não foi possível iniciar o pagamento. Se uma cobrança já apareceu no Asaas, não tente novamente; entre em contato com o restaurante.');}
+  return;
   if(!storeOpen&&checkoutState.orderTiming!=='scheduled')return;
   if(orderCompleted()){showCompletedOrder();return}
   if('Notification' in window&&Notification.permission==='default'){try{await Notification.requestPermission()}catch(e){}}
