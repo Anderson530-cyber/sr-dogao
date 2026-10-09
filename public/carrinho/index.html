@@ -715,7 +715,7 @@ document.getElementById('finishOrder').onclick=async()=>{
         const pending=JSON.parse(localStorage.getItem('dogao_pending_payment')||'null');
         if(!pending?.id||!pending?.token)throw Error('missing');
         const response=await fetch('/api/sr-dogao-pay/recover?orderId='+encodeURIComponent(pending.id)+'&token='+encodeURIComponent(pending.token),{cache:'no-store'});
-        const result=await response.json();if(!response.ok)throw Error('unavailable');
+        const result=await response.json();if(!response.ok)throw Error(result.error||'http_'+response.status);
         if(result.can_resume===true&&result.status==='not_created'){
           const method=checkoutState.payment==='card'?'CREDIT_CARD':'PIX';
           const chargeResponse=await fetch('/api/sr-dogao-pay/create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({orderId:pending.id,token:pending.token,method})});
@@ -738,7 +738,7 @@ document.getElementById('finishOrder').onclick=async()=>{
           reviewMsg.appendChild(input);
           if(result.qr_code){const img=document.createElement('img');img.alt='QR Code Pix';img.src='data:image/png;base64,'+result.qr_code;img.style.cssText='display:block;max-width:230px;width:100%;margin:10px auto';reviewMsg.appendChild(img);}
         }else throw Error('unavailable');
-      }catch{reviewMsg.textContent='Não foi possível recuperar o pagamento anterior. Entre em contato com o restaurante para conferir a cobrança.';}
+      }catch(error){reviewMsg.textContent='Não foi possível recuperar o pagamento. Código: '+String(error.message||'unknown').slice(0,80)+'. Não crie outra cobrança antes de verificar o Asaas.';console.error('Dogão Pay recovery:',error);}
       finally{recoverButton.disabled=false;}
     };
     reviewMsg.appendChild(recoverButton);reviewMsg.style.display='block';return;
