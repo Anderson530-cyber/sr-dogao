@@ -26,17 +26,35 @@ button{font:inherit;cursor:pointer}.tab{padding:16px 10px;border:2px solid #e7dd
 <div class="panel" id="pix-panel" role="tabpanel" aria-labelledby="pix-tab">
 <strong>Pague com Pix</strong><div class="qr" aria-label="QR Code ilustrativo, não utilizável">▦</div>
 <p class="muted">O QR Code real e o código copia e cola aparecerão aqui quando a integração estiver ativada.</p>
-<button class="action" disabled>Copiar código Pix</button>
+<button class="action" type="button" id="pix-action">Ver disponibilidade do Pix</button>
 </div>
 <div class="panel" id="card-panel" role="tabpanel" aria-labelledby="card-tab" hidden>
 <div style="font-size:3rem;margin:18px 0">💳</div><strong>Pague com cartão de crédito</strong>
 <p class="muted">Você será direcionado ao ambiente seguro do Asaas. Os dados do cartão não serão armazenados pelo Sr. Dogão.</p>
-<button class="action" disabled>Ir para pagamento seguro</button>
+<button class="action" type="button" id="card-action">Ver disponibilidade do cartão</button>
 </div>
-<div class="secure">🔒 Pagamento seguro • Processamento pelo Asaas</div>
+<p id="pay-feedback" class="muted" role="status" aria-live="polite" style="text-align:center"></p><div class="secure">🔒 Pagamento seguro • Processamento pelo Asaas</div>
 </section><p class="note">Protótipo de interface. Não compartilhe informações de cartão nesta página.</p></main>
 <script>
 const tabs=[document.getElementById('pix-tab'),document.getElementById('card-tab')];
 const panels=[document.getElementById('pix-panel'),document.getElementById('card-panel')];
 tabs.forEach((tab,i)=>tab.addEventListener('click',()=>{tabs.forEach((t,j)=>t.setAttribute('aria-selected',String(i===j)));panels.forEach((p,j)=>p.hidden=i!==j)}));
+const feedback=document.getElementById('pay-feedback');
+async function checkPayment(method){
+ feedback.textContent='Verificando disponibilidade do pagamento…';
+ try{
+  const response=await fetch('/api/sr-dogao-pay/readiness',{cache:'no-store'});
+  if(!response.ok) throw new Error('unavailable');
+  const state=await response.json();
+  feedback.textContent=method==='CREDIT_CARD'
+   ? 'O pagamento por cartão ainda está em preparação. Nenhuma cobrança foi iniciada.'
+   : state.pix_sandbox_ready
+    ? 'O ambiente de testes do Pix está configurado. A finalização do pedido ainda não está habilitada nesta prévia.'
+    : 'O Pix ainda não está disponível. Nenhuma cobrança foi iniciada.';
+ }catch{
+  feedback.textContent='Pagamento indisponível nesta prévia. Nenhuma cobrança foi iniciada.';
+ }
+}
+document.getElementById('pix-action').addEventListener('click',()=>checkPayment('PIX'));
+document.getElementById('card-action').addEventListener('click',()=>checkPayment('CREDIT_CARD'));
 </script></body></html>
