@@ -700,7 +700,7 @@ document.getElementById('finishOrder').onclick=async()=>{
   // Segurança: não criar pedido confirmado nem conceder pontos antes da confirmação
   // de pagamento pelo gateway. A integração real de cobrança ainda não está ativa.
   const reviewMsg=document.getElementById('reviewMessage');
-  reviewMsg.textContent='Pagamento online ainda indisponível. Seu pedido não foi enviado nem cobrado. Aguarde a liberação do Pix ou cartão.';
+  reviewMsg.textContent='Dogão Pay ainda não está disponível para cobranças. Seu pedido não foi enviado nem cobrado. Aguarde a liberação do Pix ou cartão.';
   reviewMsg.style.display='block';
   return;
   if(!storeOpen&&checkoutState.orderTiming!=='scheduled')return;
