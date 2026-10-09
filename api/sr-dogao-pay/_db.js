@@ -7,7 +7,9 @@ export async function db(table, { method='GET', query='', body } = {}) {
   ...(body===undefined?{}:{body:JSON.stringify(body)})
  });
  if(!response.ok) throw new Error('DATABASE_REQUEST_FAILED');
- return response.json().catch(()=>[]);
+ const raw=await response.text();
+ if(!raw) return null;
+ try { return JSON.parse(raw); } catch { throw new Error('DATABASE_INVALID_RESPONSE'); }
 }
 export function orderAmountCents(order) {
  const amount=Number(order?.total);
