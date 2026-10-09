@@ -29,7 +29,7 @@ export default async function handler(req,res) {
   const order=orders?.[0];
   if(!order?.customer_name||!order?.customer_phone) throw new Error('missing_customer');
   const customerResponse=await asaasRequest('/customers',{method:'POST',body:{
-   name:order.customer_name,mobilePhone:String(order.customer_phone).replace(/\\D/g,''),
+   name:order.customer_name,mobilePhone:String(order.customer_phone).replace(/\D/g,''),
    externalReference:'dogao-order-'+orderId
   }});
   if(!customerResponse?.id)throw new Error('missing_customer_id');
