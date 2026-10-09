@@ -7,6 +7,6 @@ export default async function handler(req, res) {
    service: 'Dogão Pay',
    status: 'integration_pending',
    environment: process.env.ASAAS_ENV === 'production' ? 'production' : 'not_configured',
-   payments_enabled: process.env.ASAAS_ENV === 'production' && process.env.DOGAO_PAY_PRODUCTION_ENABLED === 'true' && Boolean(process.env.ASAAS_API_KEY && process.env.DOGAO_PAY_ASAAS_CUSTOMER_ID && process.env.SUPABASE_SERVICE_ROLE_KEY)
+   payments_enabled: process.env.ASAAS_ENV === 'production' && process.env.DOGAO_PAY_PRODUCTION_ENABLED === 'true' && Boolean(process.env.ASAAS_API_KEY && process.env.ASAAS_WEBHOOK_TOKEN && process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY)
  });
 }
