@@ -697,12 +697,25 @@ document.getElementById('applyRedeem').onclick=()=>{
 };
 
 document.getElementById('finishOrder').onclick=async()=>{
-  // Segurança: não criar pedido confirmado nem conceder pontos antes da confirmação
-  // de pagamento pelo gateway. A integração real de cobrança ainda não está ativa.
+  // Dogão Pay: uma cobrança só pode ser iniciada quando o servidor estiver habilitado.
+  // Nunca marque o pedido como pago a partir de uma resposta do navegador.
   const reviewMsg=document.getElementById('reviewMessage');
-  reviewMsg.textContent='Dogão Pay ainda não está disponível para cobranças. Seu pedido não foi enviado nem cobrado. Aguarde a liberação do Pix ou cartão.';
-  reviewMsg.style.display='block';
-  return;
+  reviewMsg.style.display='none';
+  const finishBtn=document.getElementById('finishOrder');
+  if(finishBtn.disabled)return;
+  if(!['pix','card'].includes(checkoutState.payment)){
+    reviewMsg.textContent='Escolha Pix ou cartão.';reviewMsg.style.display='block';return;
+  }
+  try{
+    const response=await fetch('/api/sr-dogao-pay/status',{cache:'no-store'});
+    const state=await response.json();
+    if(!response.ok||state.payments_enabled!==true)throw new Error('not_ready');
+  }catch{
+    reviewMsg.textContent='Dogão Pay está finalizando a configuração. Nenhum pedido foi enviado nem cobrado.';
+    reviewMsg.style.display='block';return;
+  }
+  reviewMsg.textContent='Pagamento em implantação: ainda não é possível concluir este pedido. Nenhuma cobrança foi realizada.';
+  reviewMsg.style.display='block';return;
   if(!storeOpen&&checkoutState.orderTiming!=='scheduled')return;
   if(orderCompleted()){showCompletedOrder();return}
   if('Notification' in window&&Notification.permission==='default'){try{await Notification.requestPermission()}catch(e){}}
