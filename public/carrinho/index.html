@@ -704,6 +704,10 @@ document.getElementById('finishOrder').onclick=async()=>{
     reviewMsg.textContent='Selecione Pix ou cartão.';reviewMsg.style.display='block';return;
   }
   const cart=getCart();if(!cart.length)return;
+  if(localStorage.getItem('dogao_pending_payment')){
+    reviewMsg.textContent='Já existe uma tentativa de pagamento deste pedido. Para evitar cobrança duplicada, consulte o restaurante antes de tentar novamente.';
+    reviewMsg.style.display='block';return;
+  }
   finishBtn.disabled=true;finishBtn.textContent='Preparando pagamento...';
   const showError=(message)=>{reviewMsg.textContent=message;reviewMsg.style.display='block';finishBtn.disabled=false;finishBtn.textContent='Confirmar pedido';};
   try{
