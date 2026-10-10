@@ -10,5 +10,7 @@ export default async function handler(req,res){
   try{await asaasRequest('/myAccount');provider='reachable';}
   catch{provider='unavailable';}
  }
- return res.status(200).json({service:'Dogão Pay',environment:environment(),credentials_configured:configured,provider, payments_enabled:enabled&&provider==='reachable'});
+ const staticPixConfigured=Boolean(process.env.ASAAS_PIX_ADDRESS_KEY&&process.env.ASAAS_API_KEY);
+ const staticPixEnabled=enabled&&provider==='reachable'&&staticPixConfigured&&process.env.DOGAO_STATIC_PIX_ENABLED==='true';
+ return res.status(200).json({service:'Dogão Pay',environment:environment(),credentials_configured:configured,provider,payments_enabled:enabled&&provider==='reachable',static_pix_configured:staticPixConfigured,static_pix_enabled:staticPixEnabled});
 }
