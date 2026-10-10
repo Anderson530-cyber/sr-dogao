@@ -24,7 +24,7 @@ header{background:var(--y);position:sticky;top:0;z-index:10;box-shadow:0 2px 14p
 </style>
 </head>
 <body>
-<header><div class="top"><a href="/"><img class="logo" src="/sr-dogao-logo.png" alt="Sr. Dogão"></a><div class="title">Finalizar pedido</div><a class="back" href="/">← Voltar</a></div></header>
+<header><div class="top"><a href="/"><img class="logo" src="/sr-dogao-logo.png" alt="Sr. Dogão"></a><div class="title">Finalizar pedido</div><button id="dogaoExit" type="button" style="border:1px solid #9b3528;background:#fff;color:#9b241c;border-radius:18px;padding:9px;font-weight:700;cursor:pointer">Sair</button><a class="back" href="/">← Voltar</a></div></header>
 <main class="wrap">
 <div class="head"><div><h1 id="pageTitle">Carrinho</h1><p id="pageSubtitle">Confira seu pedido antes de continuar.</p></div></div><div id="checkoutStatus" class="message" style="display:none;margin:0 0 16px"></div>
 <div class="steps" id="steps">
@@ -765,6 +765,7 @@ document.querySelectorAll('.option input').forEach(input=>input.addEventListener
 if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});
 (async()=>{await Promise.all([ensureCheckoutDeliveryFee(),loadCheckoutSettings()]);loadAddress();loadCustomer();renderTimingOptions();syncOptions();renderCouponTrigger();renderRedeemTrigger();if(!showCompletedOrder()){renderCart();showStep(1);}})();
 </script>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">document.getElementById('dogaoExit').onclick=()=>{if(!confirm('Sair e limpar o carrinho deste aparelho? Pedidos registrados não serão cancelados.'))return;['srdogao_checkout','srdogao_customer','srdogao_cart','srdogao_address','srdogao_last_order','srdogao_last_order_completed'].forEach(k=>localStorage.removeItem(k));location.href='/';};
+</script>
 </body>
 </html>
