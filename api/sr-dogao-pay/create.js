@@ -32,7 +32,7 @@ export default async function handler(req,res) {
    stage='asaas_static_pix_creation';
    const qr=await createOrderPixQrCode({addressKey:process.env.ASAAS_PIX_ADDRESS_KEY,orderId,paymentId:reservation.payment_id,amountCents:Number(reservation.amount_cents)});
    stage='static_pix_id_sync';
-   const bound=await db('rpc/srdogao_pay_bind_static_pix',{method:'POST',body:{p_payment_id:reservation.payment_id,p_qr_id:qr.qrId,p_expires_at:qr.expiresAt||null}});
+   const bound=await db('rpc/srdogao_pay_store_static_pix',{method:'POST',body:{p_payment_id:reservation.payment_id,p_qr_id:qr.qrId,p_payload:qr.copyPaste,p_image:qr.encodedImage,p_expires_at:qr.expiresAt||null}});
    if(bound!==true)throw new Error('PIX_BIND_FAILED');
    return res.status(200).json({payment_id:reservation.payment_id,status:'pending',method:'PIX',qr_code:qr.encodedImage,copy_paste:qr.copyPaste,expires_at:qr.expiresAt});
   }
