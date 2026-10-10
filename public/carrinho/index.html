@@ -75,9 +75,9 @@ header{background:var(--y);position:sticky;top:0;z-index:10;box-shadow:0 2px 14p
 <h2>Seus dados</h2><p class="intro">Usaremos esses dados para identificar seu pedido e seus pontos.</p>
 <div class="field"><label for="customerName">Nome</label><input id="customerName" autocomplete="name" placeholder="Seu nome"></div>
 <div class="field"><label for="customerPhone">Telefone</label><input id="customerPhone" inputmode="tel" autocomplete="tel" placeholder="(48) 99999-9999"></div>
-<div class="field"><label for="customerCpf">CPF <span style="font-weight:400;color:var(--muted)">(opcional)</span></label><input id="customerCpf" inputmode="numeric" placeholder="000.000.000-00"></div>
+<div class="field"><label for="customerCpf">CPF</label><input id="customerCpf" inputmode="numeric" placeholder="000.000.000-00"></div>
 <div class="actions-row"><button class="secondary" type="button" data-back="2">Voltar</button><button class="primary" id="saveCustomer" type="button">Continuar</button></div>
-<div class="message" id="customerMessage">Informe seu nome e telefone para continuar.</div>
+<div class="message" id="customerMessage">Informe nome, telefone e CPF válido para continuar.</div>
 </div>
 </section>
 
@@ -522,6 +522,7 @@ document.getElementById('captureDeliveryLocation').onclick=()=>{
   },()=>{status.textContent='Não foi possível obter sua localização. Você pode continuar sem ela.'},{enableHighAccuracy:true,timeout:12000,maximumAge:30000});
 };
 function normalizePhone(v){return (v||'').replace(/\D/g,'')}
+function validDogaoCpf(v){const s=String(v||'').replace(/\D/g,'');if(!/^\d{11}$/.test(s)||/^(\d)\1{10}$/.test(s))return false;for(let n=9;n<=10;n++){let sum=0;for(let i=0;i<n;i++)sum+=Number(s[i])*(n+1-i);let d=(sum*10)%11;if(d===10)d=0;if(d!==Number(s[n]))return false;}return true;}
 function loadCustomer(){
   const saved=checkoutState.customer||JSON.parse(localStorage.getItem('srdogao_customer')||'{}');
   document.getElementById('customerName').value=saved.name||'';
@@ -623,7 +624,7 @@ document.getElementById('saveAddress').onclick=()=>{
 document.getElementById('saveCustomer').onclick=()=>{
   const customer={name:document.getElementById('customerName').value.trim(),phone:document.getElementById('customerPhone').value.trim(),cpf:document.getElementById('customerCpf').value.trim()};
   const msg=document.getElementById('customerMessage');
-  if(!customer.name||normalizePhone(customer.phone).length<10){msg.style.display='block';return}
+  if(!customer.name||normalizePhone(customer.phone).length<10||!validDogaoCpf(customer.cpf)){msg.style.display='block';return}
   msg.style.display='none';checkoutState.customer=customer;persistCheckout();localStorage.setItem('srdogao_customer',JSON.stringify(customer));showStep(4);
 };
 document.querySelectorAll('input[name="deliveryType"]').forEach(radio=>radio.onchange=()=>{checkoutState.deliveryType=radio.value;persistCheckout();syncOptions();updateSummary()});
@@ -713,7 +714,7 @@ document.getElementById('finishOrder').onclick=async()=>{
   message.style.display='block';return;
  }
  const cart=getCart(),customer=checkoutState.customer||{};
- if(!cart.length||!customer.name||!customer.phone){message.textContent='Confira seus produtos, nome e telefone.';message.style.display='block';return}
+ if(!cart.length||!customer.name||!customer.phone||!validDogaoCpf(customer.cpf)){message.textContent='Confira seus produtos, nome e telefone.';message.style.display='block';return}
  const items=cart.map(x=>({id:Number(x.id||x.productId||x.product_id),qty:Number(x.qty)}));
  if(items.some(x=>!Number.isSafeInteger(x.id)||x.id<=0)){
   message.textContent='Não foi possível identificar os produtos. Volte ao cardápio e adicione-os novamente.';
