@@ -87,7 +87,7 @@
 <div class="tape-wrap"><img class="tape-img" src="/Trena-mede.png" alt="Trena 100+"></div>
 <p class="sub">Dogão caprichado, recheado de verdade e do jeito que você gosta.</p>
 <div class="hero-actions"><a class="cta" id="startOrderBtn" href="/cardapio/">🛒 Fazer meu pedido <b>›</b></a><a class="points-cta" href="/pontos/">⭐ Programa de pontos</a></div>
-<div id="dogaoExitWrap" style="display:none;margin:10px 0"><button id="dogaoExit" type="button" style="background:transparent;border:1px solid currentColor;border-radius:18px;padding:8px 18px;color:inherit;cursor:pointer;font-weight:700">Sair / Trocar cliente</button></div><div class="benefits"><span>🛵 Entrega rápida</span><span>⭐ Qualidade garantida</span><span class="benefit-hours"><b>🕒 Horários de funcionamento</b><small>Segunda a quinta: 18h–23h</small><small>Sexta e sábado: 18h–00h</small><small>Domingo: 18h–23h</small></span></div>
+<div id="dogaoMyOrderWrap" style="display:none;margin:10px 0"><a href="/meu-pedido/" style="display:inline-block;padding:11px 20px;border-radius:22px;background:#bd2821;color:#fff;font-weight:800;text-decoration:none">📦 Ver meu pedido</a></div><div id="dogaoExitWrap" style="display:none;margin:10px 0"><button id="dogaoExit" type="button" style="background:transparent;border:1px solid currentColor;border-radius:18px;padding:8px 18px;color:inherit;cursor:pointer;font-weight:700">Sair / Trocar cliente</button></div><div class="benefits"><span>🛵 Entrega rápida</span><span>⭐ Qualidade garantida</span><span class="benefit-hours"><b>🕒 Horários de funcionamento</b><small>Segunda a quinta: 18h–23h</small><small>Sexta e sábado: 18h–00h</small><small>Domingo: 18h–23h</small></span></div>
 </div>
 <div class="visual"><a class="hero-promo-card" href="/cardapio/?categoria=combos" aria-label="Ver combos"><div class="hero-promo-media"><img src="/Combo-dog.png" alt="Combo Sr. Dogão"></div><div class="hero-promo-copy"><strong>COMBOS<br>QUE VALEM<br>A PENA!</strong><b>Hot Dog + Batata + Bebida</b><div class="hero-promo-bottom"><div><span>A partir de</span><div class="hero-promo-price">R$ 29,90</div></div><span class="hero-promo-link">Ver combos →</span></div></div></a></div>
 </div></section>
@@ -202,6 +202,8 @@ function dogaoExit(){if(!confirm('Sair e limpar o carrinho deste aparelho? Pedid
 function dogaoRefreshExit(){const el=document.getElementById('dogaoExitWrap');if(el)el.style.display=dogaoHasIdentity()?'block':'none';}
 document.getElementById('dogaoExit').addEventListener('click',dogaoExit);
 dogaoRefreshExit();
+function dogaoRefreshMyOrder(){let order=null;try{order=JSON.parse(localStorage.getItem('srdogao_pending_pix_order')||'null')}catch{};const el=document.getElementById('dogaoMyOrderWrap');if(el)el.style.display=order?.id&&order?.token?'block':'none'}
+dogaoRefreshMyOrder();window.addEventListener('pageshow',dogaoRefreshMyOrder);
 window.addEventListener('pageshow',dogaoRefreshExit);
 window.addEventListener('storage',dogaoRefreshExit);
 $('#startOrderBtn').onclick=e=>{
