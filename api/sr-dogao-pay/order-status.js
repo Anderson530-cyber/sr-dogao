@@ -21,10 +21,14 @@ export default async function handler(req,res){
       p_event_type:'PAYMENT_'+current.status,p_status:publicPaymentStatus(current.status),
       p_amount_cents:p.amount_cents,p_payload:{id:'poll-'+current.id,event:'PAYMENT_'+current.status,payment:{id:current.id},source:'verified_provider_poll'}
      }});
-     if(result===true)paymentStatus=publicPaymentStatus(current.status);
+     if(result===true){paymentStatus=publicPaymentStatus(current.status);}else{
+      const updated=await db('srdogao_pay_payments',{query:'?order_id=eq.'+encodeURIComponent(orderId)+'&asaas_payment_id=eq.'+encodeURIComponent(current.id)+'&select=status&limit=1'});
+      if(['confirmed','received'].includes(updated?.[0]?.status))paymentStatus=updated[0].status;
+     }
     }
    }catch(error){console.error('dogao_payment_reconciliation_failed',String(error?.message||'unknown').slice(0,90));}
   }
-  return res.status(200).json({order_status:orders[0].status,payment_status:paymentStatus,method:p?.billing_type||null});
+  const verifiedOrder=paymentStatus==='confirmed'||paymentStatus==='received' ? await db('srdogao_orders',{query:'?id=eq.'+encodeURIComponent(orderId)+'&select=status'}) : null;
+  return res.status(200).json({order_status:verifiedOrder?.[0]?.status||orders[0].status,payment_status:paymentStatus,method:p?.billing_type||null});
  }catch{return res.status(503).json({error:'payment_status_unavailable'});}
 }
