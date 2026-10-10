@@ -25,6 +25,18 @@ export default async function handler(req,res) {
   if(!Number.isFinite(amount)||amount<=0||Math.abs(amount*100-Math.round(amount*100))>0.00001)
    return res.status(422).json({error:'invalid_provider_amount'});
   const status=publicPaymentStatus(current.status);
+  // For static Pix, Asaas creates the payment after receipt. Verify it with Asaas,
+  // match its QR identifier and settle atomically; never trust webhook body alone.
+  const qrId=current.pixQrCodeId;
+  if(typeof qrId==='string'&&qrId.length>0){
+   if(!['CONFIRMED','RECEIVED'].includes(current.status))
+    return res.status(503).json({error:'static_pix_payment_not_settled'});
+   const result=await db('rpc/srdogao_pay_apply_static_pix_event',{method:'POST',body:{
+    p_event_id:id,p_payment_id:current.id,p_qr_id:qrId,p_event_type:event,p_status:status,
+    p_amount_cents:Math.round(amount*100),p_payload:req.body
+   }});
+   return res.status(200).json({received:true,processed:result===true});
+  }
   const result=await db('rpc/srdogao_pay_apply_event',{method:'POST',body:{
    p_event_id:id,p_payment_id:current.id,p_event_type:event,p_status:status,
    p_amount_cents:Math.round(amount*100),p_payload:req.body
