@@ -277,4 +277,6 @@ $('#faqBtn').onclick=e=>{e.preventDefault();$('#infoTitle').textContent='Dúvida
 $$('[data-soon]').forEach(el=>el.onclick=e=>{e.preventDefault();const name=el.dataset.soon||'Esta área';$('#soonTitle').textContent=name;$('#soonBody').innerHTML='<p>Esta área ainda está sendo configurada. Em breve estará disponível.</p>';openModal('#soonModal')});
 renderCart();
 loadStoreProducts();
+// Solicita identificação ao entrar pela primeira vez; clientes identificados não são interrompidos.
+try{const s=JSON.parse(localStorage.getItem('srdogao_checkout')||'{}');const phone=String(s.customer?.phone||'').replace(/\D/g,'');if(!validDogaoCpf(s.customer?.cpf)||phone.length<10||String(s.address?.cep||'').replace(/\D/g,'').length!==8){$('#startOrderBtn').click();}}catch{ $('#startOrderBtn').click(); }
 if("serviceWorker" in navigator)navigator.serviceWorker.register("/sw.js").catch(()=>{});</script></body></html>
