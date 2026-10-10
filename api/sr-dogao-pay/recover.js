@@ -13,7 +13,7 @@ export default async function handler(req,res){
   const orders=await db('srdogao_orders',{query:'?id=eq.'+encodeURIComponent(orderId)+'&public_token=eq.'+encodeURIComponent(token)+'&select=id,status'});
   if(!orders?.length)return res.status(404).json({error:'not_found'});
   stage='payment_lookup';
-  const rows=await db('srdogao_pay_payments',{query:'?order_id=eq.'+encodeURIComponent(orderId)+'&select=id,asaas_payment_id,asaas_pix_qr_id,pix_qr_expires_at,billing_type,status,amount_cents&order=created_at.desc&limit=1'});
+  const rows=await db('srdogao_pay_payments',{query:'?order_id=eq.'+encodeURIComponent(orderId)+'&select=id,asaas_payment_id,asaas_pix_qr_id,pix_qr_expires_at,pix_payload,pix_encoded_image,billing_type,status,amount_cents&order=created_at.desc&limit=1'});
   const p=rows?.[0];
   if(!p){if(orders[0].status==='pending_payment')return res.status(200).json({method:null,status:'not_created',can_resume:true});return res.status(409).json({error:'order_not_pending'});}
   if(p.billing_type==='PIX'&&p.asaas_pix_qr_id){
@@ -24,10 +24,9 @@ export default async function handler(req,res){
     return res.status(200).json({method:'PIX',status:p.status});
    if(p.pix_qr_expires_at&&Date.parse(p.pix_qr_expires_at)<=Date.now())
     return res.status(409).json({error:'pix_expired',method:'PIX'});
-   const qr=await asaasRequest('/pix/qrCodes/static/'+encodeURIComponent(p.asaas_pix_qr_id));
-   if(qr?.id!==p.asaas_pix_qr_id)return res.status(409).json({error:'qr_mismatch'});
-   if(typeof qr.payload!=='string'||!qr.payload)return res.status(409).json({error:'qr_unavailable'});
-   return res.status(200).json({method:'PIX',status:p.status,qr_code:qr.encodedImage||null,copy_paste:qr.payload,expires_at:p.pix_qr_expires_at||qr.expirationDate||null});
+   if(typeof p.pix_payload!=='string'||!p.pix_payload)
+    return res.status(409).json({error:'pix_payload_unavailable'});
+   return res.status(200).json({method:'PIX',status:p.status,qr_code:p.pix_encoded_image||null,copy_paste:p.pix_payload,expires_at:p.pix_qr_expires_at||null});
   }
   if(p.billing_type==='PIX'&&!p.asaas_payment_id)
    return res.status(409).json({error:'pix_creation_needs_reconciliation'});
