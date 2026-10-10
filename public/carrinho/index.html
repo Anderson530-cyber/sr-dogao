@@ -129,7 +129,7 @@ header{background:var(--y);position:sticky;top:0;z-index:10;box-shadow:0 2px 14p
 <div class="review-block"><div class="review-head"><h3>Pagamento</h3><button type="button" class="edit-link" data-edit-step="5">Editar</button></div><div id="reviewPayment"></div></div>
 <div class="review-block"><h3>Resumo</h3><div id="reviewTotals"></div></div>
 <div class="message" id="reviewMessage"></div>
-<div class="actions-row"><button class="secondary" type="button" data-back="5">Voltar</button><button class="primary" id="finishOrder" type="button" disabled aria-disabled="true" title="Pagamento online temporariamente indisponível" style="opacity:.55;cursor:not-allowed">Pagamento em configuração</button></div>
+<div class="actions-row"><button class="secondary" type="button" data-back="5">Voltar</button><button class="primary" id="finishOrder" type="button">Gerar pagamento Pix</button></div>
 </div>
 </section>
 
@@ -696,79 +696,67 @@ document.getElementById('applyRedeem').onclick=()=>{
   closeRedeemModal();
 };
 
+let pixCheckoutBusy=false,pixCheckoutTimer=null;
 document.getElementById('finishOrder').onclick=async()=>{
-  // Segurança: não criar pedido confirmado nem conceder pontos antes da confirmação
-  // de pagamento pelo gateway. A integração real de cobrança ainda não está ativa.
-  return;
-  if(!storeOpen&&checkoutState.orderTiming!=='scheduled')return;
-  if(orderCompleted()){showCompletedOrder();return}
-  if('Notification' in window&&Notification.permission==='default'){try{await Notification.requestPermission()}catch(e){}}
-  const finishBtn=document.getElementById('finishOrder');finishBtn.disabled=true;finishBtn.textContent='Confirmando...';
-  const msg=document.getElementById('paymentMessage');if(!checkoutState.payment){msg.style.display='block';return}msg.style.display='none';
-  const cart=getCart();if(!cart.length){showCompletedOrder();return}
-  const subtotal=cartSubtotal(),delivery=currentDeliveryFee(),selectedReward=selectedRedeem(),couponValue=couponDiscount(),redeemValue=(selectedReward&&selectedReward.type==='discount'&&!checkoutState.couponCode)?redeemDiscount():0,discount=couponValue+redeemValue,finalTotal=Math.max(0,subtotal-discount)+delivery,earned=Math.floor(finalTotal/10),customer=checkoutState.customer||{};
-  const phoneKey=normalizePhone(customer.phone),loyaltyBefore=getLoyalty(),rewardKey=checkoutState.redeemLoyaltyKey||phoneKey,rewardAccount=loyaltyBefore[rewardKey]||null;
-  if(selectedReward&&(!rewardAccount||Number(rewardAccount.points||0)<selectedReward.points)){
-    finishBtn.disabled=false;finishBtn.textContent='Confirmar pedido';
-    const reviewMsg=document.getElementById('reviewMessage');reviewMsg.textContent='Seu saldo de pontos mudou. Escolha o resgate novamente.';reviewMsg.style.display='block';return;
+ const button=document.getElementById('finishOrder'),message=document.getElementById('reviewMessage');
+ if(pixCheckoutBusy)return;
+ if(checkoutState.payment!=='pix'){
+  message.textContent='Por enquanto, finalize pelo Pix. O pagamento por cartão ainda não está disponível.';
+  message.style.display='block';return;
+ }
+ if(checkoutState.couponCode||selectedRedeem()){
+  message.textContent='Cupons e resgates ainda não estão habilitados para pagamento online. Remova-os para continuar.';
+  message.style.display='block';return;
+ }
+ if(checkoutState.orderTiming==='scheduled'){
+  message.textContent='O pagamento de pedidos agendados ainda não está disponível. Selecione entrega assim que possível.';
+  message.style.display='block';return;
+ }
+ const cart=getCart(),customer=checkoutState.customer||{};
+ if(!cart.length||!customer.name||!customer.phone){message.textContent='Confira seus produtos, nome e telefone.';message.style.display='block';return}
+ const items=cart.map(x=>({id:Number(x.id||x.productId||x.product_id),qty:Number(x.qty)}));
+ if(items.some(x=>!Number.isSafeInteger(x.id)||x.id<=0)){
+  message.textContent='Não foi possível identificar os produtos. Volte ao cardápio e adicione-os novamente.';
+  message.style.display='block';return;
+ }
+ pixCheckoutBusy=true;button.disabled=true;button.textContent='Preparando Pix...';message.style.display='block';message.textContent='Registrando pedido com segurança...';
+ try{
+  const create=await fetch('/api/sr-dogao-pay/new-order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({customer,address:checkoutState.address||{},items})});
+  const order=await create.json();
+  if(!create.ok||!order.order_id||!order.token)throw Error('Não foi possível registrar o pedido. Verifique os dados e tente novamente.');
+  localStorage.setItem('srdogao_pending_pix_order',JSON.stringify({id:order.order_id,token:order.token}));
+  message.textContent='Pedido registrado. Solicitando cobrança ao Asaas...';
+  const response=await fetch('/api/sr-dogao-pay/create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({orderId:order.order_id,token:order.token,method:'PIX'})});
+  const pay=await response.json();
+  if(!response.ok||!pay.copy_paste){
+   message.textContent='Pedido registrado, mas não foi possível gerar o Pix. Não tente criar outro pedido: entre em contato com o estabelecimento para verificar a cobrança.';
+   return;
   }
-  let remoteOrder;
-  try{
-    remoteOrder=await createRemoteOrder({
-      customer,address:checkoutState.address||{},deliveryType:checkoutState.deliveryType,payment:checkoutState.payment,
-      items:cart,deliveryCoords:checkoutState.deliveryCoords||null,subtotal,discount,total:finalTotal,couponCode:checkoutState.couponCode||'',redeemTitle:(selectedRedeem()?.title||'')
-    });
-    await registerOrderPush(remoteOrder?.public_token);
-  }catch(error){
-    finishBtn.disabled=false;finishBtn.textContent='Confirmar pedido';
-    const reviewMsg=document.getElementById('reviewMessage');
-    reviewMsg.textContent='Não foi possível confirmar o pedido agora. Verifique sua internet e tente novamente.';
-    reviewMsg.style.display='block';
-    return;
-  }
-  const loyalty=getLoyalty();
-  const current=loyalty[phoneKey]||{name:customer.name||'',cpf:customer.cpf||'',points:0,history:[]};
-  current.name=customer.name||current.name;current.cpf=customer.cpf||current.cpf;
-  if(checkoutState.couponCode&&!checkoutState.storeCoupon){
-    const couponOwner=loyalty[checkoutState.redeemLoyaltyKey||phoneKey]||current;
-    const redemption=(couponOwner.redemptions||[]).find(r=>r.code===checkoutState.couponCode&&!r.usedAt);
-    if(redemption)redemption.usedAt=new Date().toISOString();
-    if(checkoutState.redeemLoyaltyKey&&loyalty[checkoutState.redeemLoyaltyKey])loyalty[checkoutState.redeemLoyaltyKey]=couponOwner;
-  }
-  if(selectedReward){
-    const owner=loyalty[rewardKey];
-    owner.points=Number(owner.points||0)-selectedReward.points;
-    owner.redemptions=owner.redemptions||[];
-    owner.redemptions.unshift({date:new Date().toISOString(),rewardId:selectedReward.id,title:selectedReward.title,points:selectedReward.points,value:selectedReward.value,type:selectedReward.type,usedAt:new Date().toISOString(),usedDirectlyAtCheckout:true});
-    loyalty[rewardKey]=owner;
-  }
-  current.points=Number(current.points||0)+earned;
-  current.history=current.history||[];
-  current.history.unshift({date:new Date().toISOString(),amount:subtotal,points:earned});
-  loyalty[phoneKey]=current;saveLoyalty(loyalty);
-  checkoutState.updatedAt=new Date().toISOString();checkoutState.pointsEarned=earned;persistCheckout();
-  const finalOrder={remoteId:remoteOrder?.id||'',trackingToken:remoteOrder?.public_token||'',deliveryPin:remoteOrder?.delivery_pin||'',customer,address:checkoutState.address||{},deliveryType:checkoutState.deliveryType,orderTiming:checkoutState.orderTiming||'now',scheduledFor:checkoutState.scheduledFor||'',payment:checkoutState.payment,items:cart,subtotal,deliveryFee:delivery,discount,total:finalTotal,couponCode:checkoutState.couponCode||'',redeemRewardId:checkoutState.redeemRewardId||'',redeemTitle:(selectedRedeem()?.title||''),pointsEarned:earned,pointsTotal:current.points,status:'confirmed',date:checkoutState.updatedAt};
-  localStorage.setItem('srdogao_last_order',JSON.stringify(finalOrder));
-  const history=JSON.parse(localStorage.getItem('srdogao_order_history')||'[]');
-  history.unshift({...finalOrder,loyaltyKey:checkoutState.redeemLoyaltyKey||phoneKey});
-  localStorage.setItem('srdogao_order_history',JSON.stringify(history.slice(0,20)));
-  localStorage.setItem('srdogao_last_order_completed','1');
-  saveCart([]);
-  document.querySelectorAll('.step-content').forEach(section=>section.classList.add('hidden'));
-  document.querySelectorAll('[data-step-pill]').forEach(pill=>{pill.classList.remove('active');pill.classList.add('done')});
-  document.getElementById('pageTitle').textContent='Pedido finalizado';
-  document.getElementById('pageSubtitle').textContent='Confira abaixo os dados do pedido.';
-  const a=checkoutState.address||{};
-  document.getElementById('successInfo').innerHTML='<p><b>Cliente:</b> '+(customer.name||'-')+'</p><p><b>Telefone:</b> '+(customer.phone||'-')+'</p><p><b>Endereço:</b> '+[a.street,a.number,a.district,a.city?(a.city+(a.state?' - '+a.state:'')):'',a.cep,a.reference].filter(Boolean).join(', ')+'</p><p><b>Entrega:</b> '+(checkoutState.deliveryType==='pickup'?'Retirada':'Entrega')+'</p><p><b>Pagamento:</b> '+({pix:'Pix',card:'Cartão'}[checkoutState.payment]||checkoutState.payment)+'</p><p><b>Subtotal:</b> '+money(subtotal)+'</p>'+(couponValue>0?'<p><b>Cupom:</b> '+checkoutState.couponCode+' (- '+money(couponValue)+')</p>':'')+(selectedRedeem()?'<p><b>Resgate:</b> '+selectedRedeem().title+(redeemValue>0?' (- '+money(redeemValue)+')':'')+'</p>':'')+'<p><b>Total:</b> '+money(finalTotal)+'</p>';
-  document.getElementById('pointsTotal').textContent=current.points;
-  document.getElementById('pointsEarnedText').textContent='Neste pedido você ganhou '+earned+' ponto'+(earned===1?'':'s')+'.';
-  document.getElementById('success').style.display='block';
-  document.getElementById('deliveryPin').textContent=finalOrder.deliveryPin||'----';
-  updatePushStatus();
-  renderTracking('confirmed');
-  startCustomerTracking(finalOrder.trackingToken,finalOrder.deliveryPin);
-  finishBtn.disabled=false;finishBtn.textContent='Confirmar pedido';
-  window.scrollTo({top:0,behavior:'smooth'});
+  message.textContent='';
+  const heading=document.createElement('p');heading.textContent='Pix do pedido • Total: '+money(order.total);message.appendChild(heading);
+  if(pay.qr_code){const image=document.createElement('img');image.src='data:image/png;base64,'+pay.qr_code;image.alt='QR Code Pix';image.style.cssText='display:block;width:220px;max-width:100%;margin:12px auto';message.appendChild(image)}
+  const code=document.createElement('textarea');code.className='field';code.readOnly=true;code.rows=3;code.value=pay.copy_paste;message.appendChild(code);
+  const copy=document.createElement('button');copy.type='button';copy.className='primary';copy.textContent='Copiar Pix Copia e Cola';copy.onclick=async()=>{try{await navigator.clipboard.writeText(code.value);copy.textContent='Código copiado!'}catch{code.select()}};message.appendChild(copy);
+  const status=document.createElement('p');status.textContent='Aguardando confirmação do pagamento...';message.appendChild(status);
+  button.textContent='Pix gerado';button.disabled=true;
+  if(pixCheckoutTimer)clearInterval(pixCheckoutTimer);
+  const check=async()=>{
+   try{
+    const response=await fetch('/api/sr-dogao-pay/order-status?orderId='+encodeURIComponent(order.order_id)+'&token='+encodeURIComponent(order.token),{cache:'no-store'});
+    if(!response.ok)return;
+    const result=await response.json();
+    if(result.order_status==='confirmed'||['received','confirmed'].includes(result.payment_status)){
+     clearInterval(pixCheckoutTimer);pixCheckoutTimer=null;
+     status.textContent='Pagamento confirmado! Seu pedido foi recebido.';
+     localStorage.setItem('srdogao_last_order_completed','1');
+     localStorage.setItem('srdogao_last_order',JSON.stringify({remoteId:order.order_id,trackingToken:order.token,status:'confirmed',customer,items:cart}));
+     saveCart([]);
+    }
+   }catch{}
+  };
+  pixCheckoutTimer=setInterval(check,5000);check();
+ }catch(error){message.textContent=error.message||'Falha ao iniciar pagamento.';button.disabled=false;button.textContent='Gerar pagamento Pix';}
+ finally{pixCheckoutBusy=false}
 };
 document.querySelectorAll('[data-back]').forEach(button=>button.onclick=()=>showStep(Number(button.dataset.back)));
 document.querySelectorAll('.option input').forEach(input=>input.addEventListener('change',syncOptions));
