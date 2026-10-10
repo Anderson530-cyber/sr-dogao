@@ -29,6 +29,7 @@ export default async function handler(req,res){
   if(!Number.isFinite(fee)||fee<0)throw Error('INVALID_FEE');
   const totalCents=subtotalCents+money(fee);
   if(totalCents<=0||totalCents>10000000)return res.status(400).json({error:'invalid_total'});
+  if(totalCents<500)return res.status(400).json({error:'minimum_payment_amount',minimum_amount:5});
   const created=await db('rpc/srdogao_create_order',{method:'POST',body:{
    p_customer_name:name,p_customer_phone:phone,p_address:address,p_delivery_type:'delivery',
    p_payment:'PIX',p_items:orderItems,p_subtotal:subtotalCents/100,p_discount:0,
