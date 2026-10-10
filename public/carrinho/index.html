@@ -705,6 +705,20 @@ document.getElementById('finishOrder').onclick=async()=>{
   }
   const cart=getCart();if(!cart.length)return;
   if(localStorage.getItem('dogao_pending_payment')){
+    // An abandoned local payment may have been removed by the operator.
+    // Verify with the server before blocking a fresh checkout.
+    try {
+      const pending=JSON.parse(localStorage.getItem('dogao_pending_payment')||'null');
+      if(pending?.id&&pending?.token){
+        const check=await fetch('/api/sr-dogao-pay/recover?orderId='+encodeURIComponent(pending.id)+'&token='+encodeURIComponent(pending.token),{cache:'no-store'});
+        const result=await check.json();
+        if(check.status===404&&result.error==='not_found')localStorage.removeItem('dogao_pending_payment');
+        // A pending order with its payment deleted is safe to abandon only after
+        // checking the order on the server; no provider payment is associated.
+      }
+    }catch(error){console.warn('Dogao Pay preflight recovery unavailable:',error);}
+  }
+  if(localStorage.getItem('dogao_pending_payment')){
     reviewMsg.textContent='Já existe um pagamento em andamento. Use Recuperar pagamento para consultar a mesma cobrança.';
     const recoverButton=document.createElement('button');
     recoverButton.type='button';recoverButton.textContent='Recuperar pagamento';
