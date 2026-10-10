@@ -752,6 +752,9 @@ document.getElementById('finishOrder').onclick=async()=>{
      localStorage.setItem('srdogao_last_order_completed','1');
      localStorage.setItem('srdogao_last_order',JSON.stringify({remoteId:order.order_id,trackingToken:order.token,status:'confirmed',customer,items:cart}));
      saveCart([]);
+     message.replaceChildren(status);
+     button.textContent='Pagamento confirmado';button.disabled=true;
+     window.location.replace('/meu-pedido/');
     }
    }catch{}
   };
