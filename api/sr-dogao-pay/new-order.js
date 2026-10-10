@@ -19,7 +19,7 @@ export default async function handler(req,res){
   const orderItems=normalized.map(x=>{
    const p=byId.get(x.id),price=Number(p.promo&&p.promo_price!=null?p.promo_price:p.price);
    if(!p||!Number.isFinite(price)||price<=0)throw Error('INVALID_PRICE');
-   return {id:x.id,name:p.name,price:money(price)/100,qty:x.qty,quantity:x.qty,total:money(price)*x.qty/100};
+   return {productId:x.id,id:x.id,name:p.name,price:money(price)/100,qty:x.qty,quantity:x.qty,total:money(price)*x.qty/100,additions:[]};
   });
   const subtotalCents=orderItems.reduce((sum,x)=>sum+money(x.price)*x.qty,0);
   const settings=await db('srdogao_settings',{query:'?key=eq.site&select=value'});
