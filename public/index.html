@@ -109,8 +109,8 @@ const money=v=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).
 let cart=JSON.parse(localStorage.getItem('srdogao_cart')||'[]');
 const $=q=>document.querySelector(q); const $$=q=>Array.from(document.querySelectorAll(q));
 function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),1800)}
-function openModal(id){$(id).classList.add('open')} function closeAll(){$$('.modal-backdrop').forEach(x=>x.classList.remove('open'))}
-$('[data-close]').forEach(b=>b.onclick=closeAll); $('.modal-backdrop').forEach(m=>m.onclick=e=>{if(e.target===m)closeAll()});
+function openModal(id){$(id).classList.add('open')} function closeAll(){$$$('.modal-backdrop').forEach(x=>x.classList.remove('open'))}
+$$('[data-close]').forEach(b=>b.onclick=closeAll); $$('.modal-backdrop').forEach(m=>m.onclick=e=>{if(e.target===m)closeAll()});
 function formatOrderCep(v){const d=String(v||'').replace(/\D/g,'').slice(0,8);return d.length>5?d.slice(0,5)+'-'+d.slice(5):d}
 function findOrderIdentity(value){
   const id=String(value||'').replace(/\D/g,''),loyalty=JSON.parse(localStorage.getItem('srdogao_loyalty')||'{}');
@@ -292,12 +292,12 @@ $('#pixGenerateBtn').onclick=async()=>{
  }catch(e){toast(e.message||'Erro ao iniciar pagamento');button.disabled=false;button.textContent='Tentar novamente'}
  finally{dogaoPixPending=false}
 };
-$$('.cat').forEach(c=>c.onclick=()=>{$$('.cat').forEach(x=>x.classList.remove('active'));c.classList.add('active');const cat=c.dataset.category;if(cat==='promocoes'){location.hash='promocoes';return}$$('.card').forEach(card=>card.style.display=(card.dataset.category===cat?'':'none'));location.hash='cardapio'});
+$$$('.cat').forEach(c=>c.onclick=()=>{$$$('.cat').forEach(x=>x.classList.remove('active'));c.classList.add('active');const cat=c.dataset.category;if(cat==='promocoes'){location.hash='promocoes';return}$$$('.card').forEach(card=>card.style.display=(card.dataset.category===cat?'':'none'));location.hash='cardapio'});
 $('.cta').onclick=e=>{e.preventDefault();location.hash='cardapio'};
 $('.combo-action a').onclick=e=>{e.preventDefault();$$('.cat').find(x=>x.dataset.category==='combos')?.click()};
 $('#trackOrder').onclick=e=>{e.preventDefault();$('#infoTitle').textContent='Acompanhar pedido';$('#infoBody').innerHTML='<p>Quando seu pedido for finalizado, o acompanhamento aparecerá aqui.</p>';openModal('#infoModal')};
 $('#faqBtn').onclick=e=>{e.preventDefault();$('#infoTitle').textContent='Dúvidas frequentes';$('#infoBody').innerHTML='<p><b>Como faço um pedido?</b><br>Escolha os produtos, adicione ao carrinho e informe o endereço.</p><p><b>Como acompanho?</b><br>Use a opção Acompanhar pedido após finalizar.</p>';openModal('#infoModal')};
-$$('[data-soon]').forEach(el=>el.onclick=e=>{e.preventDefault();const name=el.dataset.soon||'Esta área';$('#soonTitle').textContent=name;$('#soonBody').innerHTML='<p>Esta área ainda está sendo configurada. Em breve estará disponível.</p>';openModal('#soonModal')});
+$$$('[data-soon]').forEach(el=>el.onclick=e=>{e.preventDefault();const name=el.dataset.soon||'Esta área';$('#soonTitle').textContent=name;$('#soonBody').innerHTML='<p>Esta área ainda está sendo configurada. Em breve estará disponível.</p>';openModal('#soonModal')});
 renderCart();
 loadStoreProducts();
 
