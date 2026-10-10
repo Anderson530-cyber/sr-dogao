@@ -26,12 +26,12 @@ export default async function handler(req,res) {
  }
  let stage='order_lookup';
  try {
-  const orders=await db('srdogao_orders',{query:'?id=eq.'+encodeURIComponent(orderId)+'&select=id,customer_name,customer_phone'});
+  const orders=await db('srdogao_orders',{query:'?id=eq.'+encodeURIComponent(orderId)+'&select=id,customer_name,customer_phone,customer_cpf'});
   const order=orders?.[0];
-  if(!order?.customer_name||!order?.customer_phone) throw new Error('missing_customer');
+  if(!order?.customer_name||!order?.customer_phone||!/^\d{11}$/.test(order.customer_cpf||'')) throw new Error('missing_customer');
   stage='asaas_customer_creation';
   const customerResponse=await asaasRequest('/customers',{method:'POST',body:{
-   name:order.customer_name,mobilePhone:String(order.customer_phone).replace(/\D/g,''),
+   name:order.customer_name,cpfCnpj:order.customer_cpf,mobilePhone:String(order.customer_phone).replace(/\D/g,''),
    externalReference:'dogao-order-'+orderId
   }});
   if(!customerResponse?.id)throw new Error('missing_customer_id');
