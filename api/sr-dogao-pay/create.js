@@ -1,7 +1,6 @@
 // Dogão Pay: real Asaas charges remain disabled until end-to-end payment verification is deployed.
 import { db } from './_db.js';
 import { asaasRequest, environment } from './_asaas.js';
-import { createOrderPixQrCode } from './_static-pix.js';
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export default async function handler(req,res) {
  res.setHeader('Cache-Control','no-store');
@@ -14,8 +13,7 @@ export default async function handler(req,res) {
   return res.status(400).json({error:'invalid_credentials'});
  
  if(!process.env.ASAAS_API_KEY) return res.status(503).json({error:'asaas_production_not_configured'});
- if(method==='PIX'&&(process.env.DOGAO_STATIC_PIX_ENABLED!=='true'||!process.env.ASAAS_PIX_ADDRESS_KEY)) return res.status(503).json({error:'static_pix_not_configured'});
- let reservation;
+  let reservation;
  try {
   const rows=await db('rpc/srdogao_pay_reserve',{method:'POST',body:{
    p_order_id:orderId,p_token:token,p_method:method
@@ -28,14 +26,6 @@ export default async function handler(req,res) {
  }
  let stage='order_lookup';
  try {
-  if(method==='PIX') {
-   stage='asaas_static_pix_creation';
-   const qr=await createOrderPixQrCode({addressKey:process.env.ASAAS_PIX_ADDRESS_KEY,orderId,paymentId:reservation.payment_id,amountCents:Number(reservation.amount_cents)});
-   stage='static_pix_id_sync';
-   const bound=await db('rpc/srdogao_pay_store_static_pix',{method:'POST',body:{p_payment_id:reservation.payment_id,p_qr_id:qr.qrId,p_payload:qr.copyPaste,p_image:qr.encodedImage,p_expires_at:qr.expiresAt||null}});
-   if(bound!==true)throw new Error('PIX_BIND_FAILED');
-   return res.status(200).json({payment_id:reservation.payment_id,status:'pending',method:'PIX',qr_code:qr.encodedImage,copy_paste:qr.copyPaste,expires_at:qr.expiresAt});
-  }
   const orders=await db('srdogao_orders',{query:'?id=eq.'+encodeURIComponent(orderId)+'&select=id,customer_name,customer_phone'});
   const order=orders?.[0];
   if(!order?.customer_name||!order?.customer_phone) throw new Error('missing_customer');
@@ -54,10 +44,11 @@ export default async function handler(req,res) {
   }});
   if(typeof payment.id!=='string') throw new Error('missing_payment_id');
   stage='payment_id_sync';
-  await db('srdogao_pay_payments',{method:'PATCH',
-   query:'?id=eq.'+encodeURIComponent(reservation.payment_id),
+  const synced=await db('srdogao_pay_payments',{method:'PATCH',
+   query:'?id=eq.'+encodeURIComponent(reservation.payment_id)+'&asaas_payment_id=is.null',
    body:{asaas_payment_id:payment.id}
   });
+  if(!Array.isArray(synced)||synced.length!==1) throw new Error('PAYMENT_SYNC_FAILED');
   if(method==='CREDIT_CARD') {
    if(typeof payment.invoiceUrl!=='string'||!payment.invoiceUrl.startsWith('https://'))
     throw new Error('missing_secure_invoice');
@@ -65,8 +56,9 @@ export default async function handler(req,res) {
   }
   stage='pix_qr_creation';
   const qr=await asaasRequest('/payments/'+encodeURIComponent(payment.id)+'/pixQrCode');
+  if(typeof qr.payload!=='string'||!qr.payload) throw new Error('PIX_PAYLOAD_MISSING');
   return res.status(200).json({payment_id:reservation.payment_id,status:'pending',method,
-   qr_code:qr.encodedImage||null,copy_paste:qr.payload||null,expires_at:qr.expirationDate||null});
+   qr_code:qr.encodedImage||null,copy_paste:qr.payload,expires_at:qr.expirationDate||null});
  } catch(error) {
   console.error('Dogao Pay charge failed',stage,error?.message,error?.status||'');
   // A reservation may already have generated a provider charge.
