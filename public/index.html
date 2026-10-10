@@ -223,7 +223,7 @@ function renderCart(){const count=cart.reduce((a,x)=>a+x.qty,0);$('#cartCount').
  box.innerHTML=cart.map((x,i)=>'<div class="cart-row"><b>'+x.name+'</b><div class="qty"><button onclick="qty('+i+',-1)">−</button><span>'+x.qty+'</span><button onclick="qty('+i+',1)">+</button></div><span class="price-line">'+money(x.price*x.qty)+'</span></div>').join('');
  $('#cartTotal').textContent='Total: '+money(cart.reduce((a,x)=>a+x.price*x.qty,0))}
 window.qty=(i,d)=>{cart[i].qty+=d;if(cart[i].qty<=0)cart.splice(i,1);saveCart()};
-$('.add').forEach(b=>b.onclick=()=>{startFreshOrder();const c=b.closest('.card'),name=c.dataset.name,price=+c.dataset.price;let x=cart.find(x=>x.name===name);x?x.qty++:cart.push({name,price,qty:1});saveCart();toast(name+' adicionado ao carrinho')});
+$$('.add').forEach(b=>b.onclick=()=>{startFreshOrder();const c=b.closest('.card'),name=c.dataset.name,price=+c.dataset.price;let x=cart.find(x=>x.name===name);x?x.qty++:cart.push({name,price,qty:1});saveCart();toast(name+' adicionado ao carrinho')});
 
 const catNames={hotdogs:'Hot Dogs',hamburguer:'Hambúrguer',barca:'Na Barca',combos:'Combos',porcoes:'Porções',bebidas:'Bebidas',sobremesas:'Sobremesas',promocoes:'Promoções'};
 function addCart(p){startFreshOrder();let x=cart.find(x=>x.name===p.name);x?x.qty++:cart.push({name:p.name,price:p.price,qty:1});saveCart();toast(p.name+' adicionado ao carrinho')}
