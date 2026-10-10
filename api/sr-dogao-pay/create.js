@@ -71,6 +71,6 @@ export default async function handler(req,res) {
   console.error('Dogao Pay charge failed',stage,error?.message,error?.status||'');
   // A reservation may already have generated a provider charge.
   // Do not release it or retry automatically: reconciliation is required.
-  return res.status(503).json({error:'payment_creation_or_sync_failed',payment_id:reservation.payment_id,stage,provider_status:Number.isInteger(error?.status)?error.status:null});
+  return res.status(503).json({error:'payment_creation_or_sync_failed',payment_id:reservation.payment_id,stage,provider_status:Number.isInteger(error?.status)?error.status:null,diagnostic_code:typeof error?.message==='string' && /^(ASAAS_[A-Z_]+|PIX_[A-Z_]+)$/.test(error.message)?error.message:null});
  }
 }
