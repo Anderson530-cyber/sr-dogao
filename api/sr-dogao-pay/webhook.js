@@ -42,7 +42,8 @@ export default async function handler(req,res) {
    p_amount_cents:Math.round(amount*100),p_payload:req.body
   }});
   return res.status(200).json({received:true,processed:result===true});
- } catch {
+ } catch(error) {
+  console.error('dogao_webhook_processing_failed',{code:String(error?.message||'unknown').slice(0,90),status:Number(error?.status)||null});
   // Do not acknowledge failed events: Asaas should retry.
   return res.status(503).json({error:'processing_unavailable'});
  }
