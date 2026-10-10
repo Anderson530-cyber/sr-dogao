@@ -62,7 +62,7 @@ header{background:var(--y);position:sticky;top:0;z-index:10;box-shadow:0 2px 14p
 <div class="field"><label for="city">Cidade</label><input id="city" readonly placeholder="Preenchida automaticamente pelo CEP"><input id="state" type="hidden"></div>
 <div class="field street-field"><label for="street">Rua / Avenida</label><input id="street" autocomplete="address-line1" placeholder="Comece a digitar o nome da rua" disabled><div class="street-suggestions" id="streetSuggestions"></div><small class="muted" id="streetStatus">Informe primeiro um CEP válido.</small></div>
 <div class="field"><label for="number">Número</label><input id="number" inputmode="numeric" placeholder="Ex.: 123"></div>
-<div class="field"><label for="district">Bairro</label><input id="district" readonly placeholder="Preenchido automaticamente"><small class="muted" id="districtStatus">O bairro será preenchido pelo CEP ou pela rua selecionada.</small></div>
+<div class="field"><label for="district">Bairro</label><input id="district" autocomplete="address-level3" placeholder="Bairro (pode editar)"><small class="muted" id="districtStatus">O bairro é sugerido automaticamente, mas você pode corrigir.</small></div>
 <div class="field"><label for="reference">Complemento / referência</label><textarea id="reference" required placeholder="Apartamento, bloco, ponto de referência..."></textarea></div>
 <div class="field"><label>Localização exata da entrega</label><button class="secondary" id="captureDeliveryLocation" type="button">📍 Usar minha localização atual</button><small class="muted" id="deliveryLocationStatus">Opcional. Use se você estiver no endereço onde o pedido será entregue; isso melhora o aviso de chegada.</small></div>
 <div class="actions-row"><button class="secondary" type="button" data-back="1">Voltar</button><button class="primary" id="saveAddress" type="button">Continuar</button></div>
@@ -436,10 +436,10 @@ function loadAddress(){
   document.getElementById('state').value=saved.state||'';
   document.getElementById('street').value=saved.street||'';
   document.getElementById('street').disabled=!(saved.city&&saved.state);
-  if(saved.city&&saved.state)document.getElementById('streetStatus').textContent='Digite pelo menos 3 letras para ver as ruas da cidade.';
+  if(saved.city&&saved.state)document.getElementById('streetStatus').textContent='Rua preenchida pelo CEP ou pesquisada na cidade. Você pode editar.';
   document.getElementById('number').value=saved.number||'';
   document.getElementById('district').value=saved.district||'';
-  if(saved.district)document.getElementById('districtStatus').textContent='✅ Bairro preenchido automaticamente.';
+  if(saved.district)document.getElementById('districtStatus').textContent='✅ Bairro sugerido pelo CEP. Você pode editar.';
   document.getElementById('reference').value=saved.reference||'';
   const legacy=localStorage.getItem('srdogao_address');
   if(legacy&&!saved.street&&!saved.cep){document.getElementById('cepStatus').textContent='Confirme seu endereço começando pelo CEP.'}
