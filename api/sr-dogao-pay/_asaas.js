@@ -19,6 +19,13 @@ export async function asaasRequest(path, { method = 'GET', body } = {}) {
  if (!response.ok) {
   const err = new Error('ASAAS_PROVIDER_ERROR');
   err.status = response.status;
+  // Keep only provider error codes and a bounded, redacted diagnostic in server logs.
+  const issues = Array.isArray(data?.errors) ? data.errors : [];
+  const codes = issues.map(item => typeof item?.code === 'string' ? item.code.slice(0, 60) : '').filter(Boolean).slice(0, 4);
+  const descriptions = issues.map(item => typeof item?.description === 'string' ? item.description : '').filter(Boolean).slice(0, 2);
+  const sanitize = value => String(value).replace(/\b\d{11,14}\b/g, '[redacted-number]').replace(/[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}/g, '[redacted-email]').replace(/(?:access_token|api[_-]?key|authorization)\s*[:=]\s*\S+/gi, '[redacted-secret]').slice(0, 240);
+  console.error('Dogao Pay Asaas rejection', JSON.stringify({ path, method, status: response.status, codes, descriptions: descriptions.map(sanitize) }));
+  err.providerCodes = codes;
   throw err;
  }
  return data;
