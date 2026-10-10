@@ -98,6 +98,7 @@
 <div class="modal-backdrop" id="welcomeBackModal"><div class="modal" style="text-align:center"><div style="font-size:2.2rem;margin-bottom:8px">👋</div><h2 id="welcomeBackTitle" style="margin:0 0 8px">Olá!</h2><p id="welcomeBackText" style="color:#765;margin:0 0 18px">Que bom ter você de volta.</p><button class="primary" id="welcomeBackHome" type="button" style="width:100%">Ir para a página inicial</button></div></div>
 <div class="modal-backdrop" id="addressModal"><div class="modal"><div class="modal-head"><h2>📍 Endereço de entrega</h2><button class="close" data-close>×</button></div><label>Seu endereço</label><input class="field" id="addressInput" placeholder="Rua, número, bairro"><button class="primary" id="saveAddress">Salvar endereço</button></div></div>
 <div class="modal-backdrop" id="cartModal"><div class="modal"><div class="modal-head"><h2>🛒 Seu carrinho</h2><button class="close" data-close>×</button></div><div id="cartItems"></div><div class="cart-total" id="cartTotal">Total: R$ 0,00</div><button class="primary" id="checkoutBtn" style="width:100%">Continuar pedido</button></div></div>
+<div class="modal-backdrop" id="pixCheckoutModal"><div class="modal"><div class="modal-head"><h2>Pagamento Pix</h2><button class="close" data-close>×</button></div><div id="pixCheckoutBody"><label>Seu nome</label><input class="field" id="pixCustomerName" autocomplete="name" placeholder="Nome completo"><label>Celular com DDD</label><input class="field" id="pixCustomerPhone" type="tel" inputmode="tel" autocomplete="tel" placeholder="(48) 99999-9999"><button class="primary" id="pixGenerateBtn" type="button" style="width:100%">Gerar Pix do pedido</button></div></div></div>
 <div class="modal-backdrop" id="infoModal"><div class="modal"><div class="modal-head"><h2 id="infoTitle">Informação</h2><button class="close" data-close>×</button></div><div id="infoBody"></div></div></div>
 <div class="modal-backdrop" id="soonModal"><div class="modal"><div class="modal-head"><h2 id="soonTitle">Área em configuração</h2><button class="close" data-close>×</button></div><div id="soonBody"><p>Esta área ainda está sendo configurada. Em breve estará disponível.</p></div></div></div>
 <div class="modal-backdrop" id="fullMenuModal"><div class="modal fullmenu"><div class="modal-head"><div><h2>Cardápio completo</h2><small>Escolha uma categoria ou veja tudo.</small></div><button class="close" data-close>×</button></div><div class="fullmenu-cats" id="fullMenuCats"></div><div class="fullmenu-grid" id="fullMenuGrid"></div></div></div><div class="toast" id="toast"></div>
@@ -204,7 +205,64 @@ const savedAddress=localStorage.getItem('srdogao_address'); if(savedAddress)$('#
 function address(){ $('#addressInput').value=localStorage.getItem('srdogao_address')||'';openModal('#addressModal')}
 $('#addressBtn').onclick=null; $('#footerAddress').onclick=e=>{e.preventDefault();address()};
 $('#saveAddress').onclick=()=>{const v=$('#addressInput').value.trim();if(!v)return toast('Digite seu endereço');localStorage.setItem('srdogao_address',v);$('#addressLabel').textContent=v.length>20?v.slice(0,20)+'…':v;closeAll();toast('Endereço salvo')};
-$('#checkoutBtn').onclick=()=>{if(!cart.length)return toast('Adicione um item ao carrinho');if(!localStorage.getItem('srdogao_address')){closeAll();address();return toast('Informe o endereço primeiro')}toast('Carrinho pronto. Pagamento será conectado na próxima etapa')};
+let dogaoPixPending=false,dogaoPixPoll=null;
+function dogaoPixMessage(message){$('#pixCheckoutBody').innerHTML='<p style="line-height:1.6">'+message+'</p>'}
+async function dogaoPixStatus(orderId,token){
+ try{
+  const response=await fetch('/api/sr-dogao-pay/order-status?orderId='+encodeURIComponent(orderId)+'&token='+encodeURIComponent(token),{cache:'no-store'});
+  if(!response.ok)return;
+  const data=await response.json();
+  if(data.order_status==='confirmed'||data.payment_status==='confirmed'||data.payment_status==='received'){
+   if(dogaoPixPoll)clearInterval(dogaoPixPoll);dogaoPixPoll=null;
+   localStorage.setItem('srdogao_last_order_completed','1');
+   localStorage.setItem('srdogao_last_order',JSON.stringify({id:orderId,token}));
+   cart.length=0;saveCart();
+   dogaoPixMessage('<h3>Pagamento confirmado!</h3><p>Seu pedido foi recebido. Obrigado!</p>');
+  }
+ }catch{}
+}
+$('#checkoutBtn').onclick=()=>{
+ if(!cart.length)return toast('Adicione um item ao carrinho');
+ if(!localStorage.getItem('srdogao_address')){closeAll();address();return toast('Informe o endereço primeiro')}
+ const saved=JSON.parse(localStorage.getItem('srdogao_customer')||'{}');
+ closeAll();openModal('#pixCheckoutModal');
+ $('#pixCustomerName').value=saved.name||'';
+ $('#pixCustomerPhone').value=saved.phone||'';
+};
+$('#pixGenerateBtn').onclick=async()=>{
+ if(dogaoPixPending)return;
+ const name=$('#pixCustomerName').value.trim(),phone=$('#pixCustomerPhone').value.replace(/\D/g,'');
+ if(name.length<2||phone.length<10||phone.length>11)return toast('Informe seu nome e celular com DDD');
+ const items=cart.map(x=>{const p=menuProducts.find(p=>p.name===x.name);return {id:p?.id,qty:x.qty}});
+ if(items.some(x=>!Number.isSafeInteger(Number(x.id))))return toast('Atualize o cardápio e tente novamente');
+ const checkout=JSON.parse(localStorage.getItem('srdogao_checkout')||'{}');
+ const address=checkout.address||{description:localStorage.getItem('srdogao_address')||''};
+ const button=$('#pixGenerateBtn');dogaoPixPending=true;button.disabled=true;button.textContent='Preparando pedido...';
+ try{
+  const orderResponse=await fetch('/api/sr-dogao-pay/new-order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({customer:{name,phone},address,items})});
+  const order=await orderResponse.json();
+  if(!orderResponse.ok||!order.order_id||!order.token)throw Error('Não foi possível registrar o pedido.');
+  localStorage.setItem('srdogao_customer',JSON.stringify({name,phone}));
+  localStorage.setItem('srdogao_last_order',JSON.stringify({id:order.order_id,token:order.token}));
+  button.textContent='Gerando Pix...';
+  const payResponse=await fetch('/api/sr-dogao-pay/create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({orderId:order.order_id,token:order.token,method:'PIX'})});
+  const payment=await payResponse.json();
+  if(!payResponse.ok||!payment.copy_paste){
+   dogaoPixMessage('<h3>Pedido registrado, pagamento pendente</h3><p>Não foi possível gerar o Pix agora. Não faça outro pedido para tentar novamente. Entre em contato com o estabelecimento.</p>');
+   return;
+  }
+  const body=$('#pixCheckoutBody');body.textContent='';
+  const heading=document.createElement('p');heading.textContent='Pedido registrado • Total: '+money(order.total);body.appendChild(heading);
+  if(payment.qr_code){const img=document.createElement('img');img.src='data:image/png;base64,'+payment.qr_code;img.alt='QR Code Pix';img.style.cssText='display:block;max-width:240px;width:100%;margin:12px auto';body.appendChild(img)}
+  const input=document.createElement('textarea');input.className='field';input.readOnly=true;input.rows=3;input.value=payment.copy_paste;body.appendChild(input);
+  const copy=document.createElement('button');copy.className='primary';copy.style.width='100%';copy.textContent='Copiar código Pix';copy.onclick=async()=>{try{await navigator.clipboard.writeText(input.value);toast('Código Pix copiado')}catch{input.select();toast('Selecione e copie o código Pix')}};body.appendChild(copy);
+  const status=document.createElement('p');status.textContent='Aguardando confirmação do pagamento...';body.appendChild(status);
+  if(dogaoPixPoll)clearInterval(dogaoPixPoll);
+  dogaoPixPoll=setInterval(()=>dogaoPixStatus(order.order_id,order.token),5000);
+  dogaoPixStatus(order.order_id,order.token);
+ }catch(e){toast(e.message||'Erro ao iniciar pagamento');button.disabled=false;button.textContent='Tentar novamente'}
+ finally{dogaoPixPending=false}
+};
 $$('.cat').forEach(c=>c.onclick=()=>{$$('.cat').forEach(x=>x.classList.remove('active'));c.classList.add('active');const cat=c.dataset.category;if(cat==='promocoes'){location.hash='promocoes';return}$$('.card').forEach(card=>card.style.display=(card.dataset.category===cat?'':'none'));location.hash='cardapio'});
 $('.cta').onclick=e=>{e.preventDefault();location.hash='cardapio'};
 $('.combo-action a').onclick=e=>{e.preventDefault();$$('.cat').find(x=>x.dataset.category==='combos')?.click()};
