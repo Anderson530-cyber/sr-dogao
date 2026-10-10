@@ -738,7 +738,7 @@ document.getElementById('finishOrder').onclick=async()=>{
           reviewMsg.appendChild(input);
           if(result.qr_code){const img=document.createElement('img');img.alt='QR Code Pix';img.src='data:image/png;base64,'+result.qr_code;img.style.cssText='display:block;max-width:230px;width:100%;margin:10px auto';reviewMsg.appendChild(img);}
         }else throw Error('unavailable');
-      }catch(error){reviewMsg.textContent='Não foi possível recuperar o pagamento. Código: '+String(error.message||'unknown').slice(0,80)+'. Não crie outra cobrança antes de verificar o Asaas.';console.error('Dogão Pay recovery:',error);}
+      }catch(error){reviewMsg.textContent='Esta tentativa de pagamento não pôde ser recuperada. Nenhuma nova cobrança foi criada.';const help=document.createElement('small');help.style.cssText='display:block;margin-top:8px';help.textContent='A tentativa anterior precisa ser conferida no Asaas antes de começar outra, para evitar cobrança duplicada.';reviewMsg.appendChild(help);console.error('Dogão Pay recovery:',error);}
       finally{recoverButton.disabled=false;}
     };
     reviewMsg.appendChild(recoverButton);reviewMsg.style.display='block';return;
