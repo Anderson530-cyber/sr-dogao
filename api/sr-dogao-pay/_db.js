@@ -6,7 +6,17 @@ export async function db(table, { method='GET', query='', body } = {}) {
   method,headers:{ apikey:key,Authorization:'Bearer '+key,'Content-Type':'application/json',Prefer:'return=representation' },
   ...(body===undefined?{}:{body:JSON.stringify(body)})
  });
- if(!response.ok) throw new Error('DATABASE_HTTP_'+response.status);
+ if(!response.ok) {
+  // PostgREST returns a safe machine-readable SQLSTATE/PGRST code.
+  // Never log the raw body: it may contain customer data.
+  let diagnostic='unknown';
+  try {
+   const payload=await response.json();
+   const code=String(payload?.code||'');
+   if(/^(?:[A-Z0-9]{5}|PGRST[0-9]{3})$/.test(code)) diagnostic=code;
+  } catch {}
+  throw new Error('DATABASE_HTTP_'+response.status+'_'+diagnostic);
+ }
  const raw=await response.text();
  if(!raw) return null;
  try { return JSON.parse(raw); } catch { throw new Error('DATABASE_INVALID_RESPONSE'); }
