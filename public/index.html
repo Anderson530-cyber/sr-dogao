@@ -120,6 +120,18 @@ function findOrderIdentity(value){
   return match?{key:match[0],account:match[1]}:null;
 }
 function validDogaoCpf(v){const s=String(v||'').replace(/\D/g,'');if(!/^\d{11}$/.test(s)||/^(\d)\1{10}$/.test(s))return false;for(let n=9;n<=10;n++){let sum=0;for(let i=0;i<n;i++)sum+=Number(s[i])*(n+1-i);let d=(sum*10)%11;if(d===10)d=0;if(d!==Number(s[n]))return false;}return true;}
+function dogaoSavedProfile(cpf){try{const profiles=JSON.parse(localStorage.getItem('srdogao_profiles')||'{}');return profiles[String(cpf||'').replace(/\D/g,'')]||null}catch{return null}}
+function dogaoFillReturningCustomer(){
+ const cpf=$('#orderCpfInput').value.replace(/\D/g,'');
+ const status=$('#orderCepStatus');
+ if(!validDogaoCpf(cpf)){status.textContent='';return}
+ const profile=dogaoSavedProfile(cpf);
+ if(!profile){status.textContent='CPF válido. Informe telefone e CEP para continuar.';return}
+ $('#orderPhoneInput').value=profile.phone||'';
+ $('#orderCepInput').value=formatOrderCep(profile.cep||'');
+ status.textContent='Dados anteriores encontrados neste aparelho. Você pode editar telefone e CEP.';
+}
+$('#orderCpfInput').addEventListener('input',dogaoFillReturningCustomer);
 function previewOrderIdentity(){
   const status=$('#orderIdentityStatus'),found=findOrderIdentity($('#orderIdentityInput').value);
   if(!$('#orderIdentityInput').value.trim()){status.textContent='';return null}
@@ -151,6 +163,7 @@ async function prepareOrderByCep(){
       next.customer={...(base.customer||{}),name:identified.account.name||'',phone,cpf};
       localStorage.setItem('srdogao_customer',JSON.stringify(next.customer));
     }
+    try{const profiles=JSON.parse(localStorage.getItem('srdogao_profiles')||'{}');profiles[cpf]={phone,cep:formatOrderCep(cep)};localStorage.setItem('srdogao_profiles',JSON.stringify(profiles));}catch{}
     localStorage.setItem('srdogao_checkout',JSON.stringify(next));
     localStorage.setItem('srdogao_customer',JSON.stringify(next.customer));
     localStorage.setItem('srdogao_address',[address.street,address.district,address.city+(address.state?' - '+address.state:''),address.cep].filter(Boolean).join(', '));
