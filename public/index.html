@@ -132,6 +132,23 @@ function dogaoFillReturningCustomer(){
  status.textContent='Dados anteriores encontrados neste aparelho. Você pode editar telefone e CEP.';
 }
 $('#orderCpfInput').addEventListener('input',dogaoFillReturningCustomer);
+let dogaoSessionSeq=0;
+async function dogaoTryRememberedDevice(){
+ const cpf=$('#orderCpfInput').value.replace(/\D/g,''),seq=++dogaoSessionSeq;
+ if(!validDogaoCpf(cpf))return;
+ try{
+  const res=await fetch('/api/customer-pin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'session',cpf})});
+  const result=await res.json();
+  if(seq!==dogaoSessionSeq||!result.ok)return;
+  $('#orderPhoneInput').value=result.phone||'';
+  $('#orderCepInput').value=formatOrderCep(result.cep||'');
+  $('#orderCepStatus').textContent='Aparelho reconhecido. Entrando automaticamente...';
+  localStorage.setItem('srdogao_pin_verified_cpf',cpf);
+  await prepareOrderByCep();
+ }catch{}
+}
+$('#orderCpfInput').addEventListener('input',dogaoTryRememberedDevice);
+
 function previewOrderIdentity(){
   const status=$('#orderIdentityStatus'),found=findOrderIdentity($('#orderCpfInput').value);
   if(!$('#orderCpfInput').value.trim()){status.textContent='';return null}
@@ -181,7 +198,7 @@ async function prepareOrderByCep(){
   }catch(e){status.textContent='CEP não encontrado. Confira e tente novamente.';button.disabled=false;button.textContent='Continuar para o cardápio'}
 }
 function dogaoHasIdentity(){try{const s=JSON.parse(localStorage.getItem('srdogao_checkout')||'{}');return validDogaoCpf(s.customer?.cpf)&&/^\d{10,11}$/.test(String(s.customer?.phone||'').replace(/\D/g,''))&&/^\d{8}$/.test(String(s.address?.cep||'').replace(/\D/g,''));}catch{return false}}
-function dogaoExit(){if(!confirm('Sair e limpar o carrinho deste aparelho? Pedidos registrados não serão cancelados.'))return;['srdogao_checkout','srdogao_customer','srdogao_cart','srdogao_address','srdogao_last_order','srdogao_last_order_completed'].forEach(k=>localStorage.removeItem(k));location.href='/';}
+function dogaoExit(){if(!confirm('Sair e limpar o carrinho deste aparelho? Pedidos registrados não serão cancelados.'))return;fetch('/api/customer-pin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'logout'})}).catch(()=>{});localStorage.removeItem('srdogao_pin_verified_cpf');['srdogao_checkout','srdogao_customer','srdogao_cart','srdogao_address','srdogao_last_order','srdogao_last_order_completed'].forEach(k=>localStorage.removeItem(k));location.href='/';}
 function dogaoRefreshExit(){const el=document.getElementById('dogaoExitWrap');if(el)el.style.display=dogaoHasIdentity()?'block':'none';}
 document.getElementById('dogaoExit').addEventListener('click',dogaoExit);
 dogaoRefreshExit();
@@ -189,7 +206,7 @@ window.addEventListener('pageshow',dogaoRefreshExit);
 window.addEventListener('storage',dogaoRefreshExit);
 $('#startOrderBtn').onclick=e=>{
   e.preventDefault();
-  if(dogaoHasIdentity()){location.href='/cardapio/';return;}
+  if(dogaoHasIdentity()&&localStorage.getItem('srdogao_pin_verified_cpf')===JSON.parse(localStorage.getItem('srdogao_checkout')||'{}').customer?.cpf){location.href='/cardapio/';return;}
   const saved=JSON.parse(localStorage.getItem('srdogao_checkout')||'{}');
   $('#orderCepInput').value=saved.address?.cep||'';
   $('#orderCpfInput').value=saved.customer?.cpf||'';
