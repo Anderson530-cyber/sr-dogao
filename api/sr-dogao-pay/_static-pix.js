@@ -1,5 +1,5 @@
 // Server-only Asaas static Pix QR code adapter.
-// Not wired to checkout until payment persistence and webhook reconciliation are migrated.
+// Production checkout integration; keep feature flag off until payment verification passes.
 import { asaasRequest } from './_asaas.js';
 
 export async function createOrderPixQrCode({ addressKey, orderId, paymentId, amountCents }) {
