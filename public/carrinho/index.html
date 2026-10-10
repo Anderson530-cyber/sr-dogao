@@ -129,7 +129,7 @@ header{background:var(--y);position:sticky;top:0;z-index:10;box-shadow:0 2px 14p
 <div class="review-block"><div class="review-head"><h3>Pagamento</h3><button type="button" class="edit-link" data-edit-step="5">Editar</button></div><div id="reviewPayment"></div></div>
 <div class="review-block"><h3>Resumo</h3><div id="reviewTotals"></div></div>
 <div class="message" id="reviewMessage"></div>
-<div class="actions-row"><button class="secondary" type="button" data-back="5">Voltar</button><button class="primary" id="finishOrder" type="button">Confirmar pedido</button></div>
+<div class="actions-row"><button class="secondary" type="button" data-back="5">Voltar</button><button class="primary" id="finishOrder" type="button" disabled aria-disabled="true" title="Pagamento online temporariamente indisponível" style="opacity:.55;cursor:not-allowed">Pagamento em configuração</button></div>
 </div>
 </section>
 
@@ -699,9 +699,6 @@ document.getElementById('applyRedeem').onclick=()=>{
 document.getElementById('finishOrder').onclick=async()=>{
   // Segurança: não criar pedido confirmado nem conceder pontos antes da confirmação
   // de pagamento pelo gateway. A integração real de cobrança ainda não está ativa.
-  const reviewMsg=document.getElementById('reviewMessage');
-  reviewMsg.textContent='Pagamento online ainda indisponível. Seu pedido não foi enviado nem cobrado. Aguarde a liberação do Pix ou cartão.';
-  reviewMsg.style.display='block';
   return;
   if(!storeOpen&&checkoutState.orderTiming!=='scheduled')return;
   if(orderCompleted()){showCompletedOrder();return}
