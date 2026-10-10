@@ -1,13 +1,15 @@
 import {db} from './_db.js';
 const money=n=>Math.round(Number(n)*100);
+function validDogaoCpf(v){const s=String(v||'').replace(/\D/g,'');if(!/^\d{11}$/.test(s)||/^(\d)\1{10}$/.test(s))return false;for(let n=9;n<=10;n++){let sum=0;for(let i=0;i<n;i++)sum+=Number(s[i])*(n+1-i);let d=(sum*10)%11;if(d===10)d=0;if(d!==Number(s[n]))return false;}return true;}
+
 export default async function handler(req,res){
  res.setHeader('Cache-Control','no-store');
  if(req.method!=='POST')return res.status(405).json({error:'method_not_allowed'});
  if(process.env.DOGAO_PAY_PRODUCTION_ENABLED!=='true')return res.status(503).json({error:'payments_disabled'});
  try{
   const {customer,items,address}=req.body||{};
-  const name=String(customer?.name||'').trim(),phone=String(customer?.phone||'').replace(/\D/g,'');
-  if(name.length<2||name.length>120||phone.length<10||phone.length>11||!Array.isArray(items)||!items.length||items.length>40||!address||typeof address!=='object')
+  const name=String(customer?.name||'').trim(),phone=String(customer?.phone||'').replace(/\D/g,''),cpf=String(customer?.cpf||'').replace(/\D/g,'');
+  if(!validDogaoCpf(cpf)||name.length<2||name.length>120||phone.length<10||phone.length>11||!Array.isArray(items)||!items.length||items.length>40||!address||typeof address!=='object')
    return res.status(400).json({error:'invalid_order'});
   const normalized=items.map(x=>({id:Number(x.id),qty:Number(x.qty)}));
   if(normalized.some(x=>!Number.isSafeInteger(x.id)||!Number.isSafeInteger(x.qty)||x.qty<1||x.qty>30))
@@ -33,6 +35,7 @@ export default async function handler(req,res){
    p_total:totalCents/100,p_order_timing:'now'
   }});
   if(!created?.id||!created?.public_token)throw Error('CREATE_FAILED');
+  await db('srdogao_orders',{method:'PATCH',query:'?id=eq.'+encodeURIComponent(created.id),body:{customer_cpf:cpf}});
   return res.status(201).json({order_id:created.id,token:created.public_token,total:totalCents/100,status:'pending_payment'});
  }catch(e){console.error('Dogao order creation',e.message);return res.status(503).json({error:'order_creation_failed'});}
 }
