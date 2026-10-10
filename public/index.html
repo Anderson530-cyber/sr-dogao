@@ -87,7 +87,7 @@
 <div class="tape-wrap"><img class="tape-img" src="/Trena-mede.png" alt="Trena 100+"></div>
 <p class="sub">Dogão caprichado, recheado de verdade e do jeito que você gosta.</p>
 <div class="hero-actions"><a class="cta" id="startOrderBtn" href="/cardapio/">🛒 Fazer meu pedido <b>›</b></a><a class="points-cta" href="/pontos/">⭐ Programa de pontos</a></div>
-<div style="margin:10px 0"><button id="dogaoExit" type="button" style="background:transparent;border:1px solid currentColor;border-radius:18px;padding:8px 18px;color:inherit;cursor:pointer;font-weight:700">Sair / Trocar cliente</button></div><div class="benefits"><span>🛵 Entrega rápida</span><span>⭐ Qualidade garantida</span><span class="benefit-hours"><b>🕒 Horários de funcionamento</b><small>Segunda a quinta: 18h–23h</small><small>Sexta e sábado: 18h–00h</small><small>Domingo: 18h–23h</small></span></div>
+<div id="dogaoExitWrap" style="display:none;margin:10px 0"><button id="dogaoExit" type="button" style="background:transparent;border:1px solid currentColor;border-radius:18px;padding:8px 18px;color:inherit;cursor:pointer;font-weight:700">Sair / Trocar cliente</button></div><div class="benefits"><span>🛵 Entrega rápida</span><span>⭐ Qualidade garantida</span><span class="benefit-hours"><b>🕒 Horários de funcionamento</b><small>Segunda a quinta: 18h–23h</small><small>Sexta e sábado: 18h–00h</small><small>Domingo: 18h–23h</small></span></div>
 </div>
 <div class="visual"><a class="hero-promo-card" href="/cardapio/?categoria=combos" aria-label="Ver combos"><div class="hero-promo-media"><img src="/Combo-dog.png" alt="Combo Sr. Dogão"></div><div class="hero-promo-copy"><strong>COMBOS<br>QUE VALEM<br>A PENA!</strong><b>Hot Dog + Batata + Bebida</b><div class="hero-promo-bottom"><div><span>A partir de</span><div class="hero-promo-price">R$ 29,90</div></div><span class="hero-promo-link">Ver combos →</span></div></div></a></div>
 </div></section>
@@ -166,6 +166,7 @@ async function prepareOrderByCep(){
     try{const profiles=JSON.parse(localStorage.getItem('srdogao_profiles')||'{}');profiles[cpf]={phone,cep:formatOrderCep(cep)};localStorage.setItem('srdogao_profiles',JSON.stringify(profiles));}catch{}
     localStorage.setItem('srdogao_checkout',JSON.stringify(next));
     localStorage.setItem('srdogao_customer',JSON.stringify(next.customer));
+    dogaoRefreshExit();
     localStorage.setItem('srdogao_address',[address.street,address.district,address.city+(address.state?' - '+address.state:''),address.cep].filter(Boolean).join(', '));
     if(identified){
       button.disabled=false;button.textContent='Continuar para o cardápio';
@@ -181,7 +182,11 @@ async function prepareOrderByCep(){
 }
 function dogaoHasIdentity(){try{const s=JSON.parse(localStorage.getItem('srdogao_checkout')||'{}');return validDogaoCpf(s.customer?.cpf)&&/^\d{10,11}$/.test(String(s.customer?.phone||'').replace(/\D/g,''))&&/^\d{8}$/.test(String(s.address?.cep||'').replace(/\D/g,''));}catch{return false}}
 function dogaoExit(){if(!confirm('Sair e limpar o carrinho deste aparelho? Pedidos registrados não serão cancelados.'))return;['srdogao_checkout','srdogao_customer','srdogao_cart','srdogao_address','srdogao_last_order','srdogao_last_order_completed'].forEach(k=>localStorage.removeItem(k));location.href='/';}
-$('#dogaoExit').onclick=dogaoExit;
+function dogaoRefreshExit(){const el=document.getElementById('dogaoExitWrap');if(el)el.style.display=dogaoHasIdentity()?'block':'none';}
+document.getElementById('dogaoExit').addEventListener('click',dogaoExit);
+dogaoRefreshExit();
+window.addEventListener('pageshow',dogaoRefreshExit);
+window.addEventListener('storage',dogaoRefreshExit);
 $('#startOrderBtn').onclick=e=>{
   e.preventDefault();
   if(dogaoHasIdentity()){location.href='/cardapio/';return;}
