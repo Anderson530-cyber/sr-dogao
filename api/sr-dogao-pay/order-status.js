@@ -8,7 +8,7 @@ export default async function handler(req,res){
  const {orderId,token}=req.query||{};
  if(typeof orderId!=='string'||!uuid.test(orderId)||typeof token!=='string'||!uuid.test(token))return res.status(400).json({error:'invalid_credentials'});
  try{
-  const orders=await db('srdogao_orders',{query:'?id=eq.'+encodeURIComponent(orderId)+'&public_token=eq.'+encodeURIComponent(token)+'&select=id,status,created_at,order_timing,scheduled_for,items,total,delivery_pin,arriving_notified_at'});
+  const orders=await db('srdogao_orders',{query:'?id=eq.'+encodeURIComponent(orderId)+'&public_token=eq.'+encodeURIComponent(token)+'&select=id,status,created_at,order_timing,scheduled_for,items,total,delivery_pin,arriving_notified_at,delivered_at'});
   if(!orders?.length)return res.status(404).json({error:'not_found'});
   const payments=await db('srdogao_pay_payments',{query:'?order_id=eq.'+encodeURIComponent(orderId)+'&select=status,billing_type,created_at,asaas_payment_id,amount_cents&order=created_at.desc&limit=1'});
   const p=payments?.[0];let paymentStatus=p?.status||'not_created';
@@ -28,8 +28,8 @@ export default async function handler(req,res){
     }
    }catch(error){console.error('dogao_payment_reconciliation_failed',String(error?.message||'unknown').slice(0,90));}
   }
-  const verifiedOrder=paymentStatus==='confirmed'||paymentStatus==='received' ? await db('srdogao_orders',{query:'?id=eq.'+encodeURIComponent(orderId)+'&select=status,created_at,order_timing,scheduled_for,items,total,delivery_pin,arriving_notified_at'}) : null;
+  const verifiedOrder=paymentStatus==='confirmed'||paymentStatus==='received' ? await db('srdogao_orders',{query:'?id=eq.'+encodeURIComponent(orderId)+'&select=status,created_at,order_timing,scheduled_for,items,total,delivery_pin,arriving_notified_at,delivered_at'}) : null;
   const order=verifiedOrder?.[0]||orders[0];
-  return res.status(200).json({order_status:order.status,payment_status:paymentStatus,method:p?.billing_type||null,created_at:order.created_at,order_timing:order.order_timing,scheduled_for:order.scheduled_for,items:order.items,total:order.total,delivery_pin:(paymentStatus==='confirmed'||paymentStatus==='received')?order.delivery_pin:null,arriving_notified_at:order.arriving_notified_at});
+  return res.status(200).json({order_status:order.status,payment_status:paymentStatus,method:p?.billing_type||null,created_at:order.created_at,order_timing:order.order_timing,scheduled_for:order.scheduled_for,items:order.items,total:order.total,delivery_pin:(paymentStatus==='confirmed'||paymentStatus==='received')?order.delivery_pin:null,arriving_notified_at:order.arriving_notified_at,delivered_at:order.delivered_at});
  }catch{return res.status(503).json({error:'payment_status_unavailable'});}
 }
