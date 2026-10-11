@@ -15,6 +15,7 @@ export default async function handler(req,res) {
  const {id,event,payment}=req.body||{};
  if(typeof id!=='string'||id.length>180||!id||!acceptedEvents.has(event)||typeof payment?.id!=='string'||!payment.id||payment.id.length>180)
   return res.status(400).json({error:'invalid_event'});
+ let stage='asaas_lookup';
  try {
   const current=await asaasRequest('/payments/'+encodeURIComponent(payment.id));
   if(current.id!==payment.id) return res.status(422).json({error:'payment_mismatch'});
@@ -31,19 +32,21 @@ export default async function handler(req,res) {
   if(typeof qrId==='string'&&qrId.length>0){
    if(!['CONFIRMED','RECEIVED'].includes(current.status))
     return res.status(503).json({error:'static_pix_payment_not_settled'});
+   stage='static_pix_database_rpc';
    const result=await db('rpc/srdogao_pay_apply_static_pix_event',{method:'POST',body:{
     p_event_id:id,p_payment_id:current.id,p_qr_id:qrId,p_event_type:event,p_status:status,
     p_amount_cents:Math.round(amount*100),p_payload:req.body
    }});
    return res.status(200).json({received:true,processed:result===true});
   }
+  stage='payment_database_rpc';
   const result=await db('rpc/srdogao_pay_apply_event',{method:'POST',body:{
    p_event_id:id,p_payment_id:current.id,p_event_type:event,p_status:status,
    p_amount_cents:Math.round(amount*100),p_payload:req.body
   }});
   return res.status(200).json({received:true,processed:result===true});
  } catch(error) {
-  console.error('dogao_webhook_processing_failed',{code:String(error?.message||'unknown').slice(0,90),status:Number(error?.status)||null});
+  console.error('dogao_webhook_processing_failed',{stage,code:String(error?.message||'unknown').slice(0,90),status:Number(error?.status)||null});
   // Do not acknowledge failed events: Asaas should retry.
   return res.status(503).json({error:'processing_unavailable'});
  }
