@@ -2,7 +2,7 @@ import {randomBytes,createHash} from 'node:crypto';
 import {db} from './sr-dogao-pay/_db.js';
 const hash=v=>createHash('sha256').update(v).digest('hex');
 const cookieToken=req=>String(req.headers.cookie||'').split(';').map(x=>x.trim()).find(x=>x.startsWith('dogao_device='))?.slice(13)||'';
-const clearCookie='dogao_device=; HttpOnly; Secure; SameSite=Lax; Path=/api/customer-pin; Max-Age=0';
+const clearCookie='dogao_device=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0';
 const digits=v=>String(v||'').replace(/\D/g,'');
 async function nameForCpf(cpf){
  try{
@@ -31,7 +31,7 @@ export default async function handler(req,res){
   if(!profiles?.[0]?.id)throw Error('PROFILE_MISSING');
   const token=randomBytes(32).toString('hex');
   await db('srdogao_customer_devices',{method:'POST',body:{customer_id:profiles[0].id,token_hash:hash(token),expires_at:new Date(Date.now()+30*86400000).toISOString()}});
-  res.setHeader('Set-Cookie','dogao_device='+token+'; HttpOnly; Secure; SameSite=Lax; Path=/api/customer-pin; Max-Age=2592000');
+  res.setHeader('Set-Cookie','dogao_device='+token+'; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=2592000');
  }
  if(result?.ok)result.name=await nameForCpf(id);
  return res.status(result?.ok?200:result?.error==='temporarily_locked'?429:400).json(result);
