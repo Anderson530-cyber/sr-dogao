@@ -17,7 +17,7 @@
 </div></div>
 <div class="modal-bg" id="customModal"><div class="custom-modal">
   <div class="custom-head"><img id="customImg" src="" alt=""><div><h2 id="customName">Produto</h2><div class="price" id="customBasePrice"></div></div><button class="close" id="closeCustom" type="button">×</button></div>
-  <div class="custom-section"><h3>Retirar ingredientes</h3><div id="removeOptions"><p style="color:#765">Nenhuma opção de retirada cadastrada para este produto.</p></div></div>
+  <div class="custom-section" id="variantSelection" hidden><h3>Escolha a opção</h3><div id="variantChoices"></div></div><div class="custom-section"><h3>Retirar ingredientes</h3><div id="removeOptions"><p style="color:#765">Nenhuma opção de retirada cadastrada para este produto.</p></div></div>
   <div class="custom-section"><h3>Adicionar</h3><div id="addOptions"><p style="color:#765">Nenhum adicional cadastrado para este produto.</p></div></div>
   <div class="custom-section"><h3>Observações</h3><textarea class="obs" id="customNote" maxlength="300" placeholder="Ex.: cortar ao meio, molho à parte, sem cebola..."></textarea></div>
   <div class="custom-actions"><button class="cancel" id="cancelCustom" type="button">Voltar</button><button class="confirm" id="confirmCustom" type="button">Adicionar ao carrinho</button></div>
@@ -246,8 +246,7 @@ function parseOptions(raw=''){
 }
 function openCustom(id){
   const p=products.find(x=>String(x.id)===String(id));if(!p)return;
-  customProduct=p;
-  const parsed=parseOptions(p.options||'');
+  customProduct=p;const hasVariants=p.product_type==='variants'&&Array.isArray(p.variants)&&p.variants.length>0;const variants=hasVariants?p.variants:[];const choices=document.getElementById('variantChoices');document.getElementById('variantSelection').hidden=!hasVariants;choices.innerHTML=variants.map((v,i)=>{const out=p.track_stock&&Number(v.stock||0)<=0;return '<label class="choice"><input type="radio" name="productVariant" value="'+i+'" '+(out?'disabled':'')+'><span>'+esc(v.name)+'</span><b>'+money(Number(v.price))+(out?' · Esgotado':'')+'</b></label>'}).join('');if(hasVariants){const first=choices.querySelector('input:not(:disabled)');if(!first){alert('Todas as variantes estão esgotadas.');return}first.checked=true;}const parsed=parseOptions(p.options||'');
   document.getElementById('customImg').src=p.image_url||'';
   document.getElementById('customName').textContent=p.name;
   document.getElementById('customBasePrice').textContent=money(p.promo&&p.promo_price?p.promo_price:p.price);
@@ -262,12 +261,12 @@ function confirmCustom(){
   const removals=[...document.querySelectorAll('[data-remove-opt]:checked')].map(x=>x.value);
   const additions=[...document.querySelectorAll('[data-add-opt]:checked')].map(x=>({name:x.dataset.name,price:Number(x.dataset.price)||0}));
   const note=document.getElementById('customNote').value.trim();
-  const basePrice=+(customProduct.promo&&customProduct.promo_price?customProduct.promo_price:customProduct.price);
+  const hasVariants=customProduct.product_type==='variants'&&Array.isArray(customProduct.variants)&&customProduct.variants.length>0;const choice=hasVariants?document.querySelector('input[name="productVariant"]:checked'):null;if(hasVariants&&!choice){alert('Escolha uma variante disponível.');return}const variant=choice?customProduct.variants[Number(choice.value)]:null;if(customProduct.track_stock){const stock=variant?Number(variant.stock):Number(customProduct.stock_quantity);const existing=getCart().filter(x=>String(x.productId)===String(customProduct.id)&&(!variant||x.variantName===variant.name)).reduce((sum,x)=>sum+Number(x.qty||1),0);if(!Number.isInteger(stock)||existing>=stock){alert('Estoque insuficiente para este produto.');return}}const basePrice=variant?Number(variant.price):+(customProduct.promo&&customProduct.promo_price?customProduct.promo_price:customProduct.price);
   const extras=additions.reduce((s,x)=>s+x.price,0),price=basePrice+extras;
   const cart=getCart();
   cart.push({
     cartId:'ci-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),
-    productId:customProduct.id,name:customProduct.name,price,basePrice,qty:1,
+    productId:customProduct.id,name:customProduct.name+(variant?' - '+variant.name:''),variantName:variant?.name||null,price,basePrice,qty:1,
     removals,additions,note
   });
   saveCart(cart);
@@ -292,7 +291,7 @@ function render(cat=''){
   if(favoritesOnly)list=list.filter(p=>isFavorite(p.id));
   document.getElementById('favoritesFilter').classList.toggle('active',favoritesOnly);
   document.getElementById('grid').innerHTML=list.map(p=>{
-    const qty=itemQty(p.name),unavailable=!p.available;
+    const qty=itemQty(p.name),unavailable=!p.available||(p.track_stock&&(p.product_type==='variants'&&Array.isArray(p.variants)&&p.variants.length?p.variants.every(v=>Number(v.stock||0)<=0):Number(p.stock_quantity||0)<=0));
     const action=unavailable?'<span class="unavailable-label">Indisponível</span>':(qty?'<div class="qty-inline"><button type="button" data-minus-product="'+p.id+'">−</button><span>'+qty+'</span><button type="button" data-id="'+p.id+'" class="add">+</button></div>':'<button class="add" type="button" data-id="'+p.id+'" aria-label="Adicionar '+esc(p.name)+'">+</button>');
     return '<div class="item '+(unavailable?'unavailable':'')+'"><button class="fav" type="button" data-fav="'+p.id+'" aria-label="Favoritar">'+(isFavorite(p.id)?'♥':'♡')+'</button><img class="product-img" data-gallery="'+p.id+'" src="'+p.image_url+'" alt="'+esc(p.name)+'"><div class="item-main"><h3>'+esc(p.name)+'</h3><p>'+esc(p.description||'')+'</p>'+(p.info?'<small style="display:block;color:#876;margin-bottom:6px">'+esc(p.info)+'</small>':'')+'<div class="item-footer"><div class="price">'+money(p.promo&&p.promo_price?p.promo_price:p.price)+'</div><div class="add-wrap">'+action+'</div></div></div></div>';
   }).join('')||'<p>Nenhum produto encontrado.</p>';
