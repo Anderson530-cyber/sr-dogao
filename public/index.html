@@ -78,7 +78,7 @@
 <header class="header"><nav class="nav">
 <img class="logo" src="/sr-dogao-logo.png" alt="Sr. Dogão">
 <div class="links"><a href="#">Início</a><a href="javascript:void(0)" data-soon="Cardápio">Cardápio</a><a href="javascript:void(0)" data-soon="Promoções">Promoções</a><a href="javascript:void(0)" data-soon="Sobre">Sobre</a><a href="javascript:void(0)" data-soon="Contato">Contato</a></div>
-<div class="actions"><button class="pill" id="addressBtn" type="button" style="border:0" data-soon="Meu endereço">📍 <span id="addressLabel">Meu endereço</span></button><a class="pill cart" id="cartBtn" href="/carrinho/">🛒 Carrinho <span id="cartCount"></span></a></div>
+<div class="actions"><button class="pill" id="addressBtn" type="button" style="border:0" data-soon="Meu endereço">📍 <span id="addressLabel">Meu endereço</span></button><button class="pill" id="headerLoginBtn" type="button" style="border:2px solid #c72c25;background:#fff;color:#c72c25;font-weight:900">Entrar</button><a class="pill cart" id="cartBtn" href="/carrinho/">🛒 Carrinho <span id="cartCount"></span></a></div>
 </nav></header>
 <main>
 <section class="hero"><div class="hero-inner">
@@ -110,7 +110,7 @@ let cart=JSON.parse(localStorage.getItem('srdogao_cart')||'[]');
 const $=q=>document.querySelector(q); const $$=q=>Array.from(document.querySelectorAll(q));
 function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),1800)}
 function openModal(id){$(id).classList.add('open')} function closeAll(){$('.modal-backdrop').forEach(x=>x.classList.remove('open'))}
-$$('[data-close]').forEach(b=>b.onclick=closeAll); $$('.modal-backdrop').forEach(m=>m.onclick=e=>{if(e.target===m)closeAll()});
+$('[data-close]').forEach(b=>b.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();closeAll()})); $$('.modal-backdrop').forEach(m=>m.onclick=e=>{if(e.target===m)closeAll()});
 function formatOrderCep(v){const d=String(v||'').replace(/\D/g,'').slice(0,8);return d.length>5?d.slice(0,5)+'-'+d.slice(5):d}
 function findOrderIdentity(value){
   const id=String(value||'').replace(/\D/g,''),loyalty=JSON.parse(localStorage.getItem('srdogao_loyalty')||'{}');
@@ -216,7 +216,7 @@ function dogaoRefreshMyOrder(){let order=null;try{order=JSON.parse(localStorage.
 dogaoRefreshMyOrder();window.addEventListener('pageshow',dogaoRefreshMyOrder);
 window.addEventListener('pageshow',dogaoRefreshExit);
 window.addEventListener('storage',dogaoRefreshExit);
-$('#startOrderBtn').onclick=e=>{
+function dogaoOpenLogin(e){
   e.preventDefault();
   if(dogaoHasIdentity()&&localStorage.getItem('srdogao_pin_verified_cpf')===JSON.parse(localStorage.getItem('srdogao_checkout')||'{}').customer?.cpf){location.href='/cardapio/';return;}
   const saved=JSON.parse(localStorage.getItem('srdogao_checkout')||'{}');
@@ -228,7 +228,9 @@ $('#startOrderBtn').onclick=e=>{
   
   previewOrderIdentity();
   openModal('#orderCepModal');
-};
+}
+$('#startOrderBtn').addEventListener('click',dogaoOpenLogin);
+$('#headerLoginBtn').addEventListener('click',dogaoOpenLogin);
 $('#orderCepInput').oninput=e=>e.target.value=formatOrderCep(e.target.value);
 $('#orderCpfInput').addEventListener('input',previewOrderIdentity);
 async function dogaoPinAction(action){
@@ -250,9 +252,9 @@ async function dogaoPinAction(action){
 }
 $('#dogaoPinLogin').onclick=()=>dogaoPinAction('login');
 $('#dogaoPinRegister').onclick=()=>dogaoPinAction('register');
-$('#dogaoGuest').onclick=()=>{localStorage.removeItem('srdogao_pin_verified_cpf');localStorage.removeItem('srdogao_checkout');localStorage.removeItem('srdogao_customer');closeAll();location.href='/cardapio/'};
+$('#dogaoGuest').addEventListener('click',e=>{e.preventDefault();e.stopPropagation();localStorage.removeItem('srdogao_pin_verified_cpf');localStorage.removeItem('srdogao_checkout');localStorage.removeItem('srdogao_customer');closeAll();window.location.assign('/cardapio/')});
 
-$('#viewAll').onclick=e=>{e.preventDefault();$('#startOrderBtn').click();};
+$('#viewAll').onclick=e=>{e.preventDefault();dogaoOpenLogin(e);};
 $('#welcomeBackHome').onclick=()=>{closeAll();location.href='/'};
 
 function startFreshOrder(){
@@ -343,7 +345,7 @@ $('#pixGenerateBtn').onclick=async()=>{
  finally{dogaoPixPending=false}
 };
 $('.cat').forEach(c=>c.onclick=()=>{$('.cat').forEach(x=>x.classList.remove('active'));c.classList.add('active');const cat=c.dataset.category;if(cat==='promocoes'){location.hash='promocoes';return}$('.card').forEach(card=>card.style.display=(card.dataset.category===cat?'':'none'));location.hash='cardapio'});
-$('.cta').onclick=e=>{e.preventDefault();location.hash='cardapio'};
+
 $('.combo-action a').onclick=e=>{e.preventDefault();$$('.cat').find(x=>x.dataset.category==='combos')?.click()};
 $('#trackOrder').onclick=e=>{e.preventDefault();$('#infoTitle').textContent='Acompanhar pedido';$('#infoBody').innerHTML='<p>Quando seu pedido for finalizado, o acompanhamento aparecerá aqui.</p>';openModal('#infoModal')};
 $('#faqBtn').onclick=e=>{e.preventDefault();$('#infoTitle').textContent='Dúvidas frequentes';$('#infoBody').innerHTML='<p><b>Como faço um pedido?</b><br>Escolha os produtos, adicione ao carrinho e informe o endereço.</p><p><b>Como acompanho?</b><br>Use a opção Acompanhar pedido após finalizar.</p>';openModal('#infoModal')};
