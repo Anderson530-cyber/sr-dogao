@@ -59,7 +59,7 @@ async function check(){
  else if(status==='cancelled'||status==='canceled'){updated.appendChild(make('div','Pedido cancelado','step active'))}
  else{const timeline=document.createElement('div');timeline.className='timeline';for(let i=0;i<stages.length;i++){const [key,label]=stages[i];timeline.appendChild(make('div',(i<level?'✓ ':i===level?'● ':'○ ')+label,'step '+(i<level?'done':i===level?'active':'')))}updated.appendChild(timeline);if(level<0)updated.appendChild(make('p','Situação atual: '+(labels[status]||status||'Em análise'),'order-meta'))}
 
- if(paid&&data.delivery_pin){const firstStep=updated.querySelector?.('.timeline .step')||null;if(firstStep)showDeliveryPin(firstStep,data.delivery_pin)}
+ if(paid&&data.delivery_pin){const firstStep=Array.from(updated.childNodes).find(el=>el.classList?.contains('timeline'))?.firstElementChild;if(firstStep)showDeliveryPin(firstStep,data.delivery_pin)}
  detail.replaceChildren(updated);
  detail.dataset.loaded='1';
  if(paid){recover.style.display='none';pixArea.textContent='';notice.textContent='Pagamento confirmado. Acompanhe aqui a evolução do seu pedido.';localStorage.setItem('srdogao_last_order_completed','1')}
