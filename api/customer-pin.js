@@ -17,7 +17,7 @@ export default async function handler(req,res){
   const token=cookieToken(req);if(!token)return res.status(401).json({ok:false,error:'session_missing'});
   const rows=await db('srdogao_customer_devices',{query:'?token_hash=eq.'+hash(token)+'&expires_at=gt.'+encodeURIComponent(new Date().toISOString())+'&select=customer_id,srdogao_customer_profiles!inner(cpf,phone,cep,street,district,city,state,address_number,address_reference)'});
   const row=rows?.[0];if(!row||row.srdogao_customer_profiles?.cpf!==id)return res.status(401).json({ok:false,error:'session_expired'});
-  const p=row.srdogao_customer_profiles;return res.json({ok:true,phone:p.phone,cep:p.cep,street:p.street,district:p.district,city:p.city,state:p.state,address_number:p.address_number,address_reference:p.address_reference});
+  const p=row.srdogao_customer_profiles;return res.json({ok:true,name:p.name||'',phone:p.phone,cep:p.cep,street:p.street,district:p.district,city:p.city,state:p.state,address_number:p.address_number,address_reference:p.address_reference});
  }
  const result=await db('rpc/srdogao_pin_access',{method:'POST',body:{p_cpf:id,p_pin:code,p_action:action,p_phone:tel||null,p_cep:zip||null}});
  if(result?.ok){
