@@ -53,7 +53,8 @@ async function check(){
   const heading=document.createElement('h2');heading.textContent=recent?'Pedido entregue!':'Entrega concluída';heading.style.margin='6px 0';
   const thanks=document.createElement('p');thanks.textContent=recent?'Obrigado pela preferência! Esperamos que aproveite seu pedido. Volte sempre ao Sr. Dogão!':'Este pedido foi entregue e permanece disponível no seu histórico.';
   success.append(checkmark,heading,thanks);
-  detail.append(success);
+  if(recent)detail.append(success);
+  else{const historyNote=document.createElement('p');historyNote.className='muted';historyNote.textContent='Entrega finalizada. Você pode consultar esta compra no histórico e comprar novamente quando quiser.';detail.append(historyNote)}
   const reorder=document.createElement('a');reorder.href='/cardapio/';reorder.className='btn';reorder.textContent='Comprar novamente';detail.append(reorder);
   document.getElementById('refresh').style.display='none';
   recover.style.display='none';pixArea.replaceChildren();notice.textContent='';
