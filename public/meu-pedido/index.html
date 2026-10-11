@@ -1,5 +1,7 @@
 <!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Meu pedido | Sr. Dogão</title><style>body{margin:0;background:#fff9ef;color:#341a14;font:16px system-ui,sans-serif}header{background:#ffe04c;padding:22px;text-align:center}main{max-width:580px;margin:24px auto;padding:0 18px}.card{background:white;border:1px solid #ead9c7;border-radius:22px;padding:24px;box-shadow:0 8px 30px #44221110}button,a.btn{display:block;box-sizing:border-box;width:100%;padding:15px;border:0;border-radius:15px;background:#c72c25;color:white;text-align:center;text-decoration:none;font-weight:800;margin-top:14px;cursor:pointer}.muted{color:#705a51}#detail{white-space:normal;line-height:1.6}.timeline{display:grid;gap:10px;margin:18px 0}.step{padding:12px 14px;border-radius:12px;background:#f4eee7;color:#705a51;border-left:4px solid #d7c8b9}.step.done{background:#e9f7ed;color:#1e7040;border-color:#26874c}.step.active{background:#fff3d6;color:#7d4a0d;border-color:#e8a620}.order-meta{font-size:14px;color:#705a51;margin:6px 0}.item-list{padding-left:20px;margin:8px 0 16px}.item-list li{margin:5px 0}a.back{color:#53251a;text-decoration:none;font-weight:700}</style></head><body><header><a href="/" aria-label="Sr. Dogão - voltar ao início"><img src="/sr-dogao-logo.png" alt="Sr. Dogão" style="display:block;width:160px;max-width:55vw;height:80px;object-fit:contain;margin:auto"></a></header><main><a class="back" href="/">← Voltar ao início</a><section class="card"><h2>📦 Meus pedidos</h2><div id="history"></div><p id="detail">Consultando seu pedido...</p><button id="refresh" type="button">Atualizar situação</button><button id="recover" type="button" style="display:none;background:#e6a921;color:#311a10">Recuperar Pix para pagar</button><div id="pixArea"></div><p class="muted" id="notice"></p></section></main><script>
 function showDeliveryPin(container,pin){if(!/^\d{4}$/.test(String(pin||'')))return;const box=document.createElement('div');box.style.cssText='margin-top:12px;padding:12px;border-radius:10px;background:#fff9e9;border:1px solid #ead6a5';const heading=document.createElement('div');heading.style.cssText='font-size:12px;font-weight:800;letter-spacing:.3px';heading.textContent='CÓDIGO DE ENTREGA';box.appendChild(heading);const number=document.createElement('div');number.style.cssText='font-size:30px;font-weight:900;letter-spacing:7px;margin:3px 0';number.textContent=String(pin);box.appendChild(number);const hint=document.createElement('small');hint.textContent='Informe este código ao entregador somente ao receber o pedido, para confirmar a entrega.';box.appendChild(hint);container.appendChild(box)}
+function trackingHeader(container,pin){const row=document.createElement('div');row.style.cssText='display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap';const heading=document.createElement('h4');heading.textContent='Acompanhamento';heading.style.margin='12px 0';row.appendChild(heading);if(/^\d{4}$/.test(String(pin||''))){const code=document.createElement('span');code.style.cssText='font-size:12px;font-weight:800;color:#795012;background:#fff1cd;border-radius:9px;padding:7px 10px';code.textContent='Código de entrega: '+pin;row.appendChild(code)}container.appendChild(row)}
+function trackingStages(status,arrived){const stages=['Pedido confirmado','Em preparação','A caminho','Seu pedido chegou','Entregue'];const levels={confirmed:0,preparing:1,in_preparation:1,preparation:1,preparando:1,ready:1,out_for_delivery:2,on_the_way:2,delivering:2,arrived:3,delivered:4};let level=levels[status]??0;if(arrived&&level>=2&&level<4)level=3;return {stages,level}}
 const history=document.getElementById('history'),detail=document.getElementById('detail'),notice=document.getElementById('notice'),recover=document.getElementById('recover'),pixArea=document.getElementById('pixArea');
 let pending;try{pending=JSON.parse(localStorage.getItem('srdogao_pending_pix_order')||'null')}catch{}
 if(pending?.id)detail.textContent='Pedido '+pending.id.slice(0,8).toUpperCase()+' — carregando acompanhamento...';
@@ -20,12 +22,11 @@ async function loadHistory(){
     if(latest.created_at){const date=document.createElement('p');date.className='order-meta';date.textContent='Realizado em: '+new Date(latest.created_at).toLocaleString('pt-BR');summary.appendChild(date)}
     if(Number.isFinite(Number(latest.total))){const total=document.createElement('p');total.className='order-meta';total.textContent='Total: '+Number(latest.total).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});summary.appendChild(total)}
     if(Array.isArray(latest.items)&&latest.items.length){const label=document.createElement('h4');label.textContent='Itens do pedido';summary.appendChild(label);const list=document.createElement('ul');list.className='item-list';for(const item of latest.items){const li=document.createElement('li');li.textContent=(item.qty||item.quantity||1)+'× '+(item.name||'Produto');list.appendChild(li)}summary.appendChild(list)}
-    const stageNames=['Pedido confirmado','Em preparação','A caminho','Entregue'];
-    const stageLevel={confirmed:0,preparing:1,ready:1,out_for_delivery:2,delivered:3}[latest.status]??0;
-    const heading=document.createElement('h4');heading.textContent='Acompanhamento';summary.appendChild(heading);
+    const {stages,level}=trackingStages(latest.status,latest.arriving_notified_at);
+    trackingHeader(summary,latest.delivery_pin);
     const timeline=document.createElement('div');timeline.className='timeline';
-    stageNames.forEach((name,i)=>{const step=document.createElement('div');step.className='step '+(i<stageLevel?'done':i===stageLevel?'active':'');step.textContent=(i<stageLevel?'✓ ':i===stageLevel?'● ':'○ ')+name;timeline.appendChild(step)});
-    if(latest.delivery_pin)showDeliveryPin(timeline.firstElementChild,latest.delivery_pin);summary.appendChild(timeline);detail.appendChild(summary);detail.dataset.loaded='1';
+    stages.forEach((name,i)=>{const step=document.createElement('div');step.className='step '+(i<level?'done':i===level?'active':'');step.textContent=(i<level?'✓ ':i===level?'● ':'○ ')+name;if(latest.delivery_pin&&(i===0||i===2&&level>=2||i===3&&level>=3&&level<4))showDeliveryPin(step,latest.delivery_pin);timeline.appendChild(step)});
+    summary.appendChild(timeline);detail.appendChild(summary);detail.dataset.loaded='1';
     void check();
    }
   }else if(!pending?.id){history.textContent='Você ainda não tem compras registradas.'}
@@ -42,8 +43,8 @@ async function check(){
  const data=await r.json(),paid=['confirmed','received'].includes(data.payment_status)||data.order_status==='confirmed';
  const labels={pending_payment:'Aguardando pagamento',confirmed:'Pedido confirmado',preparing:'Em preparação',in_preparation:'Em preparação',preparation:'Em preparação',preparando:'Em preparação',ready:'Pronto para entrega',out_for_delivery:'A caminho',on_the_way:'A caminho',delivering:'A caminho',delivered:'Entregue',cancelled:'Cancelado',canceled:'Cancelado'};
  const status=String(data.order_status||'').toLowerCase();
- const stages=[['confirmed','Pedido confirmado'],['preparing','Em preparação'],['out_for_delivery','A caminho'],['delivered','Entregue']];
- const level={confirmed:0,preparing:1,in_preparation:1,preparation:1,preparando:1,ready:1,out_for_delivery:2,on_the_way:2,delivering:2,delivered:3}[status]??-1;
+ const tracking=trackingStages(status,data.arriving_notified_at);
+ const level=tracking.level;
  const dateText=value=>{if(!value)return null;const d=new Date(value);return Number.isNaN(d.getTime())?null:d.toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'})};
  const make=(tag,txt,cls)=>{const el=document.createElement(tag);el.textContent=txt;if(cls)el.className=cls;return el};
  const updated=document.createDocumentFragment();
@@ -54,12 +55,11 @@ async function check(){
  if(Number.isFinite(Number(data.total)))updated.appendChild(make('p','Total: '+Number(data.total).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}),'order-meta'));
  const products=Array.isArray(data.items)?data.items:[];
  if(products.length){updated.appendChild(make('h4','Itens do pedido'));const list=document.createElement('ul');list.className='item-list';for(const item of products){list.appendChild(make('li',(item.qty||item.quantity||1)+'× '+(item.name||'Produto')))}updated.appendChild(list)}
- updated.appendChild(make('h4','Acompanhamento'));
+ trackingHeader(updated,paid?data.delivery_pin:null);
  if(!paid){updated.appendChild(make('div','Aguardando pagamento do Pix','step active'))}
  else if(status==='cancelled'||status==='canceled'){updated.appendChild(make('div','Pedido cancelado','step active'))}
- else{const timeline=document.createElement('div');timeline.className='timeline';for(let i=0;i<stages.length;i++){const [key,label]=stages[i];timeline.appendChild(make('div',(i<level?'✓ ':i===level?'● ':'○ ')+label,'step '+(i<level?'done':i===level?'active':'')))}updated.appendChild(timeline);if(level<0)updated.appendChild(make('p','Situação atual: '+(labels[status]||status||'Em análise'),'order-meta'))}
+ else{const timeline=document.createElement('div');timeline.className='timeline';for(let i=0;i<tracking.stages.length;i++){const label=tracking.stages[i];const step=make('div',(i<level?'✓ ':i===level?'● ':'○ ')+label,'step '+(i<level?'done':i===level?'active':''));if(data.delivery_pin&&(i===0||i===2&&level>=2||i===3&&level>=3&&level<4))showDeliveryPin(step,data.delivery_pin);timeline.appendChild(step)}updated.appendChild(timeline);if(level<0)updated.appendChild(make('p','Situação atual: '+(labels[status]||status||'Em análise'),'order-meta'))}
 
- if(paid&&data.delivery_pin){const firstStep=Array.from(updated.childNodes).find(el=>el.classList?.contains('timeline'))?.firstElementChild;if(firstStep)showDeliveryPin(firstStep,data.delivery_pin)}
  detail.replaceChildren(updated);
  detail.dataset.loaded='1';
  if(paid){recover.style.display='none';pixArea.textContent='';notice.textContent='Pagamento confirmado. Acompanhe aqui a evolução do seu pedido.';localStorage.setItem('srdogao_last_order_completed','1')}
