@@ -67,13 +67,13 @@ window.setOrderStatus=async(id,status)=>{const {data,error}=await sb.rpc('srdoga
 async function loadDrivers(){
   const box=$('#driversList');if(!box)return;
   const {data,error}=await sb.rpc('srdogao_admin_drivers');
-  if(error){box.innerHTML='<p class="help">Não foi possível carregar entregadores.</p>';return}
+  if(error){box.innerHTML='<p class="help">Não foi possível carregar entregadores: '+kitchenEscape(error.message||'erro de conexão')+'</p>';return}
   const list=Array.isArray(data)?data:[];
   box.innerHTML=list.length?list.map(d=>'<div class="product"><div style="font-size:1.5rem">🛵</div><div><b>'+d.name+'</b><small>'+(d.active?'Ativo':'Inativo')+'</small></div></div>').join(''):'<p class="help">Nenhum entregador cadastrado.</p>';
 }
 async function createDriver(){
   const name=$('#driverNameInput').value.trim(),username=$('#driverUsername').value.trim().toLowerCase(),password=$('#driverPassword').value;
-  if(!name||!/^[a-z0-9][a-z0-9._-]{2,29}$/.test(username)||password.length<6)return toast('Informe nome, usuário (3 a 30 caracteres) e senha com 6+ caracteres');
+  if(!name||!/^[a-z0-9][a-z0-9._-]{2,29}$/.test(username)||password.length<6){const feedback=$('#driverCreateFeedback');feedback.textContent='Confira os dados: nome obrigatório, usuário com 3 a 30 caracteres (letras sem acento, números, ponto, hífen ou _), senha de pelo menos 6 caracteres.';feedback.style.color='#a21d20';return}
   const button=$('#createDriver'),feedback=$('#driverCreateFeedback');button.disabled=true;button.textContent='Cadastrando...';feedback.textContent='Validando cadastro do entregador...';feedback.style.color='#765';
   try{
     const {data:sessionData,error:sessionError}=await sb.auth.getSession();
