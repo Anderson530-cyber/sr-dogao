@@ -7,7 +7,10 @@ export default async function handler(req,res){
  if(req.method!=='POST')return res.status(405).json({error:'method_not_allowed'});
  if(process.env.DOGAO_PAY_PRODUCTION_ENABLED!=='true')return res.status(503).json({error:'payments_disabled'});
  try{
-  const {customer,items,address}=req.body||{};
+  const {customer,items,address,orderTiming,scheduledFor}=req.body||{};
+  const timing=orderTiming==='scheduled'?'scheduled':'now';
+  const scheduledDate=timing==='scheduled'?new Date(scheduledFor):null;
+  if(timing==='scheduled'&&(!scheduledFor||!Number.isFinite(scheduledDate.getTime())||scheduledDate.getTime()<=Date.now()))return res.status(400).json({error:'invalid_schedule'});
   const name=String(customer?.name||'').trim(),phone=String(customer?.phone||'').replace(/\D/g,''),cpf=String(customer?.cpf||'').replace(/\D/g,'');
   if(!validDogaoCpf(cpf)||name.length<2||name.length>120||phone.length<10||phone.length>11||!Array.isArray(items)||!items.length||items.length>40||!address||typeof address!=='object')
    return res.status(400).json({error:'invalid_order'});
@@ -33,7 +36,7 @@ export default async function handler(req,res){
   const created=await db('rpc/srdogao_create_order',{method:'POST',body:{
    p_customer_name:name,p_customer_phone:phone,p_address:address,p_delivery_type:'delivery',
    p_payment:'PIX',p_items:orderItems,p_subtotal:subtotalCents/100,p_discount:0,
-   p_total:totalCents/100,p_order_timing:'now'
+   p_total:totalCents/100,p_order_timing:timing,p_scheduled_for:scheduledDate?scheduledDate.toISOString():null
   }});
   if(!created?.id||!created?.public_token)throw Error('CREATE_FAILED');
   await db('srdogao_orders',{method:'PATCH',query:'?id=eq.'+encodeURIComponent(created.id),body:{customer_cpf:cpf}});
