@@ -43,6 +43,25 @@ async function check(){
  const data=await r.json(),paid=['confirmed','received'].includes(data.payment_status)||data.order_status==='confirmed';
  const labels={pending_payment:'Aguardando pagamento',confirmed:'Pedido confirmado',preparing:'Em preparação',in_preparation:'Em preparação',preparation:'Em preparação',preparando:'Em preparação',ready:'Pronto para entrega',out_for_delivery:'A caminho',on_the_way:'A caminho',delivering:'A caminho',delivered:'Entregue',cancelled:'Cancelado',canceled:'Cancelado'};
  const status=String(data.order_status||'').toLowerCase();
+ if(status==='delivered'){
+  const deliveredAt=Date.parse(data.delivered_at||'');
+  const recent=Number.isFinite(deliveredAt)&&Date.now()-deliveredAt<120000;
+  detail.replaceChildren();
+  const success=document.createElement('section');
+  success.style.cssText='background:#e8f7ec;border:2px solid #299553;border-radius:18px;padding:22px 16px;margin:14px 0;text-align:center;color:#165d33';
+  const checkmark=document.createElement('div');checkmark.textContent='✓';checkmark.style.cssText='display:grid;place-items:center;margin:0 auto 12px;width:66px;height:66px;border-radius:50%;background:#20854a;color:white;font-size:43px;font-weight:900';
+  const heading=document.createElement('h2');heading.textContent=recent?'Pedido entregue!':'Entrega concluída';heading.style.margin='6px 0';
+  const thanks=document.createElement('p');thanks.textContent=recent?'Obrigado pela preferência! Esperamos que aproveite seu pedido. Volte sempre ao Sr. Dogão!':'Este pedido foi entregue e permanece disponível no seu histórico.';
+  success.append(checkmark,heading,thanks);
+  detail.append(success);
+  const reorder=document.createElement('a');reorder.href='/cardapio/';reorder.className='btn';reorder.textContent='Comprar novamente';detail.append(reorder);
+  document.getElementById('refresh').style.display='none';
+  recover.style.display='none';pixArea.replaceChildren();notice.textContent='';
+  detail.dataset.loaded='1';
+  localStorage.setItem('srdogao_last_order_completed','1');
+  return;
+ }
+ document.getElementById('refresh').style.display='block';
  const tracking=trackingStages(status,data.arriving_notified_at);
  if(data.arriving_notified_at&&tracking.level===3){notice.textContent='O entregador informou que chegou ao endereço. Informe o código somente após receber seu pedido.';}
  const level=tracking.level;
