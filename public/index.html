@@ -101,6 +101,16 @@
  .section{padding:25px 14px}
 }
 @media(max-width:370px){.brand-greeting .logo{width:55px}.actions .cart{padding:8px 7px;font-size:.72rem}#headerLoginBtn{padding:8px;font-size:.72rem}#dogaoGreeting{font-size:.72rem}}
+
+@media(max-width:520px){
+ .hero-actions{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;align-items:stretch}
+ .hero-actions #startOrderBtn{grid-column:1/-1;width:100%;box-sizing:border-box}
+ .hero-actions .points-cta{width:100%;min-width:0;box-sizing:border-box;padding:10px 5px;font-size:clamp(.73rem,3vw,.87rem);line-height:1.1;text-align:center;border-radius:18px}
+ .hero-actions #dogaoMyOrderWrap{width:100%;min-width:0;margin:0!important;align-self:stretch}
+ .hero-actions #dogaoMyOrderWrap a{display:flex!important;align-items:center;justify-content:center;width:100%;height:100%;box-sizing:border-box;padding:10px 5px!important;font-size:clamp(.73rem,3vw,.87rem);line-height:1.1;border-radius:18px!important;white-space:nowrap}
+ .hero-inner>div:first-child .eyebrow{transform:translateX(-7px) rotate(-3deg)}
+ .hero-inner>div:first-child .tape-wrap{left:46%}
+}
 </style><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script></head>
 <body>
 <header class="header"><nav class="nav">
@@ -114,8 +124,7 @@
 <h1 class="eyebrow">É bom pra <span class="red">mais de metro!</span></h1>
 <div class="tape-wrap"><img class="tape-img" src="/Trena-mede.png" alt="Trena 100+"></div>
 <p class="sub">Dogão caprichado, recheado de verdade e do jeito que você gosta.</p>
-<div class="hero-actions"><a class="cta" id="startOrderBtn" href="/cardapio/">🛒 Fazer meu pedido <b>›</b></a><a class="points-cta" href="/pontos/">⭐ Programa de pontos</a></div>
-<div id="dogaoMyOrderWrap" style="display:none;margin:10px 0"><a href="/meu-pedido/" style="display:inline-block;padding:11px 20px;border-radius:22px;background:#bd2821;color:#fff;font-weight:800;text-decoration:none">📦 Minhas compras</a></div><div id="dogaoExitWrap" style="display:none;margin:10px 0"><button id="dogaoExit" type="button" style="background:transparent;border:1px solid currentColor;border-radius:18px;padding:8px 18px;color:inherit;cursor:pointer;font-weight:700">Sair / Trocar cliente</button></div><div class="benefits"><span>🛵 Entrega rápida</span><span>⭐ Qualidade garantida</span><span class="benefit-hours"><b>🕒 Horários de funcionamento</b><small>Segunda a quinta: 18h–23h</small><small>Sexta e sábado: 18h–00h</small><small>Domingo: 18h–23h</small></span></div>
+<div class="hero-actions"><a class="cta" id="startOrderBtn" href="/cardapio/">🛒 Fazer meu pedido <b>›</b></a><a class="points-cta" href="/pontos/">⭐ Programa de pontos</a><div id="dogaoMyOrderWrap" style="display:none;margin:10px 0"><a href="/meu-pedido/" style="display:inline-block;padding:11px 20px;border-radius:22px;background:#bd2821;color:#fff;font-weight:800;text-decoration:none">📦 Minhas compras</a></div></div><div id="dogaoExitWrap" style="display:none;margin:10px 0"><button id="dogaoExit" type="button" style="background:transparent;border:1px solid currentColor;border-radius:18px;padding:8px 18px;color:inherit;cursor:pointer;font-weight:700">Sair / Trocar cliente</button></div><div class="benefits"><span>🛵 Entrega rápida</span><span>⭐ Qualidade garantida</span><span class="benefit-hours"><b>🕒 Horários de funcionamento</b><small>Segunda a quinta: 18h–23h</small><small>Sexta e sábado: 18h–00h</small><small>Domingo: 18h–23h</small></span></div>
 </div>
 <div class="visual"><a class="hero-promo-card" href="/cardapio/?categoria=combos" aria-label="Ver combos"><div class="hero-promo-media"><img src="/Combo-dog.png" alt="Combo Sr. Dogão"></div><div class="hero-promo-copy"><strong>COMBOS<br>QUE VALEM<br>A PENA!</strong><b>Hot Dog + Batata + Bebida</b><div class="hero-promo-bottom"><div><span>A partir de</span><div class="hero-promo-price">R$ 29,90</div></div><span class="hero-promo-link">Ver combos →</span></div></div></a></div>
 </div></section>
