@@ -220,19 +220,19 @@ function dogaoRefreshMyOrder(){
 dogaoRefreshMyOrder();window.addEventListener('pageshow',dogaoRefreshMyOrder);
 window.addEventListener('pageshow',dogaoRefreshExit);
 window.addEventListener('storage',dogaoRefreshExit);
-let dogaoIdentityMode='order';
+let dogaoIdentityMode='login';
 function dogaoSetIdentityMode(mode){
  dogaoIdentityMode=mode;
  const register=mode==='register';
- $('#orderCepModal .modal-head h2').textContent=register?'Criar cadastro':mode==='login'?'Entrar':'Seus dados para pedir';
- $('#orderCepModal .modal-head small').textContent=register?'Cadastre-se para ter benefícios e acompanhar seus pedidos.':'Informe CPF, telefone e PIN de 4 dígitos.';
+ $('#orderCepModal .modal-head h2').textContent=register?'Criar cadastro':'Entrar';
+ $('#orderCepModal .modal-head small').textContent=register?'Informe CPF, telefone e crie um PIN de 4 dígitos.':'Informe seu CPF e PIN de 4 dígitos.';
  $('#dogaoPinLogin').style.display=register?'none':'block';
  $('#dogaoPinRegister').style.display=register?'block':'none';
  $('#dogaoRegisterInvite').style.display=register?'none':'block';
  $('#dogaoLoginInvite').style.display=register?'block':'none';
  $('#dogaoGuest').style.display=mode==='order'?'block':'none';
- $('#orderPhoneInput').style.display='block';
- document.querySelector('label[for="orderPhoneInput"]').style.display='block';
+ $('#orderPhoneInput').style.display=register?'block':'none';
+ document.querySelector('label[for="orderPhoneInput"]').style.display=register?'block':'none';
  $('#orderCepStatus').textContent='';
 }
 function dogaoOpenLogin(e,mode='order'){
