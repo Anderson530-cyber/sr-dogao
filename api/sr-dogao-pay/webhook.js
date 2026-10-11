@@ -52,6 +52,13 @@ export default async function handler(req,res) {
      throw new Error('DOGAO_STATIC_PAYMENT_MISMATCH');
     if(!['CONFIRMED','RECEIVED'].includes(current.status))
      return res.status(503).json({error:'static_pix_payment_not_settled'});
+    // An already settled matching payment is an idempotent replay, not a new payment.
+    // Never change the local status or attach a second provider payment.
+    if(p.status==='received'||p.status==='confirmed'){
+     if(p.asaas_payment_id!==current.id)
+      throw new Error('DOGAO_SETTLED_PAYMENT_ID_MISMATCH');
+     return res.status(200).json({received:true,already_processed:true});
+    }
     if(p.status!=='pending')throw new Error('DOGAO_STATIC_PAYMENT_REQUIRES_REVIEW');
     stage='static_pix_qr_reconciliation';
     const linked=await db('srdogao_pay_payments',{method:'PATCH',
