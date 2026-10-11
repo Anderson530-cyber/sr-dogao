@@ -164,7 +164,13 @@ let checkoutState=JSON.parse(localStorage.getItem('srdogao_checkout')||'{}');
 // Métodos legados não podem continuar selecionados após a remoção de dinheiro.
 if(!['pix','card'].includes(checkoutState.payment)){checkoutState.payment='';localStorage.setItem('srdogao_checkout',JSON.stringify(checkoutState));}
 let siteSettings={},storeOpen=true;
-const orderCompleted=()=>getCart().length===0&&localStorage.getItem('srdogao_last_order_completed')==='1';
+const orderCompleted=()=>{
+ const activeCpf=String(checkoutState.customer?.cpf||'').replace(/\\D/g,'');
+ const verifiedCpf=String(localStorage.getItem('srdogao_pin_verified_cpf')||'').replace(/\\D/g,'');
+ const saved=JSON.parse(localStorage.getItem('srdogao_last_order')||'null');
+ const orderCpf=String(saved?.customer?.cpf||'').replace(/\\D/g,'');
+ return getCart().length===0&&localStorage.getItem('srdogao_last_order_completed')==='1'&&activeCpf.length===11&&activeCpf===verifiedCpf&&orderCpf===activeCpf;
+};
 
 let trackingTimer=null,driverMap=null,driverMarker=null;
 function urlBase64ToUint8Array(base64String){
@@ -407,7 +413,7 @@ function removeItem(index){
 }
 function updateItemNote(index,value){const cart=getCart();if(!cart[index])return;cart[index].note=String(value||'').trim();saveCart(cart)}
 function showStep(step){
-  if(orderCompleted()){showCompletedOrder();return;}
+  if(orderCompleted()&&step!==1){showCompletedOrder();return;}
   currentStep=step;
   document.querySelectorAll('.step-content').forEach(section=>section.classList.add('hidden'));
   document.getElementById('success').style.display='none';
@@ -765,7 +771,7 @@ document.querySelectorAll('[data-back]').forEach(button=>button.onclick=()=>show
 document.querySelectorAll('.option input').forEach(input=>input.addEventListener('change',syncOptions));
 
 if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});
-(async()=>{await Promise.all([ensureCheckoutDeliveryFee(),loadCheckoutSettings()]);loadAddress();loadCustomer();renderTimingOptions();syncOptions();renderCouponTrigger();renderRedeemTrigger();if(!showCompletedOrder()){renderCart();showStep(1);}})();
+(async()=>{await Promise.all([ensureCheckoutDeliveryFee(),loadCheckoutSettings()]);loadAddress();loadCustomer();renderTimingOptions();syncOptions();renderCouponTrigger();renderRedeemTrigger();renderCart();showStep(1);})();
 </script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">document.getElementById('dogaoExit').onclick=()=>{if(!confirm('Sair e limpar o carrinho deste aparelho? Pedidos registrados não serão cancelados.'))return;['srdogao_checkout','srdogao_customer','srdogao_cart','srdogao_address','srdogao_last_order','srdogao_last_order_completed'].forEach(k=>localStorage.removeItem(k));location.href='/';};
 </script>
