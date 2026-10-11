@@ -39,6 +39,12 @@ export default async function handler(req,res) {
    }});
    return res.status(200).json({received:true,processed:result===true});
   }
+  // The Asaas account may serve other applications. Only process payments
+  // explicitly linked to Sr. Dogao; acknowledge unrelated events safely.
+  stage='payment_ownership_lookup';
+  const matches=await db('srdogao_pay_payments',{query:'?select=id&asaas_payment_id=eq.'+encodeURIComponent(current.id)+'&limit=1'});
+  if(!Array.isArray(matches)) throw new Error('INVALID_PAYMENT_LOOKUP');
+  if(matches.length===0) return res.status(200).json({received:true,ignored:true});
   stage='payment_database_rpc';
   const result=await db('rpc/srdogao_pay_apply_event',{method:'POST',body:{
    p_event_id:id,p_payment_id:current.id,p_event_type:event,p_status:status,
