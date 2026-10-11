@@ -73,12 +73,40 @@
   .hero-inner>div:first-child .sub{margin-top:92px}
 }
 
+
+/* Mobile compacto: saudação permanece junto da marca, sem separar Olá e nome. */
+.brand-greeting{display:flex;align-items:center;gap:12px;min-width:0}
+@media(max-width:520px){
+ .nav{min-height:58px;padding:6px 10px;gap:6px;flex-wrap:nowrap}
+ .brand-greeting{gap:5px;flex:1 1 auto;min-width:0}
+ .brand-greeting .logo{width:68px;height:43px;flex-shrink:0}
+ #dogaoGreeting{font-size:clamp(.73rem,3.2vw,.95rem);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+ .actions{gap:5px;flex:0 0 auto;margin-left:0}
+ #headerLoginBtn{padding:8px 10px;font-size:.8rem;border-radius:19px}
+ .actions .cart{padding:8px 9px;font-size:.8rem;border-radius:19px;white-space:nowrap}
+ .hero-inner{padding:18px 12px 22px;gap:0}
+ .eyebrow{font-size:clamp(2rem,9vw,2.65rem)}
+ .hero-inner>div:first-child .sub{font-size:.88rem;line-height:1.2;margin-top:26px;margin-bottom:10px}
+ .hero-actions{width:100%;gap:8px;margin-top:0}
+ .hero-actions .cta{width:100%;padding:12px 14px;font-size:.98rem;min-height:46px;box-shadow:0 5px 12px #a00b0b30}
+ .hero-actions .points-cta{width:100%;padding:11px 12px;font-size:.91rem;min-height:44px;box-shadow:none}
+ #dogaoMyOrderWrap{margin:7px 0!important;width:100%}
+ #dogaoMyOrderWrap a{display:block!important;padding:10px 14px!important;font-size:.9rem;border-radius:20px!important}
+ .benefits{margin:12px auto 0;gap:6px 12px;font-size:.75rem;line-height:1.2}
+ .benefit-hours{gap:2px}
+ .benefit-hours b{font-size:.82rem}
+ .benefit-hours small{font-size:.73rem}
+ .visual{min-height:190px;margin-top:0}
+ .visual img{max-height:200px}
+ .section{padding:25px 14px}
+}
+@media(max-width:370px){.brand-greeting .logo{width:55px}.actions .cart{padding:8px 7px;font-size:.72rem}#headerLoginBtn{padding:8px;font-size:.72rem}#dogaoGreeting{font-size:.72rem}}
 </style><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script></head>
 <body>
 <header class="header"><nav class="nav">
-<img class="logo" src="/sr-dogao-logo.png" alt="Sr. Dogão">
+<div class="brand-greeting"><img class="logo" src="/sr-dogao-logo.png" alt="Sr. Dogão"><span id="dogaoGreeting" style="display:none;font-weight:800;align-self:center;white-space:nowrap"></span></div>
 <div class="links"><a href="#">Início</a><a href="javascript:void(0)" data-soon="Cardápio">Cardápio</a><a href="javascript:void(0)" data-soon="Promoções">Promoções</a><a href="javascript:void(0)" data-soon="Sobre">Sobre</a><a href="javascript:void(0)" data-soon="Contato">Contato</a></div>
-<div class="actions"><button class="pill" id="addressBtn" type="button" style="border:0" data-soon="Meu endereço">📍 <span id="addressLabel">Meu endereço</span></button><span id="dogaoGreeting" style="display:none;font-weight:800;align-self:center;white-space:nowrap"></span><button class="pill" id="headerLoginBtn" type="button" style="border:2px solid #c72c25;background:#fff;color:#c72c25;font-weight:900">Entrar</button><a class="pill cart" id="cartBtn" href="/carrinho/">🛒 Carrinho <span id="cartCount"></span></a></div>
+<div class="actions"><button class="pill" id="addressBtn" type="button" style="border:0" data-soon="Meu endereço">📍 <span id="addressLabel">Meu endereço</span></button><button class="pill" id="headerLoginBtn" type="button" style="border:2px solid #c72c25;background:#fff;color:#c72c25;font-weight:900">Entrar</button><a class="pill cart" id="cartBtn" href="/carrinho/">🛒 Carrinho <span id="cartCount"></span></a></div>
 </nav></header>
 <main>
 <section class="hero"><div class="hero-inner">
