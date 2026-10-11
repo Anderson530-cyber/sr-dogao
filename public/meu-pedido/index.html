@@ -12,8 +12,15 @@ async function loadHistory(){
    const latest=orders[0];
    if(!pending?.id||pending.id!==latest.id){
     pending={id:latest.id,token:latest.token};
-    detail.textContent='Pedido '+latest.id.slice(0,8).toUpperCase()+' — '+(latest.status==='confirmed'?'Pagamento confirmado':'Carregando acompanhamento...');
-    await check();
+    detail.replaceChildren();
+    const summary=document.createElement('div');
+    const title=document.createElement('h3');title.textContent='Pedido '+latest.id.slice(0,8).toUpperCase();summary.appendChild(title);
+    const status=document.createElement('p');status.className='order-meta';status.textContent='Pagamento: '+(latest.status==='confirmed'?'Confirmado':'Em acompanhamento');summary.appendChild(status);
+    if(latest.created_at){const date=document.createElement('p');date.className='order-meta';date.textContent='Realizado em: '+new Date(latest.created_at).toLocaleString('pt-BR');summary.appendChild(date)}
+    if(Number.isFinite(Number(latest.total))){const total=document.createElement('p');total.className='order-meta';total.textContent='Total: '+Number(latest.total).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});summary.appendChild(total)}
+    if(Array.isArray(latest.items)&&latest.items.length){const label=document.createElement('h4');label.textContent='Itens do pedido';summary.appendChild(label);const list=document.createElement('ul');list.className='item-list';for(const item of latest.items){const li=document.createElement('li');li.textContent=(item.qty||item.quantity||1)+'× '+(item.name||'Produto');list.appendChild(li)}summary.appendChild(list)}
+    const loading=document.createElement('p');loading.className='order-meta';loading.textContent='Atualizando acompanhamento...';summary.appendChild(loading);detail.appendChild(summary);detail.dataset.loaded='1';
+    void check();
    }
   }else if(!pending?.id){history.textContent='Você ainda não tem compras registradas.'}
  }catch{if(!pending?.id)history.textContent='Não foi possível carregar suas compras.'}
