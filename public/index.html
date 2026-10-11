@@ -78,7 +78,7 @@
 <header class="header"><nav class="nav">
 <img class="logo" src="/sr-dogao-logo.png" alt="Sr. Dogão">
 <div class="links"><a href="#">Início</a><a href="javascript:void(0)" data-soon="Cardápio">Cardápio</a><a href="javascript:void(0)" data-soon="Promoções">Promoções</a><a href="javascript:void(0)" data-soon="Sobre">Sobre</a><a href="javascript:void(0)" data-soon="Contato">Contato</a></div>
-<div class="actions"><button class="pill" id="addressBtn" type="button" style="border:0" data-soon="Meu endereço">📍 <span id="addressLabel">Meu endereço</span></button><button class="pill" id="headerLoginBtn" type="button" style="border:2px solid #c72c25;background:#fff;color:#c72c25;font-weight:900">Entrar</button><a class="pill cart" id="cartBtn" href="/carrinho/">🛒 Carrinho <span id="cartCount"></span></a></div>
+<div class="actions"><button class="pill" id="addressBtn" type="button" style="border:0" data-soon="Meu endereço">📍 <span id="addressLabel">Meu endereço</span></button><span id="dogaoGreeting" style="display:none;font-weight:800;align-self:center;white-space:nowrap"></span><button class="pill" id="headerLoginBtn" type="button" style="border:2px solid #c72c25;background:#fff;color:#c72c25;font-weight:900">Entrar</button><a class="pill cart" id="cartBtn" href="/carrinho/">🛒 Carrinho <span id="cartCount"></span></a></div>
 </nav></header>
 <main>
 <section class="hero"><div class="hero-inner">
@@ -205,11 +205,11 @@ async function dogaoFinishIdentity(cpf,phone,cep){
  if(zip.length===8)next.address={...(old.address||{}),cep:formatOrderCep(zip)};
  localStorage.setItem('srdogao_checkout',JSON.stringify(next));
  localStorage.setItem('srdogao_customer',JSON.stringify(customer));
- dogaoRefreshExit();dogaoRefreshMyOrder();closeAll();location.href='/cardapio/';
+ dogaoRefreshExit();dogaoRefreshMyOrder();closeAll();location.href='/';
 }
 function dogaoHasIdentity(){try{const s=JSON.parse(localStorage.getItem('srdogao_checkout')||'{}');return validDogaoCpf(s.customer?.cpf)&&/^\d{10,11}$/.test(String(s.customer?.phone||'').replace(/\D/g,''))&&localStorage.getItem('srdogao_pin_verified_cpf')===String(s.customer.cpf).replace(/\D/g,'');}catch{return false}}
 function dogaoExit(){if(!confirm('Sair e limpar o carrinho deste aparelho? Pedidos registrados não serão cancelados.'))return;fetch('/api/customer-pin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'logout'})}).catch(()=>{});localStorage.removeItem('srdogao_pin_verified_cpf');['srdogao_checkout','srdogao_customer','srdogao_cart','srdogao_address','srdogao_last_order','srdogao_last_order_completed'].forEach(k=>localStorage.removeItem(k));location.href='/';}
-function dogaoRefreshExit(){const el=document.getElementById('dogaoExitWrap');if(el)el.style.display=dogaoHasIdentity()?'block':'none';}
+function dogaoRefreshExit(){const logged=dogaoHasIdentity();const el=document.getElementById('dogaoExitWrap');if(el)el.style.display='none';const btn=document.getElementById('headerLoginBtn');if(btn){btn.textContent=logged?'Sair':'Entrar';btn.setAttribute('aria-label',logged?'Sair da conta':'Entrar na conta')}const greeting=document.getElementById('dogaoGreeting');if(greeting){let customer={};try{customer=JSON.parse(localStorage.getItem('srdogao_customer')||'{}')}catch{};let name=String(customer.name||'').trim();try{const cpf=String(customer.cpf||'').replace(/\D/g,'');const found=typeof findOrderIdentity==='function'?findOrderIdentity(cpf):null;name=name||String(found?.account?.name||'').trim()}catch{};greeting.textContent=logged?'Olá, '+(name?name.split(/\s+/)[0]:'cliente')+'!':'';greeting.style.display=logged?'inline':'none'}}
 document.getElementById('dogaoExit').addEventListener('click',dogaoExit);
 dogaoRefreshExit();
 function dogaoRefreshMyOrder(){
@@ -237,6 +237,7 @@ function dogaoSetIdentityMode(mode){
 }
 function dogaoOpenLogin(e,mode='order'){
  if(e)e.preventDefault();
+ if(mode==='order'&&dogaoHasIdentity()){location.href='/cardapio/';return}
  const saved=JSON.parse(localStorage.getItem('srdogao_checkout')||'{}');
  $('#orderCepInput').value=saved.address?.cep||'';
  $('#orderCpfInput').value=saved.customer?.cpf||'';
@@ -246,8 +247,8 @@ function dogaoOpenLogin(e,mode='order'){
  previewOrderIdentity();
  openModal('#orderCepModal');
 }
-$('#startOrderBtn').addEventListener('click',e=>dogaoOpenLogin(e,'order'));
-$('#headerLoginBtn').addEventListener('click',e=>dogaoOpenLogin(e,'login'));
+$('#startOrderBtn').addEventListener('click',e=>{if(dogaoHasIdentity()){e.preventDefault();location.href='/cardapio/';return}dogaoOpenLogin(e,'order')});
+$('#headerLoginBtn').addEventListener('click',e=>{if(dogaoHasIdentity()){e.preventDefault();dogaoExit();return}dogaoOpenLogin(e,'login')});
 $('#dogaoShowRegister').addEventListener('click',()=>dogaoSetIdentityMode('register'));
 $('#dogaoShowLogin').addEventListener('click',()=>dogaoSetIdentityMode('login'));
 $('#orderCepInput').oninput=e=>e.target.value=formatOrderCep(e.target.value);
