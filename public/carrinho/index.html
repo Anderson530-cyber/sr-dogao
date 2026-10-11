@@ -709,10 +709,6 @@ document.getElementById('finishOrder').onclick=async()=>{
   message.textContent='Cupons e resgates ainda não estão habilitados para pagamento online. Remova-os para continuar.';
   message.style.display='block';return;
  }
- if(checkoutState.orderTiming==='scheduled'){
-  message.textContent='O pagamento de pedidos agendados ainda não está disponível. Selecione entrega assim que possível.';
-  message.style.display='block';return;
- }
  const cart=getCart(),customer=checkoutState.customer||{};
  if(!cart.length||!customer.name||!customer.phone||!validDogaoCpf(customer.cpf)){message.textContent='Confira seus produtos, nome e telefone.';message.style.display='block';return}
  const items=cart.map(x=>({id:Number(x.id||x.productId||x.product_id),qty:Number(x.qty)}));
@@ -722,7 +718,7 @@ document.getElementById('finishOrder').onclick=async()=>{
  }
  pixCheckoutBusy=true;button.disabled=true;button.textContent='Preparando Pix...';message.style.display='block';message.textContent='Registrando pedido com segurança...';
  try{
-  const create=await fetch('/api/sr-dogao-pay/new-order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({customer,address:checkoutState.address||{},items})});
+  const create=await fetch('/api/sr-dogao-pay/new-order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({customer,address:checkoutState.address||{},items,orderTiming:checkoutState.orderTiming||'now',scheduledFor:checkoutState.orderTiming==='scheduled'?checkoutState.scheduledFor:null})});
   const order=await create.json();
   if(!create.ok||!order.order_id||!order.token)throw Error('Não foi possível registrar o pedido. Verifique os dados e tente novamente.');
   localStorage.setItem('srdogao_pending_pix_order',JSON.stringify({id:order.order_id,token:order.token}));
