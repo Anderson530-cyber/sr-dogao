@@ -165,10 +165,10 @@ let checkoutState=JSON.parse(localStorage.getItem('srdogao_checkout')||'{}');
 if(!['pix','card'].includes(checkoutState.payment)){checkoutState.payment='';localStorage.setItem('srdogao_checkout',JSON.stringify(checkoutState));}
 let siteSettings={},storeOpen=true;
 const orderCompleted=()=>{
- const activeCpf=String(checkoutState.customer?.cpf||'').replace(/\\D/g,'');
- const verifiedCpf=String(localStorage.getItem('srdogao_pin_verified_cpf')||'').replace(/\\D/g,'');
+ const activeCpf=String(checkoutState.customer?.cpf||'').replace(/\D/g,'');
+ const verifiedCpf=String(localStorage.getItem('srdogao_pin_verified_cpf')||'').replace(/\D/g,'');
  const saved=JSON.parse(localStorage.getItem('srdogao_last_order')||'null');
- const orderCpf=String(saved?.customer?.cpf||'').replace(/\\D/g,'');
+ const orderCpf=String(saved?.customer?.cpf||'').replace(/\D/g,'');
  return getCart().length===0&&localStorage.getItem('srdogao_last_order_completed')==='1'&&activeCpf.length===11&&activeCpf===verifiedCpf&&orderCpf===activeCpf;
 };
 
