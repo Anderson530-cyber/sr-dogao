@@ -126,7 +126,7 @@ function dogaoFillReturningCustomer(){
  const status=$('#orderCepStatus');
  if(!validDogaoCpf(cpf)){status.textContent='';return}
  const profile=dogaoSavedProfile(cpf);
- if(!profile){status.textContent='Informe seu PIN para entrar. Se ainda não tem cadastro, escolha Criar cadastro.';$('#dogaoPinRegister').style.display='block';return}
+ if(!profile){status.textContent='Informe seu PIN para entrar. Se ainda não tem cadastro, escolha Criar cadastro.';$('#dogaoPinRegister').style.display=$('#dogaoGuest').style.display==='none'?'none':'block';return}
  $('#orderPhoneInput').value=profile.phone||'';
  $('#orderCepInput').value=formatOrderCep(profile.cep||'');
  status.textContent='Telefone recuperado neste aparelho. Digite seu PIN.';$('#dogaoPinRegister').style.display='none';
@@ -216,10 +216,15 @@ function dogaoRefreshMyOrder(){let order=null;try{order=JSON.parse(localStorage.
 dogaoRefreshMyOrder();window.addEventListener('pageshow',dogaoRefreshMyOrder);
 window.addEventListener('pageshow',dogaoRefreshExit);
 window.addEventListener('storage',dogaoRefreshExit);
-function dogaoOpenLogin(e){
-  e.preventDefault();
-  if(dogaoHasIdentity()&&localStorage.getItem('srdogao_pin_verified_cpf')===JSON.parse(localStorage.getItem('srdogao_checkout')||'{}').customer?.cpf){location.href='/cardapio/';return;}
+function dogaoOpenLogin(e,mode='order'){
+  if(e)e.preventDefault();
   const saved=JSON.parse(localStorage.getItem('srdogao_checkout')||'{}');
+  const loginOnly=mode==='login';
+  $('#orderPhoneInput').style.display=loginOnly?'none':'';
+  document.querySelector('label[for="orderPhoneInput"]').style.display=loginOnly?'none':'';
+  $('#dogaoGuest').style.display=loginOnly?'none':'';
+  $('#dogaoPinRegister').style.display='none';
+  $('#orderCepModal .modal-head small').textContent=loginOnly?'Informe seu CPF e PIN de 4 dígitos para entrar.':'Informe seus dados para começar o pedido.';
   $('#orderCepInput').value=saved.address?.cep||'';
   $('#dogaoPinRegister').style.display='none';
   $('#orderCpfInput').value=saved.customer?.cpf||'';
@@ -227,10 +232,11 @@ function dogaoOpenLogin(e){
   $('#orderCepStatus').textContent='';
   
   previewOrderIdentity();
+  if(loginOnly)$('#dogaoPinRegister').style.display='none';
   openModal('#orderCepModal');
 }
 $('#startOrderBtn').addEventListener('click',dogaoOpenLogin);
-$('#headerLoginBtn').addEventListener('click',dogaoOpenLogin);
+$('#headerLoginBtn').addEventListener('click',e=>dogaoOpenLogin(e,'login'));
 $('#orderCepInput').oninput=e=>e.target.value=formatOrderCep(e.target.value);
 $('#orderCpfInput').addEventListener('input',previewOrderIdentity);
 async function dogaoPinAction(action){
