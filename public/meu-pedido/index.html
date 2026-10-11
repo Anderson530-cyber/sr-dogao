@@ -19,7 +19,12 @@ async function loadHistory(){
     if(latest.created_at){const date=document.createElement('p');date.className='order-meta';date.textContent='Realizado em: '+new Date(latest.created_at).toLocaleString('pt-BR');summary.appendChild(date)}
     if(Number.isFinite(Number(latest.total))){const total=document.createElement('p');total.className='order-meta';total.textContent='Total: '+Number(latest.total).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});summary.appendChild(total)}
     if(Array.isArray(latest.items)&&latest.items.length){const label=document.createElement('h4');label.textContent='Itens do pedido';summary.appendChild(label);const list=document.createElement('ul');list.className='item-list';for(const item of latest.items){const li=document.createElement('li');li.textContent=(item.qty||item.quantity||1)+'× '+(item.name||'Produto');list.appendChild(li)}summary.appendChild(list)}
-    const loading=document.createElement('p');loading.className='order-meta';loading.textContent='Atualizando acompanhamento...';summary.appendChild(loading);detail.appendChild(summary);detail.dataset.loaded='1';
+    const stageNames=['Pedido confirmado','Em preparação','A caminho','Entregue'];
+    const stageLevel={confirmed:0,preparing:1,ready:1,out_for_delivery:2,delivered:3}[latest.status]??0;
+    const heading=document.createElement('h4');heading.textContent='Acompanhamento';summary.appendChild(heading);
+    const timeline=document.createElement('div');timeline.className='timeline';
+    stageNames.forEach((name,i)=>{const step=document.createElement('div');step.className='step '+(i<stageLevel?'done':i===stageLevel?'active':'');step.textContent=(i<stageLevel?'✓ ':i===stageLevel?'● ':'○ ')+name;timeline.appendChild(step)});
+    summary.appendChild(timeline);detail.appendChild(summary);detail.dataset.loaded='1';
     void check();
    }
   }else if(!pending?.id){history.textContent='Você ainda não tem compras registradas.'}
