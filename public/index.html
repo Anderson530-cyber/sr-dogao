@@ -120,6 +120,10 @@
  .hero-inner>div:first-child .tape-wrap .tape-img{height:42px;max-height:42px;bottom:0;transform:rotate(-5deg)}
  .hero-inner>div:first-child .sub{position:relative;z-index:6;margin-top:56px;margin-bottom:12px;line-height:1.3}
 }
+
+/* Sem trena: título e descrição próximos, sem espaço reservado ao elemento removido. */
+@media(max-width:850px){.hero-inner>div:first-child .sub{margin-top:14px}}
+@media(max-width:520px){.hero-inner>div:first-child .sub{margin-top:14px;margin-bottom:12px}}
 </style><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script></head>
 <body>
 <header class="header"><nav class="nav">
@@ -131,7 +135,7 @@
 <section class="hero"><div class="hero-inner">
 <div>
 <h1 class="eyebrow">É bom pra <span class="red">mais de metro!</span></h1>
-<div class="tape-wrap"><img class="tape-img" src="/Trena-mede.png" alt="Trena 100+"></div>
+
 <p class="sub">Dogão caprichado, recheado de verdade e do jeito que você gosta.</p>
 <div class="hero-actions"><a class="cta" id="startOrderBtn" href="/cardapio/">🛒 Fazer meu pedido <b>›</b></a><a class="points-cta" href="/pontos/">⭐ Programa de pontos</a><div id="dogaoMyOrderWrap" style="display:none;margin:10px 0"><a href="/meu-pedido/" style="display:inline-block;padding:11px 20px;border-radius:22px;background:#bd2821;color:#fff;font-weight:800;text-decoration:none">📦 Minhas compras</a></div></div><div id="dogaoExitWrap" style="display:none;margin:10px 0"><button id="dogaoExit" type="button" style="background:transparent;border:1px solid currentColor;border-radius:18px;padding:8px 18px;color:inherit;cursor:pointer;font-weight:700">Sair / Trocar cliente</button></div><div class="benefits"><span>🛵 Entrega rápida</span><span>⭐ Qualidade garantida</span><span class="benefit-hours"><b>🕒 Horários de funcionamento</b><small>Segunda a quinta: 18h–23h</small><small>Sexta e sábado: 18h–00h</small><small>Domingo: 18h–23h</small></span></div>
 </div>
