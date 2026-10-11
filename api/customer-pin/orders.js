@@ -10,9 +10,9 @@ export default async function handler(req,res){
  const sessions=await db('srdogao_customer_devices',{query:'?token_hash=eq.'+hash+'&expires_at=gt.'+encodeURIComponent(new Date().toISOString())+'&select=customer_id,srdogao_customer_profiles!inner(cpf)'});
  const cpf=sessions?.[0]?.srdogao_customer_profiles?.cpf;
  if(!cpf)return res.status(401).json({error:'login_required'});
- const orders=await db('srdogao_orders',{query:'?customer_cpf=eq.'+encodeURIComponent(cpf)+'&select=id,public_token,status,created_at&order=created_at.desc&limit=20'});
+ const orders=await db('srdogao_orders',{query:'?customer_cpf=eq.'+encodeURIComponent(cpf)+'&select=id,public_token,status,created_at,order_timing,scheduled_for,items,total&order=created_at.desc&limit=20'});
  const paid=(orders||[]).filter(o=>o.status==='confirmed');
  const visible=paid.slice(0,1);
- return res.json({orders:visible.map(o=>({id:o.id,token:o.public_token,status:o.status,created_at:o.created_at}))});
+ return res.json({orders:visible.map(o=>({id:o.id,token:o.public_token,status:o.status,created_at:o.created_at,order_timing:o.order_timing,scheduled_for:o.scheduled_for,items:o.items,total:o.total}))});
  }catch(e){console.error('dogao_order_history_error',String(e.message).slice(0,80));return res.status(503).json({error:'unavailable'})}
 }
