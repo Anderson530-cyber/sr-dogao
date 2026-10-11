@@ -29,7 +29,22 @@ export default async function handler(req,res) {
   // For static Pix, Asaas creates the payment after receipt. Verify it with Asaas,
   // match its QR identifier and settle atomically; never trust webhook body alone.
   const qrId=current.pixQrCodeId;
+  // Asaas sends account-wide events, including static Pix from other systems.
+  // Only route static Pix to Dogao's settlement RPC when the QR is registered here.
   if(typeof qrId==='string'&&qrId.length>0){
+   stage='static_pix_ownership_lookup';
+   const ownedQr=await db('srdogao_pay_payments',{query:'?select=id&asaas_pix_qr_id=eq.'+encodeURIComponent(qrId)+'&limit=1'});
+   if(!Array.isArray(ownedQr))throw new Error('INVALID_STATIC_QR_LOOKUP');
+   if(ownedQr.length===0){
+    // A Dogao static QR may have failed to persist; do not discard that payment.
+    const ref=String(current.externalReference||'');
+    if(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(ref)){
+     const pending=await db('srdogao_pay_payments',{query:'?select=id&id=eq.'+encodeURIComponent(ref)+'&limit=1'});
+     if(!Array.isArray(pending))throw new Error('INVALID_STATIC_REFERENCE_LOOKUP');
+     if(pending.length)throw new Error('DOGAO_STATIC_QR_NOT_REGISTERED');
+    }
+    return res.status(200).json({received:true,ignored:true});
+   }
    if(!['CONFIRMED','RECEIVED'].includes(current.status))
     return res.status(503).json({error:'static_pix_payment_not_settled'});
    stage='static_pix_database_rpc';
