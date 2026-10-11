@@ -758,7 +758,10 @@ document.getElementById('finishOrder').onclick=async()=>{
     }
    }catch{}
   };
-  pixCheckoutTimer=setInterval(check,5000);check();
+  pixCheckoutTimer=setInterval(check,2000);
+   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&pixCheckoutTimer)check()});
+   window.addEventListener('focus',()=>{if(pixCheckoutTimer)check()});
+   check();
  }catch(error){message.textContent=error.message||'Falha ao iniciar pagamento.';button.disabled=false;button.textContent='Gerar pagamento Pix';}
  finally{pixCheckoutBusy=false}
 };
