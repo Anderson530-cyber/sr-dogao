@@ -36,14 +36,29 @@ export default async function handler(req,res) {
    const ownedQr=await db('srdogao_pay_payments',{query:'?select=id&asaas_pix_qr_id=eq.'+encodeURIComponent(qrId)+'&limit=1'});
    if(!Array.isArray(ownedQr))throw new Error('INVALID_STATIC_QR_LOOKUP');
    if(ownedQr.length===0){
-    // A Dogao static QR may have failed to persist; do not discard that payment.
+    // Only recover a Dogao QR after verifying the Asaas payment itself.
+    // The provider's externalReference must identify an existing, pending
+    // Dogao payment with the exact amount and no conflicting provider ID.
     const ref=String(current.externalReference||'');
-    if(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(ref)){
-     const pending=await db('srdogao_pay_payments',{query:'?select=id&id=eq.'+encodeURIComponent(ref)+'&limit=1'});
-     if(!Array.isArray(pending))throw new Error('INVALID_STATIC_REFERENCE_LOOKUP');
-     if(pending.length)throw new Error('DOGAO_STATIC_QR_NOT_REGISTERED');
-    }
-    return res.status(200).json({received:true,ignored:true});
+    const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if(!uuid.test(ref))return res.status(200).json({received:true,ignored:true});
+    const matches=await db('srdogao_pay_payments',{query:'?select=id,amount_cents,billing_type,status,asaas_payment_id,asaas_pix_qr_id&id=eq.'+encodeURIComponent(ref)+'&limit=1'});
+    if(!Array.isArray(matches))throw new Error('INVALID_STATIC_REFERENCE_LOOKUP');
+    if(!matches.length)return res.status(200).json({received:true,ignored:true});
+    const p=matches[0];
+    if(p.billing_type!=='PIX'||Number(p.amount_cents)!==Math.round(amount*100)||
+       (p.asaas_payment_id&&p.asaas_payment_id!==current.id)||
+       (p.asaas_pix_qr_id&&p.asaas_pix_qr_id!==qrId))
+     throw new Error('DOGAO_STATIC_PAYMENT_MISMATCH');
+    if(!['CONFIRMED','RECEIVED'].includes(current.status))
+     return res.status(503).json({error:'static_pix_payment_not_settled'});
+    if(p.status!=='pending')throw new Error('DOGAO_STATIC_PAYMENT_REQUIRES_REVIEW');
+    stage='static_pix_qr_reconciliation';
+    const linked=await db('srdogao_pay_payments',{method:'PATCH',
+     query:'?id=eq.'+encodeURIComponent(ref)+'&status=eq.pending&asaas_pix_qr_id=is.null&or=(asaas_payment_id.is.null,asaas_payment_id.eq.'+encodeURIComponent(current.id)+')',
+     body:{asaas_pix_qr_id:qrId}
+    });
+    if(!Array.isArray(linked)||linked.length!==1)throw new Error('DOGAO_STATIC_QR_RECONCILIATION_CONFLICT');
    }
    if(!['CONFIRMED','RECEIVED'].includes(current.status))
     return res.status(503).json({error:'static_pix_payment_not_settled'});
