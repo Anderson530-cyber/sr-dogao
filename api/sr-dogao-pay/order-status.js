@@ -30,6 +30,6 @@ export default async function handler(req,res){
   }
   const verifiedOrder=paymentStatus==='confirmed'||paymentStatus==='received' ? await db('srdogao_orders',{query:'?id=eq.'+encodeURIComponent(orderId)+'&select=status,created_at,order_timing,scheduled_for,items,total,delivery_pin,arriving_notified_at'}) : null;
   const order=verifiedOrder?.[0]||orders[0];
-  return res.status(200).json({order_status:order.status,payment_status:paymentStatus,method:p?.billing_type||null,created_at:order.created_at,order_timing:order.order_timing,scheduled_for:order.scheduled_for,items:order.items,total:order.total,delivery_pin,arriving_notified_at:(paymentStatus==='confirmed'||paymentStatus==='received')?order.delivery_pin:null});
+  return res.status(200).json({order_status:order.status,payment_status:paymentStatus,method:p?.billing_type||null,created_at:order.created_at,order_timing:order.order_timing,scheduled_for:order.scheduled_for,items:order.items,total:order.total,delivery_pin:(paymentStatus==='confirmed'||paymentStatus==='received')?order.delivery_pin:null,arriving_notified_at:order.arriving_notified_at});
  }catch{return res.status(503).json({error:'payment_status_unavailable'});}
 }
