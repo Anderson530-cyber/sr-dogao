@@ -32,7 +32,8 @@ export default async function handler(req,res) {
   stage='asaas_customer_creation';
   const customerResponse=await asaasRequest('/customers',{method:'POST',body:{
    name:order.customer_name,cpfCnpj:order.customer_cpf,mobilePhone:String(order.customer_phone).replace(/\D/g,''),
-   externalReference:'dogao-order-'+orderId
+   externalReference:'dogao-order-'+orderId,
+   notificationDisabled:true
   }});
   if(!customerResponse?.id)throw new Error('missing_customer_id');
   stage='asaas_charge_creation';
