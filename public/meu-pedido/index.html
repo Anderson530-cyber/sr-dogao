@@ -3,7 +3,7 @@ const history=document.getElementById('history'),detail=document.getElementById(
 let pending;try{pending=JSON.parse(localStorage.getItem('srdogao_pending_pix_order')||'null')}catch{}
 async function loadHistory(){
  try{
-  const r=await fetch('/api/customer-pin/orders',{cache:'no-store'});
+  const controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),9000);let r;try{r=await fetch('/api/customer-pin/orders',{cache:'no-store',signal:controller.signal})}finally{clearTimeout(timeout)}
   if(!r.ok){if(!pending?.id)history.textContent='Entre com CPF e PIN no início do site para consultar suas compras.';return}
   const data=await r.json(),orders=data.orders||[];
   history.replaceChildren();
@@ -11,6 +11,7 @@ async function loadHistory(){
    const latest=orders[0];
    if(!pending?.id||pending.id!==latest.id){
     pending={id:latest.id,token:latest.token};
+    detail.textContent='Pedido '+latest.id.slice(0,8).toUpperCase()+' — '+(latest.status==='confirmed'?'Pagamento confirmado':'Carregando acompanhamento...');
     await check();
    }
   }else if(!pending?.id){history.textContent='Você ainda não tem compras registradas.'}
@@ -21,9 +22,9 @@ async function check(){
  if(checkInProgress)return;
  if(!pending?.id||!pending?.token){detail.textContent='Nenhum pedido recente encontrado neste aparelho.';notice.textContent='Para consultar pedidos feitos em outro aparelho, será necessário entrar no seu cadastro.';return}
  checkInProgress=true;
- if(!detail.dataset.loaded)detail.textContent='Consultando pagamento com segurança...';
+ if(!detail.dataset.loaded&&!detail.textContent.trim())detail.textContent='Consultando pagamento com segurança...';
  try{
- const r=await fetch('/api/sr-dogao-pay/order-status?orderId='+encodeURIComponent(pending.id)+'&token='+encodeURIComponent(pending.token),{cache:'no-store'});if(!r.ok)throw Error('Consulta indisponível');
+ const controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),9000);let r;try{r=await fetch('/api/sr-dogao-pay/order-status?orderId='+encodeURIComponent(pending.id)+'&token='+encodeURIComponent(pending.token),{cache:'no-store',signal:controller.signal})}finally{clearTimeout(timeout)}if(!r.ok)throw Error('Consulta indisponível');
  const data=await r.json(),paid=['confirmed','received'].includes(data.payment_status)||data.order_status==='confirmed';
  const labels={pending_payment:'Aguardando pagamento',confirmed:'Pedido confirmado',preparing:'Em preparação',in_preparation:'Em preparação',preparation:'Em preparação',preparando:'Em preparação',ready:'Pronto para entrega',out_for_delivery:'A caminho',on_the_way:'A caminho',delivering:'A caminho',delivered:'Entregue',cancelled:'Cancelado',canceled:'Cancelado'};
  const status=String(data.order_status||'').toLowerCase();
