@@ -33,7 +33,7 @@ header{background:var(--y);padding:12px 16px;position:sticky;top:0;z-index:5;box
 <div class="route-note hidden" id="multiNote"></div>
 <div class="card"><div class="gps"><span class="dot" id="gpsDot"></span><div><b>Localização em tempo real</b><div class="muted" id="gpsText">Desativada</div></div></div><button class="btn primary full" id="startGps" style="margin-top:12px">Iniciar rastreamento</button></div>
 <div class="card"><h2 style="margin-top:0">Em rota</h2><div id="myOrders"></div></div>
-<div class="card"><h2 style="margin-top:0">Disponíveis para entrega</h2><div id="readyOrders"></div></div>
+<div class="card"><h2 style="margin-top:0">Disponíveis para entrega</h2><div id="readyOrders"></div></div><div class="card"><h2 style="margin-top:0">Entregas realizadas <span id="completedCount">0</span></h2><p class="muted">Últimas 100 entregas. A taxa individual será exibida quando estiver registrada por pedido.</p><div id="completedOrders"><div class="empty">Carregando...</div></div></div>
 </section>
 </main>
 <div class="toast" id="toast"></div>
@@ -69,6 +69,22 @@ async function enter(){
   $('#loginCard').classList.add('hidden');$('#app').classList.remove('hidden');$('#logout').classList.remove('hidden');
   await loadOrders();
 }
+async function loadCompletedOrders(){
+ const box=$('#completedOrders');
+ const {data,error}=await sb.rpc('srdogao_driver_completed_history');
+ if(error){box.textContent='Não foi possível carregar entregas realizadas.';return}
+ const orders=Array.isArray(data)?data:[];
+ $('#completedCount').textContent=orders.length;
+ box.replaceChildren();
+ if(!orders.length){box.innerHTML='<div class="empty">Nenhuma entrega concluída.</div>';return}
+ orders.forEach(o=>{
+  const row=document.createElement('div');row.className='order';
+  const name=document.createElement('b');name.textContent=o.customer_name||'Cliente';
+  const date=document.createElement('div');date.className='muted';date.textContent=o.delivered_at?new Date(o.delivered_at).toLocaleString('pt-BR'):'Data não informada';
+  const fee=document.createElement('div');fee.className='muted';fee.textContent='Taxa de entrega: não registrada';
+  row.append(name,date,fee);box.append(row);
+ });
+}
 async function loadOrders(){
   const {data,error}=await sb.rpc('srdogao_driver_orders');
   if(error){toast('Não foi possível carregar as entregas');return}
@@ -78,6 +94,7 @@ async function loadOrders(){
   $('#myOrders').innerHTML=mine.length?mine.map((o,i)=>orderCard(o,true,i)).join(''):'<div class="empty">Nenhuma entrega em rota.</div>';
   $('#readyOrders').innerHTML=ready.length?ready.map(o=>orderCard(o,false)).join(''):'<div class="empty">Nenhum pedido liberado no momento.</div>';
   bind();
+  await loadCompletedOrders();
 }
 function orderCard(o,mine,index=0){
   const items=(o.items||[]).map(x=>safeHtml(x.qty||1)+'× '+safeHtml(x.name)).join(' • ');
