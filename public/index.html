@@ -109,7 +109,7 @@ const money=v=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).
 let cart=JSON.parse(localStorage.getItem('srdogao_cart')||'[]');
 const $=q=>document.querySelector(q); const $$=q=>Array.from(document.querySelectorAll(q));
 function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),1800)}
-function openModal(id){$(id).classList.add('open')} function closeAll(){$('.modal-backdrop').forEach(x=>x.classList.remove('open'))}
+function openModal(id){const modal=$(id);if(modal){$('.modal-backdrop').forEach(x=>x.classList.remove('open'));modal.classList.add('open')}} function closeAll(){$('.modal-backdrop').forEach(x=>x.classList.remove('open'))}
 $('[data-close]').forEach(b=>b.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();closeAll()})); $$('.modal-backdrop').forEach(m=>m.onclick=e=>{if(e.target===m)closeAll()});
 function formatOrderCep(v){const d=String(v||'').replace(/\D/g,'').slice(0,8);return d.length>5?d.slice(0,5)+'-'+d.slice(5):d}
 function findOrderIdentity(value){
@@ -129,7 +129,7 @@ function dogaoFillReturningCustomer(){
  if(!profile){status.textContent='Informe seu PIN para entrar. Se ainda não tem cadastro, escolha Criar cadastro.';return}
  $('#orderPhoneInput').value=profile.phone||'';
  $('#orderCepInput').value=formatOrderCep(profile.cep||'');
- status.textContent='Telefone recuperado neste aparelho. Digite seu PIN.';$('#dogaoPinRegister').style.display='none';
+ status.textContent='Telefone recuperado neste aparelho. Digite seu PIN.';
 }
 $('#orderCpfInput').addEventListener('input',dogaoFillReturningCustomer);
 let dogaoSessionSeq=0;
