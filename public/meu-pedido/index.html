@@ -61,9 +61,19 @@ async function check(){
  else if(status==='cancelled'||status==='canceled'){updated.appendChild(make('div','Pedido cancelado','step active'))}
  else{const timeline=document.createElement('div');timeline.className='timeline';for(let i=0;i<tracking.stages.length;i++){const label=tracking.stages[i];const step=make('div',(i<level?'✓ ':i===level?'● ':'○ ')+label,'step '+(i<level?'done':i===level?'active':''));if(data.delivery_pin&&i===level&&level>=2&&level<4)showDeliveryPin(step,data.delivery_pin);timeline.appendChild(step)}updated.appendChild(timeline);if(level<0)updated.appendChild(make('p','Situação atual: '+(labels[status]||status||'Em análise'),'order-meta'))}
 
+ if(status==='delivered'){
+  const success=document.createElement('section');
+  success.style.cssText='background:#e8f7ec;border:2px solid #299553;border-radius:18px;padding:22px 16px;margin:14px 0;text-align:center;color:#165d33';
+  const checkmark=document.createElement('div');checkmark.textContent='✓';checkmark.style.cssText='display:grid;place-items:center;margin:0 auto 12px;width:66px;height:66px;border-radius:50%;background:#20854a;color:white;font-size:43px;font-weight:900';
+  const heading=document.createElement('h2');heading.textContent='Pedido entregue!';heading.style.margin='6px 0';
+  const thanks=document.createElement('p');thanks.textContent='Obrigado pela preferência! Esperamos que aproveite seu pedido. Volte sempre ao Sr. Dogão!';
+  const loyalty=document.createElement('p');loyalty.textContent='⭐ Continue participando do nosso programa de pontos e aproveite as recompensas disponíveis.';
+  success.append(checkmark,heading,thanks,loyalty);
+  updated.prepend(success);
+ }
  detail.replaceChildren(updated);
  detail.dataset.loaded='1';
- if(paid){recover.style.display='none';pixArea.textContent='';notice.textContent='Pagamento confirmado. Acompanhe aqui a evolução do seu pedido.';localStorage.setItem('srdogao_last_order_completed','1')}
+ if(paid){recover.style.display='none';pixArea.textContent='';notice.textContent=status==='delivered'?'Entrega concluída. Obrigado por comprar com o Sr. Dogão!':'Pagamento confirmado. Acompanhe aqui a evolução do seu pedido.';localStorage.setItem('srdogao_last_order_completed','1')}
  else{recover.style.display=data.payment_status==='pending'?'block':'none';notice.textContent='Não gere outro pedido nem pague novamente se já realizou o Pix. Para recuperar o Pix pendente, contate o estabelecimento. A reabertura segura do QR Code ainda está sendo preparada.'}
  }catch{if(!detail.dataset.loaded)detail.textContent='Não foi possível consultar o pedido agora.';notice.textContent='Falha ao atualizar. Tente novamente daqui a pouco.'}
  finally{checkInProgress=false}
