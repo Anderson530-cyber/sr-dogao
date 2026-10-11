@@ -5,8 +5,10 @@ const cookieToken=req=>String(req.headers.cookie||'').split(';').map(x=>x.trim()
 const clearCookie='dogao_device=; HttpOnly; Secure; SameSite=Lax; Path=/api/customer-pin; Max-Age=0';
 const digits=v=>String(v||'').replace(/\D/g,'');
 async function nameForCpf(cpf){
- const rows=await db('srdogao_orders',{query:'?customer_cpf=eq.'+cpf+'&select=customer_name&order=created_at.desc&limit=1'});
- return String(rows?.[0]?.customer_name||'').trim();
+ try{
+  const rows=await db('srdogao_orders',{query:'?customer_cpf=eq.'+cpf+'&select=customer_name&order=created_at.desc&limit=1'});
+  return String(rows?.[0]?.customer_name||'').trim();
+ }catch(e){console.error('customer_name_lookup_failed',e.message);return '';}
 }
 function validCpf(v){if(!/^\d{11}$/.test(v)||/^(\d)\1{10}$/.test(v))return false;for(let n=9;n<=10;n++){let sum=0;for(let i=0;i<n;i++)sum+=Number(v[i])*(n+1-i);let d=sum*10%11;if(d===10)d=0;if(d!==Number(v[n]))return false;}return true;}
 export default async function handler(req,res){
