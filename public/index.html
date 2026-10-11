@@ -144,7 +144,7 @@ async function dogaoTryRememberedDevice(){
   $('#orderCepInput').value=formatOrderCep(result.cep||'');
   $('#orderCepStatus').textContent='Aparelho reconhecido. Entrando automaticamente...';
   localStorage.setItem('srdogao_pin_verified_cpf',cpf);
-  await dogaoFinishIdentity(cpf,result.phone,result.cep);
+  await dogaoFinishIdentity(cpf,result.phone,result.cep,result.name);
  }catch{}
 }
 $('#orderCpfInput').addEventListener('input',dogaoTryRememberedDevice);
@@ -197,10 +197,10 @@ async function prepareOrderByCep(){
     location.href='/cardapio/';
   }catch(e){status.textContent='CEP não encontrado. Confira e tente novamente.';button.disabled=false;button.textContent='Continuar para o cardápio'}
 }
-async function dogaoFinishIdentity(cpf,phone,cep){
+async function dogaoFinishIdentity(cpf,phone,cep,name=''){
  const old=JSON.parse(localStorage.getItem('srdogao_checkout')||'{}');
  const zip=String(cep||old.address?.cep||dogaoSavedProfile(cpf)?.cep||'').replace(/\D/g,'');
- const customer={...(old.customer||{}),cpf,phone:phone||$('#orderPhoneInput').value.replace(/\D/g,'')};
+ const customer={...(old.customer?.cpf===cpf?old.customer:{}),cpf,phone:phone||$('#orderPhoneInput').value.replace(/\D/g,''),name:String(name||'').trim()};
  const next={...old,customer};
  if(zip.length===8)next.address={...(old.address||{}),cep:formatOrderCep(zip)};
  localStorage.setItem('srdogao_checkout',JSON.stringify(next));
@@ -209,7 +209,7 @@ async function dogaoFinishIdentity(cpf,phone,cep){
 }
 function dogaoHasIdentity(){try{const s=JSON.parse(localStorage.getItem('srdogao_checkout')||'{}');return validDogaoCpf(s.customer?.cpf)&&/^\d{10,11}$/.test(String(s.customer?.phone||'').replace(/\D/g,''))&&localStorage.getItem('srdogao_pin_verified_cpf')===String(s.customer.cpf).replace(/\D/g,'');}catch{return false}}
 function dogaoExit(){if(!confirm('Sair e limpar o carrinho deste aparelho? Pedidos registrados não serão cancelados.'))return;fetch('/api/customer-pin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'logout'})}).catch(()=>{});localStorage.removeItem('srdogao_pin_verified_cpf');['srdogao_checkout','srdogao_customer','srdogao_cart','srdogao_address','srdogao_last_order','srdogao_last_order_completed'].forEach(k=>localStorage.removeItem(k));location.href='/';}
-function dogaoRefreshExit(){const logged=dogaoHasIdentity();const el=document.getElementById('dogaoExitWrap');if(el)el.style.display='none';const btn=document.getElementById('headerLoginBtn');if(btn){btn.textContent=logged?'Sair':'Entrar';btn.setAttribute('aria-label',logged?'Sair da conta':'Entrar na conta')}const greeting=document.getElementById('dogaoGreeting');if(greeting){let customer={};try{customer=JSON.parse(localStorage.getItem('srdogao_customer')||'{}')}catch{};let name=String(customer.name||'').trim();try{const cpf=String(customer.cpf||'').replace(/\D/g,'');const found=typeof findOrderIdentity==='function'?findOrderIdentity(cpf):null;name=name||String(found?.account?.name||'').trim()}catch{};greeting.textContent=logged?'Olá, '+(name?name.split(/\s+/)[0]:'cliente')+'!':'';greeting.style.display=logged?'inline':'none'}}
+function dogaoRefreshExit(){const logged=dogaoHasIdentity();const el=document.getElementById('dogaoExitWrap');if(el)el.style.display='none';const btn=document.getElementById('headerLoginBtn');if(btn){btn.textContent=logged?'Sair':'Entrar';btn.setAttribute('aria-label',logged?'Sair da conta':'Entrar na conta')}const greeting=document.getElementById('dogaoGreeting');if(greeting){let customer={};try{customer=JSON.parse(localStorage.getItem('srdogao_customer')||'{}')}catch{};let name=String(customer.name||'').trim();try{const cpf=String(customer.cpf||'').replace(/\D/g,'');const found=typeof findOrderIdentity==='function'?findOrderIdentity(cpf):null;name=name||String(found?.account?.name||'').trim()}catch{};greeting.textContent=logged?(name?'Olá, '+name.split(/\s+/)[0]+'!':'Olá!'):'';greeting.style.display=logged?'inline':'none'}}
 document.getElementById('dogaoExit').addEventListener('click',dogaoExit);
 dogaoRefreshExit();
 function dogaoRefreshMyOrder(){
@@ -267,7 +267,7 @@ async function dogaoPinAction(action){
   if(result.cep)$('#orderCepInput').value=formatOrderCep(result.cep);
   localStorage.setItem('srdogao_pin_verified_cpf',cpf);
   status.textContent='Cadastro confirmado. Continuando...';
-  await dogaoFinishIdentity(cpf,result.phone||phone,result.cep||cep);
+  await dogaoFinishIdentity(cpf,result.phone||phone,result.cep||cep,result.name);
  }catch{status.textContent='Falha na conexão. Tente novamente.'}finally{btn.disabled=false}
 }
 $('#dogaoPinLogin').onclick=()=>dogaoPinAction('login');
