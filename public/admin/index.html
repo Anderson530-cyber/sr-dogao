@@ -76,7 +76,8 @@ async function loadDrivers(){
   const info=document.createElement('div');
   const name=document.createElement('b');name.textContent=driver.name||'Entregador';
   const status=document.createElement('small');status.textContent=driver.active?'Ativo':'Inativo';
-  info.append(name,status);
+  const username=document.createElement('small');username.textContent='Usuário: '+(driver.username||'não informado');
+  info.append(name,username,status);
   const button=document.createElement('button');button.className='mini';
   button.textContent=driver.active?'Desativar':'Ativar';
   button.onclick=async()=>{
