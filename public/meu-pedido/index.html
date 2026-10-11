@@ -25,7 +25,7 @@ async function loadHistory(){
     const {stages,level}=trackingStages(latest.status,latest.arriving_notified_at);
     trackingHeader(summary,latest.delivery_pin);
     const timeline=document.createElement('div');timeline.className='timeline';
-    stages.forEach((name,i)=>{const step=document.createElement('div');step.className='step '+(i<level?'done':i===level?'active':'');step.textContent=(i<level?'✓ ':i===level?'● ':'○ ')+name;if(latest.delivery_pin&&(i===0||i===2&&level>=2||i===3&&level>=3&&level<4))showDeliveryPin(step,latest.delivery_pin);timeline.appendChild(step)});
+    stages.forEach((name,i)=>{const step=document.createElement('div');step.className='step '+(i<level?'done':i===level?'active':'');step.textContent=(i<level?'✓ ':i===level?'● ':'○ ')+name;if(latest.delivery_pin&&i===level&&level>=2&&level<4)showDeliveryPin(step,latest.delivery_pin);timeline.appendChild(step)});
     summary.appendChild(timeline);detail.appendChild(summary);detail.dataset.loaded='1';
     void check();
    }
@@ -44,6 +44,7 @@ async function check(){
  const labels={pending_payment:'Aguardando pagamento',confirmed:'Pedido confirmado',preparing:'Em preparação',in_preparation:'Em preparação',preparation:'Em preparação',preparando:'Em preparação',ready:'Pronto para entrega',out_for_delivery:'A caminho',on_the_way:'A caminho',delivering:'A caminho',delivered:'Entregue',cancelled:'Cancelado',canceled:'Cancelado'};
  const status=String(data.order_status||'').toLowerCase();
  const tracking=trackingStages(status,data.arriving_notified_at);
+ if(data.arriving_notified_at&&tracking.level===3){notice.textContent='O entregador informou que chegou ao endereço. Informe o código somente após receber seu pedido.';}
  const level=tracking.level;
  const dateText=value=>{if(!value)return null;const d=new Date(value);return Number.isNaN(d.getTime())?null:d.toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'})};
  const make=(tag,txt,cls)=>{const el=document.createElement(tag);el.textContent=txt;if(cls)el.className=cls;return el};
@@ -58,7 +59,7 @@ async function check(){
  trackingHeader(updated,paid?data.delivery_pin:null);
  if(!paid){updated.appendChild(make('div','Aguardando pagamento do Pix','step active'))}
  else if(status==='cancelled'||status==='canceled'){updated.appendChild(make('div','Pedido cancelado','step active'))}
- else{const timeline=document.createElement('div');timeline.className='timeline';for(let i=0;i<tracking.stages.length;i++){const label=tracking.stages[i];const step=make('div',(i<level?'✓ ':i===level?'● ':'○ ')+label,'step '+(i<level?'done':i===level?'active':''));if(data.delivery_pin&&(i===0||i===2&&level>=2||i===3&&level>=3&&level<4))showDeliveryPin(step,data.delivery_pin);timeline.appendChild(step)}updated.appendChild(timeline);if(level<0)updated.appendChild(make('p','Situação atual: '+(labels[status]||status||'Em análise'),'order-meta'))}
+ else{const timeline=document.createElement('div');timeline.className='timeline';for(let i=0;i<tracking.stages.length;i++){const label=tracking.stages[i];const step=make('div',(i<level?'✓ ':i===level?'● ':'○ ')+label,'step '+(i<level?'done':i===level?'active':''));if(data.delivery_pin&&i===level&&level>=2&&level<4)showDeliveryPin(step,data.delivery_pin);timeline.appendChild(step)}updated.appendChild(timeline);if(level<0)updated.appendChild(make('p','Situação atual: '+(labels[status]||status||'Em análise'),'order-meta'))}
 
  detail.replaceChildren(updated);
  detail.dataset.loaded='1';
