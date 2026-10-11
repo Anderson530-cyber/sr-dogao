@@ -65,11 +65,30 @@ async function loadOrders(){
 }
 window.setOrderStatus=async(id,status)=>{const {data,error}=await sb.rpc('srdogao_admin_set_order_status',{p_order_id:id,p_status:status});if(error||!data)return toast('Não foi possível atualizar o pedido');toast('Status atualizado');await loadOrders()};
 async function loadDrivers(){
-  const box=$('#driversList');if(!box)return;
-  const {data,error}=await sb.rpc('srdogao_admin_drivers');
-  if(error){box.innerHTML='<p class="help">Não foi possível carregar entregadores: '+kitchenEscape(error.message||'erro de conexão')+'</p>';return}
-  const list=Array.isArray(data)?data:[];
-  box.innerHTML=list.length?list.map(d=>'<div class="product"><div style="font-size:1.5rem">🛵</div><div><b>'+d.name+'</b><small>'+(d.active?'Ativo':'Inativo')+'</small></div></div>').join(''):'<p class="help">Nenhum entregador cadastrado.</p>';
+ const box=$('#driversList');if(!box)return;
+ const {data,error}=await sb.rpc('srdogao_admin_drivers');
+ if(error){box.textContent='Erro ao carregar entregadores: '+(error.message||'erro');return}
+ const drivers=Array.isArray(data)?data:[];
+ box.replaceChildren();
+ if(!drivers.length){box.textContent='Nenhum entregador cadastrado.';return}
+ for(const driver of drivers){
+  const card=document.createElement('div');card.className='product';
+  const info=document.createElement('div');
+  const name=document.createElement('b');name.textContent=driver.name||'Entregador';
+  const status=document.createElement('small');status.textContent=driver.active?'Ativo':'Inativo';
+  info.append(name,status);
+  const button=document.createElement('button');button.className='mini';
+  button.textContent=driver.active?'Desativar':'Ativar';
+  button.onclick=async()=>{
+   const next=!driver.active;
+   if(!confirm((next?'Ativar':'Desativar')+' este entregador?'))return;
+   button.disabled=true;
+   const {data:ok,error:failure}=await sb.rpc('srdogao_admin_set_driver_active',{p_user_id:driver.user_id,p_active:next});
+   if(failure||!ok){toast(failure?.message||'Falha ao atualizar');button.disabled=false;return}
+   toast(next?'Entregador ativado':'Entregador desativado');await loadDrivers();
+  };
+  card.append(info,button);box.append(card);
+ }
 }
 async function createDriver(){
   const name=$('#driverNameInput').value.trim(),username=$('#driverUsername').value.trim().toLowerCase(),password=$('#driverPassword').value;
