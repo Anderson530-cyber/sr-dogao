@@ -28,6 +28,13 @@ export default async function handler(req,res){
   });
   const subtotalCents=orderItems.reduce((sum,x)=>sum+money(x.price)*x.qty,0);
   const settings=await db('srdogao_settings',{query:'?key=eq.site&select=value'});
+  const config=settings?.[0]?.value||{};
+  const clock=new Intl.DateTimeFormat('en-GB',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date());
+  const mins=v=>{const m=/^(\\d{2}):(\\d{2})$/.exec(String(v||''));return m?Number(m[1])*60+Number(m[2]):null};
+  const now=mins(clock),open=mins(config.openTime),close=mins(config.closeTime);
+  const within=open==null||close==null||open===close?true:open<close?now>=open&&now<close:now>=open||now<close;
+  if(config.ordersOpen===false||!within)return res.status(409).json({error:'store_closed',message:'Loja fechada. Cardápio disponível apenas para leitura.'});
+  if(config.deliveryEnabled===false)return res.status(409).json({error:'delivery_disabled',message:'Delivery indisponível.'});
   const fee=Number(settings?.[0]?.value?.deliveryFee||0);
   if(!Number.isFinite(fee)||fee<0)throw Error('INVALID_FEE');
   const totalCents=subtotalCents+money(fee);
