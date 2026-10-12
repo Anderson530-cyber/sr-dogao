@@ -68,31 +68,35 @@ async function loadCustomerOrders(){
   window.srdogaoRemoteOrders=orders;
   renderRepeatOrder();
   box.replaceChildren();
-  if(!orders.length){box.textContent='Nenhum pedido encontrado para esta conta.';return}
+  const active=orders.filter(o=>!['delivered','cancelled'].includes(o.status));
+  if(!active.length){section.style.display='none';return}
   const labels={pending:'Pedido recebido',confirmed:'Pedido confirmado',preparing:'Em preparo',ready:'Pronto',out_for_delivery:'A caminho',arrived:'Seu pedido chegou',delivered:'Entregue',cancelled:'Cancelado'};
-  orders.forEach(order=>{
+  active.forEach(order=>{
    const row=document.createElement('div');row.style.cssText='padding:10px 0;border-bottom:1px solid #eee';
    const title=document.createElement('b');title.textContent=new Date(order.created_at).toLocaleString('pt-BR')+' • '+money(Number(order.total||0));
    const status=document.createElement('div');status.textContent=labels[order.status]||order.status||'Em acompanhamento';
    row.append(title,status);
-   if(order.public_token){const link=document.createElement('a');link.href='/acompanhar/?token='+encodeURIComponent(order.public_token);link.textContent='Acompanhar pedido →';row.append(link)}
+   if(order.public_token){const link=document.createElement('a');link.href='/meu-pedido/';link.textContent='Acompanhar pedido →';row.append(link)}
    box.append(row);
   });
  }catch(e){box.textContent=e.message||'Erro ao buscar pedidos.'}
 }
 function getOrderHistory(){return JSON.parse(localStorage.getItem('srdogao_order_history')||'[]')}
-function latestRepeatOrder(){
- const remote=Array.isArray(window.srdogaoRemoteOrders)?window.srdogaoRemoteOrders.find(o=>o.status==='delivered'&&Array.isArray(o.items)&&o.items.length):null;
- if(remote)return remote;
+const REPEAT_WINDOW_MS=4*24*60*60*1000;
+function repeatCandidates(){
+ const remote=Array.isArray(window.srdogaoRemoteOrders)?window.srdogaoRemoteOrders:[];
  const resolved=resolveQuickAccount();
- return getOrderHistory().find(o=>resolved&&(o.loyaltyKey===resolved.key||normalizeId(o.customer?.phone||'')===resolved.key));
+ const local=getOrderHistory().filter(o=>resolved&&(o.loyaltyKey===resolved.key||normalizeId(o.customer?.phone||'')===resolved.key));
+ const valid=o=>{const t=Date.parse(o.delivered_at||o.created_at||o.date||'');return Number.isFinite(t)&&Date.now()-t>=0&&Date.now()-t<REPEAT_WINDOW_MS&&Array.isArray(o.items)&&o.items.length};
+ return [...remote.filter(o=>o.status==='delivered'),...local].filter(valid).sort((a,b)=>Date.parse(b.delivered_at||b.created_at||b.date)-Date.parse(a.delivered_at||a.created_at||a.date)).filter((o,i,a)=>a.findIndex(x=>(x.id||x.date)===(o.id||o.date))===i).slice(0,3);
 }
+function latestRepeatOrder(){return repeatCandidates()[0]||null}
 function renderRepeatOrder(){
-  const box=document.getElementById('repeatBox');
-  const order=latestRepeatOrder();
-  if(!order||!Array.isArray(order.items)||!order.items.length){box.classList.remove('show');return}
-  box.dataset.orderId=order.date||'';document.getElementById('repeatText').textContent=order.items.map(i=>(i.qty||1)+'× '+i.name).slice(0,3).join(' • ');
-  box.classList.add('show');
+ const box=document.getElementById('repeatBox'),orders=repeatCandidates();
+ if(!orders.length){box.classList.remove('show');return}
+ const order=orders[0];
+ document.getElementById('repeatText').textContent=orders.map((o,i)=>'Pedido '+(i+1)+': '+o.items.map(x=>(x.qty||x.quantity||1)+'× '+x.name).slice(0,3).join(' • ')).join(' | ');
+ box.classList.add('show');
 }
 const quickRewards=[
   {id:'r5',points:10,title:'R$ 5 de desconto',value:5,type:'discount'},
