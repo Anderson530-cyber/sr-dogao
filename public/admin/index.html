@@ -75,6 +75,17 @@ function receiptPrint(order){
  popup.document.close();popup.focus();popup.print();
  return true;
 }
+window.printOrderAgain=id=>{
+ const order=(window.deliveryOrderCache||[]).find(o=>o.id===id);
+ if(!order)return alert('Atualize os pedidos e tente novamente.');
+ if(!receiptPrint(order))alert('Permita pop-ups para abrir a impressão.');
+};
+window.confirmOrderPrinted=async id=>{
+ if(!confirm('Confirma que este pedido foi impresso e recebido pela cozinha?'))return;
+ const {data,error}=await sb.rpc('srdogao_admin_mark_printed',{p_order_id:id});
+ if(error||!data)return toast('Não foi possível confirmar a impressão');
+ toast('Pedido marcado como impresso');await loadOrders();
+};
 let printingCheck=false;
 async function checkAutoPrint(manual=false){
  if(printingCheck||(!manual&&!document.getElementById('autoPrintOrders').checked))return;
@@ -186,7 +197,8 @@ async function loadOrders(){
   const renderCards=list=>list.map(o=>{
     const a=o.address||{},items=Array.isArray(o.items)?o.items:[],addr=[a.street,a.number,a.district,a.city?(a.city+(a.state?' - '+a.state:'')):'',a.cep,a.reference].filter(Boolean).join(', ');
     const next=o.status==='confirmed'?'preparing':o.status==='preparing'?'ready':'';
-    return '<div class="order-card"><div class="order-top"><div><h4>'+o.customer_name+'</h4><small>'+new Date(o.created_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})+' • '+(o.customer_phone||'')+'</small>'+(o.order_timing==='scheduled'&&o.scheduled_for?'<small style="display:block;margin-top:4px;font-weight:900;color:#9a5a00">🕒 Agendado para '+new Date(o.scheduled_for).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'})+'</small>':'')+'</div><span class="status-pill">'+(o.order_timing==='scheduled'?'Agendado · ':'')+(orderStatusLabels[o.status]||o.status)+'</span></div><div class="order-items">'+items.map(i=>(i.qty||1)+'× '+i.name).join(' • ')+'</div><small>'+addr+'</small><div class="order-actions">'+(next?'<button class="mini primary-mini" onclick="setOrderStatus(\''+o.id+'\',\''+next+'\')">'+(next==='preparing'?'Iniciar preparo':'Pronto para entrega')+'</button>':'')+(o.status==='ready'?'<span class="help">Aguardando entregador assumir.</span>':'')+(o.status==='out_for_delivery'?'<span class="help">Entregador: '+(o.driver_name||'em rota')+'</span>':'')+'</div></div>'
+    const printActions=['confirmed','preparing','ready'].includes(o.status)?'<span class="status-pill">'+(o.printed_at?'Impresso':'Não impresso')+'</span> <button class="mini" onclick="printOrderAgain(\''+o.id+'\')">'+(o.printed_at?'Reimprimir':'Imprimir')+'</button> '+(!o.printed_at?'<button class="mini primary-mini" onclick="confirmOrderPrinted(\''+o.id+'\')">Confirmar impresso</button>':''):'';
+    return '<div class="order-card"><div class="order-top"><div><h4>'+o.customer_name+'</h4><small>'+new Date(o.created_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})+' • '+(o.customer_phone||'')+'</small>'+(o.order_timing==='scheduled'&&o.scheduled_for?'<small style="display:block;margin-top:4px;font-weight:900;color:#9a5a00">🕒 Agendado para '+new Date(o.scheduled_for).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'})+'</small>':'')+'</div><span class="status-pill">'+(o.order_timing==='scheduled'?'Agendado · ':'')+(orderStatusLabels[o.status]||o.status)+'</span></div><div class="order-items">'+items.map(i=>(i.qty||1)+'× '+i.name).join(' • ')+'</div><small>'+addr+'</small><div class="order-actions">'+printActions+(next?'<button class="mini primary-mini" onclick="setOrderStatus(\''+o.id+'\',\''+next+'\')">'+(next==='preparing'?'Iniciar preparo':'Pronto para entrega')+'</button>':'')+(o.status==='ready'?'<span class="help">Aguardando entregador assumir.</span>':'')+(o.status==='out_for_delivery'?'<span class="help">Entregador: '+(o.driver_name||'em rota')+'</span>':'')+'</div></div>'
   }).join('');
   if(active.length)box.innerHTML=renderCards(active);
   window.renderDeliveryCards=renderCards;
