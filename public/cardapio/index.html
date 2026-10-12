@@ -357,7 +357,23 @@ async function load(){
 document.getElementById('menuSearch').oninput=e=>{searchTerm=e.target.value.trim().toLowerCase();render(currentCat)};
 document.getElementById('favoritesFilter').onclick=()=>{favoritesOnly=!favoritesOnly;render(currentCat)};
 document.getElementById('openFavoritesTop').onclick=()=>{favoritesOnly=true;render(currentCat);document.getElementById('grid').scrollIntoView({behavior:'smooth'})};
-document.getElementById('repeatOrder').onclick=()=>{const order=latestRepeatOrder();if(!order)return;const cart=getCart();order.items.filter(i=>!i.rewardItem).forEach(i=>cart.push({...i,cartId:'repeat-'+Date.now()+'-'+Math.random().toString(36).slice(2,6)}));saveCart(cart);updateCartCount();render(currentCat)};
+document.getElementById('repeatOrder').onclick=()=>{
+ const order=latestRepeatOrder();if(!order)return;
+ const cart=getCart();let added=0,unavailable=0;
+ for(const item of order.items.filter(i=>!i.rewardItem)){
+  const id=Number(item.productId??item.id);
+  const product=products.find(p=>Number(p.id)===id);
+  if(!product||product.available===false||product.available===0){unavailable++;continue}
+  const price=Number(product.promo&&product.promo_price!=null?product.promo_price:product.price);
+  if(!Number.isFinite(price)||price<=0){unavailable++;continue}
+  const qty=Math.max(1,Math.min(30,Number(item.qty||item.quantity)||1));
+  cart.push({...item,id:product.id,productId:product.id,name:product.name,price,basePrice:price,qty,cartId:'repeat-'+Date.now()+'-'+Math.random().toString(36).slice(2,8)});
+  added++;
+ }
+ if(!added){alert('Os produtos dessa compra não estão disponíveis no cardápio atual.');return}
+ saveCart(cart);updateCartCount();render(currentCat);
+ if(unavailable)alert(added+' item(ns) adicionado(s). '+unavailable+' indisponível(is) não foi(ram) incluído(s).');
+};
 document.getElementById('menuTotalBar').onclick=openQuickCart;
 document.getElementById('menuTotalBar').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openQuickCart()}};
 document.getElementById('closeQuickCart').onclick=closeQuickCart;
