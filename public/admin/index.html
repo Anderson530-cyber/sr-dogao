@@ -57,10 +57,7 @@
   }catch(e){console.error('Falha no login',e);status('Falha de conexão ou carregamento: '+e.message)}
   finally{busy=false;btn.disabled=false;btn.textContent='Entrar'}
  },true);
- document.querySelectorAll('.navbtn[data-screen]').forEach(b=>b.addEventListener('click',()=>{
-  const id=b.dataset.screen;
-  if(typeof window.show==='function'&&!['digitalMenu','customerView','links'].includes(id)){window.show(id)}
- },true));
+
  window.addEventListener('error',e=>{if(login.style.display!=='none')status('Falha ao carregar o painel: '+e.message)});
  window.addEventListener('unhandledrejection',e=>{console.error('Admin asynchronous error',e.reason)});
  window.addEventListener('load',()=>boot().catch(e=>{console.error(e);status('Não foi possível recuperar a sessão: '+e.message)}));
