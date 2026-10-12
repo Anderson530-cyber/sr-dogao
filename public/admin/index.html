@@ -24,6 +24,49 @@
 <div class="modalbg" id="modal"><div class="modal"><div class="modalhead"><h2 id="modalTitle">Produto</h2><button class="close" id="close">×</button></div><input type="hidden" id="editId"><div class="formgrid"><div><label>Nome</label><input class="field" id="pName"></div><div><label>Preço</label><input class="field" id="pPrice" type="number" step=".01"></div><div><label>Categoria</label><select class="field" id="pCat"><option value="hotdogs">Hot Dogs</option><option value="combos">Combos</option><option value="porcoes">Porções</option><option value="bebidas">Bebidas</option><option value="sobremesas">Sobremesas</option><option value="promocoes">Promoções</option></select></div><div><label>Imagem principal</label><select class="field" id="pImg"><option>/Cachorro-quente-imagens.png</option><option>/Combo-dog.png</option><option>/porcoes-dog.png</option><option>/bebida-gelo.png</option><option>/sobremesa.png</option></select><label for="pImgCustom">Ou informe o endereço da imagem</label><input class="field" id="pImgCustom" type="text" placeholder="https://... ou /minha-foto.png" autocomplete="off"><small>Use uma imagem já hospedada. A foto é atualizada no cardápio após salvar.</small><div class="product-image-preview"><img id="pImgPreview" alt="Prévia da imagem principal"><span id="pImgPreviewEmpty">Sem imagem para prévia</span></div></div><div class="full"><label>Descrição</label><textarea class="field" id="pDesc" rows="3"></textarea></div><div class="full"><label>Outras fotos do produto</label><textarea class="field" id="pImages" rows="3" placeholder="Uma imagem por linha. Ex.: /foto-2.png"></textarea><small style="display:block;margin-top:6px;color:#876">A imagem principal continua no campo Imagem. As imagens daqui aparecerão na galeria ao tocar na foto do produto.</small></div><div class="full"><label>Informações / legenda do produto</label><textarea class="field" id="pInfo" rows="3" placeholder="Ex.: Serve 1 pessoa, aproximadamente 500 g, contém glúten..."></textarea></div><div class="full checkgrid"><label class="check"><input type="checkbox" id="pAvailable" checked> Disponível para venda</label><label class="check"><input type="checkbox" id="pFeatured"> Mostrar nos Destaques</label><label class="check"><input type="checkbox" id="pPromo"> Produto em promoção</label><label class="check"><input type="checkbox" id="pPopular"> Marcar como “Mais pedido”</label></div><div><label>Preço promocional</label><input class="field" id="pPromoPrice" type="number" step=".01" placeholder="Opcional"></div><div><label>Ordem de exibição</label><input class="field" id="pOrder" type="number" value="0"></div><div class="full"><h3>Tipo de produto e estoque</h3><label for="pProductType">Tipo de produto</label><select class="field" id="pProductType"><option value="simple">Simples (uma opção)</option><option value="variants">Com variantes</option></select><label class="check"><input type="checkbox" id="pTrackStock"> Controlar quantidade em estoque</label><div id="simpleStockFields"><label for="pStockQuantity">Quantidade disponível</label><input class="field" type="number" min="0" step="1" id="pStockQuantity" placeholder="Ex.: 20"></div><div id="variantFields" hidden><p class="help">Cada linha: Nome | Preço | Estoque. Ex.: Grande | 29,90 | 10. O estoque da variante só será considerado quando o controle estiver ativo.</p><textarea class="field" id="pVariants" rows="5" placeholder="Pequeno | 19,90 | 12&#10;Grande | 29,90 | 8"></textarea></div><small class="help">O cadastro e o estoque são salvos no banco. A baixa automática nos pedidos será integrada em uma etapa separada.</small></div><div class="full"><label>Personalizações do produto</label><textarea class="field" id="pOptions" rows="6" placeholder="Uma opção por linha. Exemplos:&#10;retirar: Milho&#10;retirar: Cebola&#10;adicionar: Queijo | 3,00&#10;adicionar: Bacon | 4,00"></textarea><small style="display:block;margin-top:6px;color:#876">Use <b>retirar:</b> para ingredientes removíveis e <b>adicionar:</b> para extras. O preço do adicional vem depois de |. A observação livre é preenchida pelo cliente no pedido.</small></div><div class="full"><button class="btn primary" id="saveProduct">Salvar produto</button></div></div></div></div><div class="toast" id="toast">Salvo</div>
 
 <script>
+(function(){
+ const login=document.getElementById('login'),app=document.getElementById('app'),btn=document.getElementById('loginBtn');
+ const note=document.createElement('div');note.id='adminLoginStatus';note.style.cssText='font-size:13px;color:#7e211c;margin-top:12px;min-height:20px';note.setAttribute('role','status');btn.insertAdjacentElement('afterend',note);
+ let client=null,busy=false;
+ function status(message){note.textContent=message}
+ function getClient(){
+  if(!window.supabase)throw new Error('Biblioteca de autenticação indisponível');
+  if(!client)client=window.supabase.createClient('https://dlccdfwteekecjiwybfr.supabase.co','sb_publishable_izc2on9Gie9UC5iCHSjaBQ_5ItuscE2',{auth:{storageKey:'sb-dlccdfwteekecjiwybfr-auth-token'}});
+  return client;
+ }
+ async function boot(){
+  const c=getClient();
+  const {data:{session},error}=await c.auth.getSession();
+  if(error||!session)return false;
+  const {data:profile,error:permissionError}=await c.from('admin_profiles').select('active').eq('user_id',session.user.id).maybeSingle();
+  if(permissionError||!profile?.active){status('Sua conta não tem acesso administrativo ativo.');return false}
+  login.style.display='none';app.style.display='block';
+  try{if(typeof window.adminAfterLogin==='function')await window.adminAfterLogin();else status('Acesso autorizado, mas o painel não inicializou completamente.')}catch(e){console.error('Falha no painel',e);status('Falha ao carregar informações do painel.')}
+  return true;
+ }
+ btn.addEventListener('click',async function(event){
+  event.preventDefault();event.stopImmediatePropagation();
+  if(busy)return;
+  const email=document.getElementById('user').value.trim(),password=document.getElementById('pass').value;
+  if(!email||!password){status('Informe e-mail e senha.');return}
+  busy=true;btn.disabled=true;btn.textContent='Entrando...';status('Verificando acesso...');
+  try{
+   const {error}=await getClient().auth.signInWithPassword({email,password});
+   if(error){status('Não foi possível entrar: '+error.message);return}
+   if(!await boot())status('Login realizado, mas o acesso administrativo não foi confirmado.');
+  }catch(e){console.error('Falha no login',e);status('Falha de conexão ou carregamento: '+e.message)}
+  finally{busy=false;btn.disabled=false;btn.textContent='Entrar'}
+ },true);
+ document.querySelectorAll('.navbtn[data-screen]').forEach(b=>b.addEventListener('click',()=>{
+  const id=b.dataset.screen;
+  if(typeof window.show==='function'&&!['digitalMenu','customerView','links'].includes(id)){window.show(id)}
+ },true));
+ window.addEventListener('error',e=>{if(login.style.display!=='none')status('Falha ao carregar o painel: '+e.message)});
+ window.addEventListener('unhandledrejection',e=>{console.error('Admin asynchronous error',e.reason)});
+ window.addEventListener('load',()=>boot().catch(e=>{console.error(e);status('Não foi possível recuperar a sessão: '+e.message)}));
+})();
+</script>
+<script>
 const SUPABASE_URL='https://dlccdfwteekecjiwybfr.supabase.co',SUPABASE_KEY='sb_publishable_izc2on9Gie9UC5iCHSjaBQ_5ItuscE2';const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const seed=[{id:1,name:'Dogão Especial',price:22.9,cat:'hotdogs',img:'/Cachorro-quente-imagens.png',desc:'Salsicha, molho, milho, ervilha, batata palha, queijo e bacon.',available:true,featured:true,promo:false,popular:true,promoPrice:0,order:1,options:''},{id:2,name:'Dogão Tradicional',price:18.9,cat:'hotdogs',img:'/Cachorro-quente-imagens.png',desc:'Salsicha, molho, milho, ervilha, batata palha e queijo.',available:true,featured:false,promo:false,popular:false,promoPrice:0,order:0,options:''},{id:3,name:'Dogão Calabresa',price:24.9,cat:'hotdogs',img:'/Cachorro-quente-imagens.png',desc:'Calabresa, molho, milho, ervilha, batata palha e queijo.',available:true,featured:false,promo:false,popular:false,promoPrice:0,order:0,options:''},{id:4,name:'Combo Dogão',price:29.9,cat:'combos',img:'/Combo-dog.png',desc:'Hot dog + batata + bebida.',available:true,featured:false,promo:false,popular:false,promoPrice:0,order:0,options:''},{id:5,name:'Batata Frita',price:14.9,cat:'porcoes',img:'/porcoes-dog.png',desc:'Porção crocante.',available:true,featured:false,promo:false,popular:false,promoPrice:0,order:0,options:''},{id:6,name:'Bebidas',price:6,cat:'bebidas',img:'/bebida-gelo.png',desc:'Bebida gelada.',available:true,featured:false,promo:false,popular:false,promoPrice:0,order:0,options:''},{id:7,name:'Sobremesas',price:12.9,cat:'sobremesas',img:'/sobremesa.png',desc:'Opção doce.',available:true,featured:false,promo:false,popular:false,promoPrice:0,order:0,options:''},{id:8,name:'Combo Promocional',price:29.9,cat:'promocoes',img:'/Combo-dog.png',desc:'Hot dog, batata e bebida.',available:true,featured:false,promo:false,popular:false,promoPrice:0,order:0,options:''}];
 let products=[];
