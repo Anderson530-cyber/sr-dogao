@@ -192,7 +192,7 @@ async function dogaoTryRememberedDevice(){
   if(seq!==dogaoSessionSeq||!result.ok)return;
   $('#orderPhoneInput').value=result.phone||'';
   $('#orderCepInput').value=formatOrderCep(result.cep||'');
-  $('#orderCepStatus').textContent='Aparelho reconhecido. Entrando automaticamente...';
+  $('#orderCepStatus').textContent='CPF autenticado. Entrando na sua conta...';
   localStorage.setItem('srdogao_pin_verified_cpf',cpf);
   await dogaoFinishIdentity(cpf,result.phone,result.cep,result.name);
  }catch{}
