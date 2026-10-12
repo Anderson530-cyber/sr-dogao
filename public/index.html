@@ -262,10 +262,22 @@ function dogaoExit(){if(!confirm('Sair e limpar o carrinho deste aparelho? Pedid
 function dogaoRefreshExit(){const logged=dogaoHasIdentity();const el=document.getElementById('dogaoExitWrap');if(el)el.style.display='none';const btn=document.getElementById('headerLoginBtn');if(btn){btn.textContent=logged?'Sair':'Entrar';btn.setAttribute('aria-label',logged?'Sair da conta':'Entrar na conta')}const greeting=document.getElementById('dogaoGreeting');if(greeting){let customer={};try{customer=JSON.parse(localStorage.getItem('srdogao_customer')||'{}')}catch{};let name=String(customer.name||'').trim();try{const cpf=String(customer.cpf||'').replace(/\D/g,'');const found=typeof findOrderIdentity==='function'?findOrderIdentity(cpf):null;name=name||String(found?.account?.name||'').trim()}catch{};greeting.textContent=logged?(name?'Olá, '+name.split(/\s+/)[0]+'!':'Olá!'):'';greeting.style.display=logged?'inline':'none'}}
 document.getElementById('dogaoExit').addEventListener('click',dogaoExit);
 dogaoRefreshExit();
-function dogaoRefreshMyOrder(){
- let order=null;try{order=JSON.parse(localStorage.getItem('srdogao_pending_pix_order')||'null')}catch{}
- const el=document.getElementById('dogaoMyOrderWrap');
- if(el)el.style.display=dogaoHasIdentity()||(order?.id&&order?.token)?'block':'none';
+async function dogaoRefreshMyOrder(){
+ const el=document.getElementById('dogaoMyOrderWrap');if(!el)return;
+ el.style.display='none';
+ let pending=null;try{pending=JSON.parse(localStorage.getItem('srdogao_pending_pix_order')||'null')}catch{}
+ const customer=JSON.parse(localStorage.getItem('srdogao_customer')||'{}');
+ const checkout=JSON.parse(localStorage.getItem('srdogao_checkout')||'{}');
+ const cpf=String(customer.cpf||checkout.customer?.cpf||'').replace(/\\D/g,'');
+ if(/^\\d{11}$/.test(cpf)){
+  try{
+   const response=await fetch('/api/customer-orders?cpf='+encodeURIComponent(cpf),{credentials:'same-origin',cache:'no-store'});
+   if(response.ok){const data=await response.json();el.style.display=(data.orders||[]).some(o=>!['delivered','cancelled'].includes(o.status))?'block':'none';return}
+  }catch{}
+ }
+ if(pending?.id&&pending?.token){
+  try{const response=await fetch('/api/sr-dogao-pay/order-status?orderId='+encodeURIComponent(pending.id)+'&token='+encodeURIComponent(pending.token),{cache:'no-store'});if(response.ok){const data=await response.json();el.style.display=!['delivered','cancelled'].includes(data.order_status)?'block':'none'}}catch{}
+ }
 }
 dogaoRefreshMyOrder();window.addEventListener('pageshow',dogaoRefreshMyOrder);
 window.addEventListener('pageshow',dogaoRefreshExit);
