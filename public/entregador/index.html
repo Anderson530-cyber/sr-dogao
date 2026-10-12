@@ -81,7 +81,7 @@ async function loadCompletedOrders(){
   const row=document.createElement('div');row.className='order';
   const name=document.createElement('b');name.textContent=o.customer_name||'Cliente';
   const date=document.createElement('div');date.className='muted';date.textContent=o.delivered_at?new Date(o.delivered_at).toLocaleString('pt-BR'):'Data não informada';
-  const fee=document.createElement('div');fee.className='muted';fee.textContent='Taxa de entrega: não registrada';
+  const fee=document.createElement('div');fee.className='muted';fee.textContent='Taxa de entrega: '+(o.delivery_fee==null?'não registrada':money(o.delivery_fee));
   row.append(name,date,fee);box.append(row);
  });
 }
