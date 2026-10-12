@@ -79,10 +79,9 @@ async function loadCompletedOrders(){
  if(!orders.length){box.innerHTML='<div class="empty">Nenhuma entrega concluída.</div>';return}
  orders.forEach(o=>{
   const row=document.createElement('div');row.className='order';
-  const name=document.createElement('b');name.textContent=o.customer_name||'Cliente';
+  const name=document.createElement('b');name.textContent=(o.customer_name||'Cliente')+' | '+(o.delivery_fee==null?'Taxa não registrada':money(o.delivery_fee));
   const date=document.createElement('div');date.className='muted';date.textContent=o.delivered_at?new Date(o.delivered_at).toLocaleString('pt-BR'):'Data não informada';
-  const fee=document.createElement('div');fee.className='muted';fee.textContent='Taxa de entrega: '+(o.delivery_fee==null?'não registrada':money(o.delivery_fee));
-  row.append(name,date,fee);box.append(row);
+  row.append(name,date);box.append(row);
  });
 }
 async function loadOrders(){
