@@ -65,6 +65,8 @@ async function loadCustomerOrders(){
   if(response.status===401){box.textContent='Entre novamente com seu CPF e PIN para consultar seus pedidos.';return}
   if(!response.ok)throw Error('Não foi possível consultar seus pedidos.');
   const result=await response.json(),orders=result.orders||[];
+  window.srdogaoRemoteOrders=orders;
+  renderRepeatOrder();
   box.replaceChildren();
   if(!orders.length){box.textContent='Nenhum pedido encontrado para esta conta.';return}
   const labels={pending:'Pedido recebido',confirmed:'Pedido confirmado',preparing:'Em preparo',ready:'Pronto',out_for_delivery:'A caminho',arrived:'Seu pedido chegou',delivered:'Entregue',cancelled:'Cancelado'};
@@ -79,9 +81,15 @@ async function loadCustomerOrders(){
  }catch(e){box.textContent=e.message||'Erro ao buscar pedidos.'}
 }
 function getOrderHistory(){return JSON.parse(localStorage.getItem('srdogao_order_history')||'[]')}
+function latestRepeatOrder(){
+ const remote=Array.isArray(window.srdogaoRemoteOrders)?window.srdogaoRemoteOrders.find(o=>o.status==='delivered'&&Array.isArray(o.items)&&o.items.length):null;
+ if(remote)return remote;
+ const resolved=resolveQuickAccount();
+ return getOrderHistory().find(o=>resolved&&(o.loyaltyKey===resolved.key||normalizeId(o.customer?.phone||'')===resolved.key));
+}
 function renderRepeatOrder(){
-  const box=document.getElementById('repeatBox'),resolved=resolveQuickAccount();if(!resolved){box.classList.remove('show');return}
-  const order=getOrderHistory().find(o=>o.loyaltyKey===resolved.key||normalizeId(o.customer?.phone||'')===resolved.key);
+  const box=document.getElementById('repeatBox');
+  const order=latestRepeatOrder();
   if(!order||!Array.isArray(order.items)||!order.items.length){box.classList.remove('show');return}
   box.dataset.orderId=order.date||'';document.getElementById('repeatText').textContent=order.items.map(i=>(i.qty||1)+'× '+i.name).slice(0,3).join(' • ');
   box.classList.add('show');
@@ -349,7 +357,7 @@ async function load(){
 document.getElementById('menuSearch').oninput=e=>{searchTerm=e.target.value.trim().toLowerCase();render(currentCat)};
 document.getElementById('favoritesFilter').onclick=()=>{favoritesOnly=!favoritesOnly;render(currentCat)};
 document.getElementById('openFavoritesTop').onclick=()=>{favoritesOnly=true;render(currentCat);document.getElementById('grid').scrollIntoView({behavior:'smooth'})};
-document.getElementById('repeatOrder').onclick=()=>{const resolved=resolveQuickAccount(),order=getOrderHistory().find(o=>resolved&&(o.loyaltyKey===resolved.key||normalizeId(o.customer?.phone||'')===resolved.key));if(!order)return;const cart=getCart();order.items.filter(i=>!i.rewardItem).forEach(i=>cart.push({...i,cartId:'repeat-'+Date.now()+'-'+Math.random().toString(36).slice(2,6)}));saveCart(cart);updateCartCount();render(currentCat)};
+document.getElementById('repeatOrder').onclick=()=>{const order=latestRepeatOrder();if(!order)return;const cart=getCart();order.items.filter(i=>!i.rewardItem).forEach(i=>cart.push({...i,cartId:'repeat-'+Date.now()+'-'+Math.random().toString(36).slice(2,6)}));saveCart(cart);updateCartCount();render(currentCat)};
 document.getElementById('menuTotalBar').onclick=openQuickCart;
 document.getElementById('menuTotalBar').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openQuickCart()}};
 document.getElementById('closeQuickCart').onclick=closeQuickCart;
