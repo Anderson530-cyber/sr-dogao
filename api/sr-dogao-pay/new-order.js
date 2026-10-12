@@ -39,7 +39,7 @@ export default async function handler(req,res){
    p_total:totalCents/100,p_order_timing:timing,p_scheduled_for:scheduledDate?scheduledDate.toISOString():null
   }});
   if(!created?.id||!created?.public_token)throw Error('CREATE_FAILED');
-  await db('srdogao_orders',{method:'PATCH',query:'?id=eq.'+encodeURIComponent(created.id),body:{customer_cpf:cpf}});
+  await db('srdogao_orders',{method:'PATCH',query:'?id=eq.'+encodeURIComponent(created.id),body:{customer_cpf:cpf,delivery_fee:money(fee)/100}});
   return res.status(201).json({order_id:created.id,token:created.public_token,total:totalCents/100,status:'pending_payment'});
  }catch(e){console.error('Dogao order creation',e.message);return res.status(503).json({error:'order_creation_failed'});}
 }
