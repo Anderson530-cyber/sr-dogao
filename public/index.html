@@ -179,6 +179,16 @@ document.getElementById('supportSend').onclick=async()=>{
 };
 setInterval(()=>{if(!document.getElementById('supportBox').hidden)refreshSupport()},20000);
 const STORE_URL='https://dlccdfwteekecjiwybfr.supabase.co',STORE_KEY='sb_publishable_izc2on9Gie9UC5iCHSjaBQ_5ItuscE2';const storeDb=supabase.createClient(STORE_URL,STORE_KEY);
+async function configureWhatsApp(){
+ const link=document.getElementById('dogaoWhatsApp');
+ const {data,error}=await storeDb.from('srdogao_settings').select('value').eq('key','site').maybeSingle();
+ const digits=String(data?.value?.whatsappNumber||'').replace(/\D/g,'');
+ if(error||digits.length<10||digits.length>13){link.href='#contato';link.title='WhatsApp ainda não configurado';link.onclick=e=>{e.preventDefault();openSupport()};return}
+ const phone=digits.startsWith('55')?digits:'55'+digits;
+ link.href='https://wa.me/'+phone+'?text='+encodeURIComponent('Olá! Gostaria de tirar uma dúvida sobre o Sr. Dogão.');
+ link.target='_blank';link.rel='noopener noreferrer';link.onclick=null;
+}
+configureWhatsApp();
 async function loadStoreProducts(){const {data,error}=await storeDb.from('srdogao_products').select('*').eq('available',true).order('display_order');if(error)return;menuProducts=(data||[]).map(p=>({id:p.id,name:p.name,price:+(p.promo&&p.promo_price?p.promo_price:p.price),category:p.category,img:p.image_url,desc:p.description,popular:p.popular,featured:p.featured}));const featured=menuProducts.filter(p=>p.featured);document.getElementById('productGrid').innerHTML=featured.map(p=>'<div class="card" data-name="'+p.name+'" data-price="'+p.price+'" data-category="'+p.category+'">'+(p.popular?'<span class="badge">Mais pedido</span>':'')+'<div class="fake"><img src="'+p.img+'" alt="'+p.name+'"></div><h3>'+p.name+'</h3><p>'+p.desc+'</p><div class="price">'+money(p.price)+'</div><button class="add" type="button" style="border:0;width:100%">🛒 Adicionar</button></div>').join('');bindAddButtons();}
 const money=v=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v);
 let cart=JSON.parse(localStorage.getItem('srdogao_cart')||'[]');
