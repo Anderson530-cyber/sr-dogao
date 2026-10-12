@@ -147,7 +147,7 @@ async function loadAdminSupport(){
  if(!data?.length){box.textContent='Nenhuma mensagem recebida.';return}
  for(const item of data){
   const button=document.createElement('button');button.className='navbtn';button.style.cssText='border:1px solid #eee;background:#fff';
-  button.textContent=(item.name||'Cliente')+' • '+(item.body||'').slice(0,80);
+  button.textContent=(item.unread?'● '+item.unread+' nova(s) • ':'')+(item.name||'Cliente')+' • '+(item.sender==='admin'?'Você: ':'Cliente: ')+(item.body||'').slice(0,80);
   button.onclick=()=>openAdminSupport(item.token,item.name||'Cliente');box.append(button);
  }
 }
@@ -160,6 +160,8 @@ async function openAdminSupport(token,name){
  box.scrollTop=box.scrollHeight;
 }
 document.getElementById('reloadMessages').onclick=loadAdminSupport;
+setInterval(()=>{if(document.visibilityState==='visible'&&document.getElementById('messages').classList.contains('active'))loadAdminSupport()},30000);
+
 document.getElementById('sendAdminSupport').onclick=async()=>{
  const body=document.getElementById('adminSupportReply').value.trim();
  if(!selectedSupportThread||!body)return;
