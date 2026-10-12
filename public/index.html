@@ -268,8 +268,8 @@ async function dogaoRefreshMyOrder(){
  let pending=null;try{pending=JSON.parse(localStorage.getItem('srdogao_pending_pix_order')||'null')}catch{}
  const customer=JSON.parse(localStorage.getItem('srdogao_customer')||'{}');
  const checkout=JSON.parse(localStorage.getItem('srdogao_checkout')||'{}');
- const cpf=String(customer.cpf||checkout.customer?.cpf||'').replace(/\\D/g,'');
- if(/^\\d{11}$/.test(cpf)){
+ const cpf=String(customer.cpf||checkout.customer?.cpf||'').replace(/\D/g,'');
+ if(/^\d{11}$/.test(cpf)){
   try{
    const response=await fetch('/api/customer-orders?cpf='+encodeURIComponent(cpf),{credentials:'same-origin',cache:'no-store'});
    if(response.ok){const data=await response.json();el.style.display=(data.orders||[]).some(o=>!['delivered','cancelled'].includes(o.status))?'block':'none';return}
