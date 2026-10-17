@@ -621,11 +621,24 @@ document.getElementById('goAddress').onclick=()=>{
   if(subtotal<minOrder)return;
   showStep(2)
 };
-document.getElementById('saveAddress').onclick=()=>{
+async function refreshRouteQuote(){
+ if(siteSettings.deliveryMode!=='km'||!checkoutState.address)return;
+ const a=checkoutState.address;
+ const destination=[a.street,a.number,a.district,a.city,a.state,a.cep,'Brasil'].filter(Boolean).join(', ');
+ const response=await fetch('/api/delivery-quote',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({destination,subtotal:cartSubtotal()})});
+ const quote=await response.json();
+ if(!response.ok)throw Error(quote.message||quote.error||'Não foi possível calcular a entrega');
+ checkoutState.deliveryFee=quote.deliveryFee;
+ checkoutState.deliveryDistanceKm=quote.distanceKm;
+ persistCheckout();updateSummary();
+}
+document.getElementById('saveAddress').onclick=async()=>{
   const address={cep:document.getElementById('cep').value.trim(),city:document.getElementById('city').value.trim(),state:document.getElementById('state').value.trim(),street:document.getElementById('street').value.trim(),number:document.getElementById('number').value.trim(),district:document.getElementById('district').value.trim(),reference:document.getElementById('reference').value.trim()};
   const msg=document.getElementById('addressMessage');
   if(address.cep.replace(/\D/g,'').length!==8||!address.city||!address.state||!address.street||!address.number||!address.district||!address.reference){msg.style.display='block';return}
-  msg.style.display='none';checkoutState.address=address;persistCheckout();localStorage.setItem('srdogao_address',[address.street,address.number,address.district,address.city+' - '+address.state,address.cep].join(', '));showStep(3);
+  msg.style.display='none';checkoutState.address=address;persistCheckout();
+  if(siteSettings.deliveryMode==='km'){try{await refreshRouteQuote()}catch(e){msg.textContent=e.message;msg.style.display='block';return}}
+  localStorage.setItem('srdogao_address',[address.street,address.number,address.district,address.city+' - '+address.state,address.cep].join(', '));showStep(3);
 };
 document.getElementById('saveCustomer').onclick=()=>{
   const customer={name:document.getElementById('customerName').value.trim(),phone:document.getElementById('customerPhone').value.trim(),cpf:document.getElementById('customerCpf').value.trim()};
@@ -722,6 +735,7 @@ document.getElementById('finishOrder').onclick=async()=>{
   message.textContent='Não foi possível identificar os produtos. Volte ao cardápio e adicione-os novamente.';
   message.style.display='block';return;
  }
+ if(siteSettings.deliveryMode==='km'){try{await refreshRouteQuote();renderReview()}catch(e){message.textContent=e.message;message.style.display='block';return}}
  pixCheckoutBusy=true;button.disabled=true;button.textContent='Preparando Pix...';message.style.display='block';message.textContent='Registrando pedido com segurança...';
  try{
   const create=await fetch('/api/sr-dogao-pay/new-order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({customer,address:checkoutState.address||{},items,orderTiming:checkoutState.orderTiming||'now',scheduledFor:checkoutState.orderTiming==='scheduled'?checkoutState.scheduledFor:null})});
