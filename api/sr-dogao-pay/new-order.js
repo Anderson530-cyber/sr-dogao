@@ -1,4 +1,5 @@
 import {db} from './_db.js';
+import {calculateRouteDelivery} from '../delivery-route.js';
 const money=n=>Math.round(Number(n)*100);
 function validDogaoCpf(v){const s=String(v||'').replace(/\D/g,'');if(!/^\d{11}$/.test(s)||/^(\d)\1{10}$/.test(s))return false;for(let n=9;n<=10;n++){let sum=0;for(let i=0;i<n;i++)sum+=Number(s[i])*(n+1-i);let d=(sum*10)%11;if(d===10)d=0;if(d!==Number(s[n]))return false;}return true;}
 
@@ -35,7 +36,13 @@ export default async function handler(req,res){
   const within=open==null||close==null||open===close?true:open<close?now>=open&&now<close:now>=open||now<close;
   if(config.ordersOpen===false||!within)return res.status(409).json({error:'store_closed',message:'Loja fechada. Cardápio disponível apenas para leitura.'});
   if(config.deliveryEnabled===false)return res.status(409).json({error:'delivery_disabled',message:'Delivery indisponível.'});
-  const fee=Number(settings?.[0]?.value?.deliveryFee||0);
+  let fee=Number(settings?.[0]?.value?.deliveryFee||0);
+  if(config.deliveryMode==='km'){
+   const destination=[address.street,address.number,address.district,address.city,address.state,address.cep,'Brasil'].map(x=>String(x||'').trim()).filter(Boolean).join(', ');
+   if(!address.street||!address.number||!address.city||!address.state||!address.cep)return res.status(400).json({error:'invalid_delivery_address'});
+   try{fee=(await calculateRouteDelivery(config,destination,subtotalCents/100)).deliveryFee;}
+   catch(e){return res.status(422).json({error:'delivery_quote_failed',message:e.message});}
+  }
   if(!Number.isFinite(fee)||fee<0)throw Error('INVALID_FEE');
   const totalCents=subtotalCents+money(fee);
   if(totalCents<=0||totalCents>10000000)return res.status(400).json({error:'invalid_total'});
