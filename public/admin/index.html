@@ -73,11 +73,23 @@ async function saveSite(){
   const ids=['heroTitle','heroSub','heroButton','benefit1','benefit2','benefit3','ordersOpen','minOrder','prepTime','scheduledOrders','scheduleLeadMinutes','scheduleInterval','deliveryFee','deliveryArea','deliveryMode','deliveryBaseFee','deliveryPerKm','deliveryMinFee','deliveryMaxKm','deliveryFreeOver','deliveryMinOrder','deliveryRegionRules','openTime','closeTime','whatsappNumber','instagram','facebook','storeNotice'],data={};
   ids.forEach(id=>{const e=document.getElementById(id);if(e)data[id]=e.type==='checkbox'?e.checked:e.value});
   data.scheduledOrders=false;
-  localStorage.setItem('srdogao_site_settings',JSON.stringify(data));
-  const {data:current}=await sb.from('srdogao_settings').select('value').eq('key','site').maybeSingle();
+  const numericFields=['deliveryFee','deliveryBaseFee','deliveryPerKm','deliveryMinFee','deliveryMaxKm','deliveryFreeOver','deliveryMinOrder'];
+  for(const id of numericFields){const value=Number(data[id]||0);if(!Number.isFinite(value)||value<0){toast('Confira o valor de '+document.getElementById(id).previousElementSibling?.textContent);document.getElementById(id).focus();return;}}
+  const regionLines=String(data.deliveryRegionRules||'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+  const seen=new Set();
+  for(let i=0;i<regionLines.length;i++){
+    const fields=regionLines[i].split('|').map(x=>x.trim());
+    const amount=Number((fields[2]||'').replace(',','.'));
+    if(fields.length!==3||!fields[0]||!fields[1]||!fields[2]||!Number.isFinite(amount)||amount<0){toast('Revise a região na linha '+(i+1));document.getElementById('deliveryRegionRules').focus();return;}
+    const key=(fields[0]+'|'+fields[1]).toLocaleLowerCase('pt-BR');
+    if(seen.has(key)){toast('Região repetida na linha '+(i+1));return;}seen.add(key);
+  }
+  const {data:current,error:readError}=await sb.from('srdogao_settings').select('value').eq('key','site').maybeSingle();
+  if(readError)return toast('Erro ao consultar configurações');
   const merged={...(current?.value||{}),...data};
   const {error}=await sb.from('srdogao_settings').upsert({key:'site',value:merged,updated_at:new Date().toISOString()},{onConflict:'key'});
   if(error)return toast('Não foi possível salvar as configurações');
+  localStorage.setItem('srdogao_site_settings',JSON.stringify(merged));
   toast('Configurações salvas');
 }
 window.saveSite=saveSite;
