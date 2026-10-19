@@ -172,7 +172,7 @@ function publicLink(path){return new URL(path,window.location.origin).href}windo
   document.getElementById('dashOrdersToday').textContent=orders.filter(o=>o.created_at&&dateKey(o.created_at)===today).length;
   document.getElementById('dashPreparing').textContent=orders.filter(o=>['confirmed','preparing','ready'].includes(o.status)).length;
   document.getElementById('dashOnWay').textContent=orders.filter(o=>o.status==='out_for_delivery').length;
-  const customers=new Set(orders.filter(o=>o.customer_phone||o.customer_name).map(o=>String(o.customer_phone||'').replace(/\\D/g,'')||String(o.customer_name).trim().toLowerCase()));
+  const customers=new Set(orders.filter(o=>o.customer_phone||o.customer_name).map(o=>String(o.customer_phone||'').replace(/\D/g,'')||String(o.customer_name).trim().toLowerCase()));
   document.getElementById('dashCustomers').textContent=customers.size;
  }catch{for(const id of ['dashOrdersToday','dashPreparing','dashOnWay','dashCustomers'])document.getElementById(id).textContent='—'}
 }
