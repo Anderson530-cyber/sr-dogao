@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#ffd500"><title>Acompanhar pedido | Sr. Dogão</title>
+<style>
+:root{font-family:system-ui,-apple-system,Arial,sans-serif;color:#292727;background:#f6f5f2}*{box-sizing:border-box}body{margin:0}header{background:#fff;border-bottom:1px solid #e8e5df;padding:16px 20px}header a{font-weight:900;text-decoration:none;color:#bd1520;font-size:1.25rem}main{max-width:960px;margin:24px auto;padding:0 16px}.grid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(250px,1fr);gap:18px}.card{background:#fff;border:1px solid #ebe6df;border-radius:18px;padding:20px;box-shadow:0 8px 24px #34230b08}h1{font-size:1.65rem;margin:0 0 8px}h2{font-size:1.05rem;margin:0 0 12px}p{line-height:1.5}.muted{color:#756f69;font-size:.92rem}.pill{display:inline-block;padding:8px 12px;background:#fff4c5;border-radius:100px;font-weight:800;font-size:.83rem}.pin{font-size:2.3rem;letter-spacing:.22em;font-weight:900;margin:12px 0;color:#b51c23}.map{height:370px;width:100%;border:0;border-radius:12px;background:#e8edea}.placeholder{height:260px;background:#f3f3f3;border-radius:12px;display:grid;place-items:center;color:#706f6c;text-align:center;padding:18px}.note{background:#fff7d9;border-radius:12px;padding:12px;font-size:.88rem}.hidden{display:none!important}.error{color:#b51c23}.row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.dot{height:9px;width:9px;border-radius:50%;background:#d1a000}small{font-size:.82rem}@media(max-width:700px){.grid{grid-template-columns:1fr}.map{height:290px}main{margin-top:16px}.card{padding:16px}}
+</style></head><body><header><a href="/">🌭 Sr. Dogão</a></header><main><h1>Acompanhe seu pedido</h1><p class="muted" id="intro">Consultando o andamento da entrega...</p><div class="grid"><section class="card"><div class="row"><span class="pill" id="status">Carregando</span><small class="muted" id="updated"></small></div><h2 style="margin-top:20px">Localização do entregador</h2><div id="mapPlaceholder" class="placeholder">O mapa será exibido quando o entregador iniciar a rota e compartilhar a localização.</div><iframe id="map" class="map hidden" title="Localização aproximada do entregador" referrerpolicy="no-referrer" loading="lazy"></iframe><p class="muted" id="gpsInfo">Aguardando informações de GPS.</p><p class="muted" id="driver"></p><p class="muted" id="eta"></p></section><aside class="card"><h2>Código de confirmação</h2><p class="muted">Informe o código ao entregador <strong>somente quando receber o pedido</strong>.</p><div class="pin" id="pin">••••</div><p class="note">O entregador digitará esse código para concluir a entrega. Não envie antes de receber seus produtos.</p><p class="muted" id="sync">Verificação automática a cada 5 segundos enquanto esta página estiver aberta.</p></aside></div></main>
+<script>
+(()=>{
+'use strict';
+const API='https://dlccdfwteekecjiwybfr.supabase.co/rest/v1/rpc/srdogao_track_order';
+const KEY='sb_publishable_izc2on9Gie9UC5iCHSjaBQ_5ItuscE2';
+const $=id=>document.getElementById(id);
+const token=new URLSearchParams(location.search).get('token');
+const labels={pending:'Pedido recebido',confirmed:'Pedido confirmado',preparing:'Em preparo',ready:'Pronto para entrega',out_for_delivery:'Saiu para entrega',delivered:'Entregue',cancelled:'Cancelado'};
+let loading=false,lastCoords='',lastStatus='';
+async function refresh(){
+ if(loading||document.visibilityState==='hidden')return;
+ if(!token||!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(token)){$('intro').textContent='Link de acompanhamento inválido. Abra o link recebido com seu pedido.';$('status').textContent='Link inválido';return}
+ loading=true;
+ try{
+ const response=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json','apikey':KEY},body:JSON.stringify({p_token:token}),cache:'no-store'});
+ if(!response.ok)throw Error('Falha na consulta');
+ const o=await response.json();
+ if(!o){$('intro').textContent='Pedido não encontrado para este link.';$('status').textContent='Não encontrado';return}
+ $('intro').textContent='Acompanhe o andamento e a localização compartilhada durante a entrega.';
+ $('status').textContent=labels[o.status]||'Em andamento';
+ $('updated').textContent='Atualizado às '+new Date().toLocaleTimeString('pt-BR');
+ $('driver').textContent=o.driver_name?'Entregador: '+o.driver_name:'Entregador ainda não atribuído.';
+ $('eta').textContent=Number.isFinite(Number(o.eta_minutes))&&o.eta_minutes!==null&&o.status==='out_for_delivery'?'Previsão informada: '+o.eta_minutes+' min':'';
+ $('pin').textContent=o.delivery_pin&&o.status!=='cancelled'?String(o.delivery_pin):'••••';
+ if(o.status==='delivered'){$('gpsInfo').textContent='Entrega concluída. O rastreamento foi encerrado.';$('map').classList.add('hidden');$('mapPlaceholder').classList.remove('hidden');$('mapPlaceholder').textContent='Pedido entregue';return}
+ const lat=Number(o.driver_lat),lng=Number(o.driver_lng),time=Date.parse(o.driver_location_at||''),age=Date.now()-time;
+ const valid=o.status==='out_for_delivery'&&o.driver_lat!=null&&o.driver_lng!=null&&Number.isFinite(lat)&&Number.isFinite(lng)&&Math.abs(lat)<=90&&Math.abs(lng)<=180;
+ if(valid){
+  const coords=lat.toFixed(5)+','+lng.toFixed(5);
+  if(coords!==lastCoords){$('map').src='https://www.openstreetmap.org/export/embed.html?bbox='+encodeURIComponent([lng-.006,lat-.006,lng+.006,lat+.006].join(','))+'&layer=mapnik&marker='+encodeURIComponent(lat+','+lng);lastCoords=coords}
+  $('map').classList.remove('hidden');$('mapPlaceholder').classList.add('hidden');
+  $('gpsInfo').textContent=Number.isFinite(time)?(age>=0&&age<120000?'Localização recente · ':'Última localização conhecida (GPS desatualizado) · ')+new Date(time).toLocaleTimeString('pt-BR'):'Localização recebida sem horário válido.';
+ }else{$('map').classList.add('hidden');$('mapPlaceholder').classList.remove('hidden');$('gpsInfo').textContent='Aguardando GPS de uma entrega ativa.';lastCoords=''}
+ $('sync').textContent='Consulta automática a cada 5 segundos. O GPS depende da conexão do celular do entregador.';
+ lastStatus=o.status;
+ }catch(e){$('updated').textContent='Sem conexão';$('sync').textContent='Não foi possível atualizar agora. Tentaremos novamente automaticamente.'}finally{loading=false}
+}
+refresh();setInterval(refresh,5000);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refresh()});
+})();
+</script></body></html>
