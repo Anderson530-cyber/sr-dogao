@@ -130,7 +130,7 @@ html,body{overflow-x:clip!important;overflow-y:visible!important}
  .store-info .store-title-row .loyalty-link{margin:0!important;align-self:center!important}
 }
 /* Desktop/tablet: manter a logo cruzando a borda do cabecalho como antes. */
-@media(min-width:701px){.store-nav{z-index:20!important}.store-info{z-index:21!important}.store-info .store-logo{z-index:22!important}}
+@media(min-width:701px){.store-nav{z-index:30!important;position:sticky!important}.store-nav-inner{position:relative;z-index:31!important}.store-info{z-index:21!important;pointer-events:none!important}.store-info .store-logo{z-index:22!important;pointer-events:auto!important}.store-info .store-identity{pointer-events:auto!important}}
 /* Uma unica imagem de canto a canto no desktop, celular e tablet. */
 .cover-slot{height:auto!important;aspect-ratio:4.4/1!important;min-height:0!important;background:#8d0e20!important;position:relative;overflow:hidden}
 .cover-slot::before{content:none!important}
