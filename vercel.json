@@ -4,6 +4,16 @@
   "rewrites": [
     {
       "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "adm.srdogao.com.br"
+        }
+      ],
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/",
       "destination": "/cardapio-web-preview/index.html"
     }
   ],
