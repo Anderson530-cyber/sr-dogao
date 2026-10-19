@@ -131,6 +131,10 @@ html,body{overflow-x:clip!important;overflow-y:visible!important}
 }
 /* Desktop/tablet: manter a logo cruzando a borda do cabecalho como antes. */
 @media(min-width:701px){.store-nav{z-index:30!important;position:sticky!important}.store-nav-inner{position:relative;z-index:31!important}.store-info{z-index:31!important;pointer-events:none!important}.store-info .store-logo{position:relative!important;z-index:32!important;pointer-events:none!important}.store-info .store-identity{pointer-events:none!important}.store-info .store-identity .loyalty-link,.store-info .store-identity button{pointer-events:auto!important}}
+/* Dialogos sempre acima da logo e das barras fixas. */
+.store-info-layer{z-index:1000!important;isolation:isolate}
+.store-info-layer.open{display:flex!important}
+.store-info-dialog{position:relative;z-index:1;isolation:isolate}
 /* Uma unica imagem de canto a canto no desktop, celular e tablet. */
 .cover-slot{height:auto!important;aspect-ratio:4.4/1!important;min-height:0!important;background:#8d0e20!important;position:relative;overflow:hidden}
 .cover-slot::before{content:none!important}
