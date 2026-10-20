@@ -45,7 +45,7 @@ header{background:var(--y);position:sticky;top:0;z-index:10;box-shadow:0 2px 14p
 <aside class="panel summary">
 <h2>Resumo do pedido</h2>
 <div class="line"><span>Subtotal</span><strong id="subtotal">R$ 0,00</strong></div>
-<div class="line"><span>Entrega</span><strong id="deliveryLabel">Calcule a entrega</strong></div>
+<div class="line"><span>Entrega</span><button id="deliveryLabel" type="button" onclick="showStep(2);document.getElementById('cep').focus()" style="border:0;background:transparent;color:#bb1720;font-weight:800;text-decoration:underline;cursor:pointer;padding:0;text-align:right">Calcule a entrega</button></div>
 <div class="line" id="discountLine" style="display:none"><span>Desconto</span><strong id="discountLabel">- R$ 0,00</strong></div>
 <div class="line" id="redeemLine" style="display:none"><span>Resgate</span><strong id="redeemLabel"></strong></div>
 <div class="total"><span>Total</span><span id="total">R$ 0,00</span></div>
@@ -377,7 +377,7 @@ function updateSummary(){
   const delivery=currentDeliveryFee();
   const selectedReward=selectedRedeem(),couponValue=couponDiscount(),redeemValue=(selectedReward&&selectedReward.type==='discount'&&!checkoutState.couponCode)?redeemDiscount():0,discount=couponValue+redeemValue;
   document.getElementById('subtotal').textContent=money(subtotal);
-  const hasDeliveryAddress=Boolean(checkoutState.address?.cep&&checkoutState.address?.street&&checkoutState.address?.number);const deliveryKnown=checkoutState.deliveryType==='pickup'||(hasDeliveryAddress&&checkoutState.deliveryFee!=null);document.getElementById('deliveryLabel').textContent=deliveryKnown?(delivery===0?'Grátis':money(delivery)):'Calcule a entrega';
+  const hasDeliveryAddress=Boolean(checkoutState.address?.cep&&checkoutState.address?.street&&checkoutState.address?.number);const deliveryKnown=checkoutState.deliveryType==='pickup'||(hasDeliveryAddress&&checkoutState.deliveryFee!=null);const deliveryLabel=document.getElementById('deliveryLabel');deliveryLabel.textContent=deliveryKnown?(delivery===0?'Grátis':money(delivery)):'Calcule a entrega';deliveryLabel.style.textDecoration=deliveryKnown?'none':'underline';deliveryLabel.style.color=deliveryKnown?'inherit':'#bb1720';
   const discountLine=document.getElementById('discountLine');
   if(discount>0){discountLine.style.display='flex';document.getElementById('discountLabel').textContent='- '+money(discount)}else{discountLine.style.display='none'}
   const redeemLine=document.getElementById('redeemLine'),r=selectedRedeem();
