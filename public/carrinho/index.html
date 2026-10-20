@@ -45,12 +45,12 @@ header{background:var(--y);position:sticky;top:0;z-index:10;box-shadow:0 2px 14p
 <aside class="panel summary">
 <h2>Resumo do pedido</h2>
 <div class="line"><span>Subtotal</span><strong id="subtotal">R$ 0,00</strong></div>
-<div class="line"><span>Entrega</span><strong id="deliveryLabel">R$ 0,00</strong></div>
+<div class="line"><span>Entrega</span><strong id="deliveryLabel">Calcule a entrega</strong></div>
 <div class="line" id="discountLine" style="display:none"><span>Desconto</span><strong id="discountLabel">- R$ 0,00</strong></div>
 <div class="line" id="redeemLine" style="display:none"><span>Resgate</span><strong id="redeemLabel"></strong></div>
 <div class="total"><span>Total</span><span id="total">R$ 0,00</span></div>
 <button class="primary" id="goAddress" type="button">Continuar</button>
-<a class="continue" href="/cardapio/">Adicionar mais itens</a>
+<a class="continue" href="/">+ Adicionar mais itens</a>
 </aside>
 </div>
 </section>
@@ -377,12 +377,12 @@ function updateSummary(){
   const delivery=currentDeliveryFee();
   const selectedReward=selectedRedeem(),couponValue=couponDiscount(),redeemValue=(selectedReward&&selectedReward.type==='discount'&&!checkoutState.couponCode)?redeemDiscount():0,discount=couponValue+redeemValue;
   document.getElementById('subtotal').textContent=money(subtotal);
-  document.getElementById('deliveryLabel').textContent=delivery===0?'Grátis':money(delivery);
+  const hasDeliveryAddress=Boolean(checkoutState.address?.cep&&checkoutState.address?.street&&checkoutState.address?.number);const deliveryKnown=checkoutState.deliveryType==='pickup'||(hasDeliveryAddress&&checkoutState.deliveryFee!=null);document.getElementById('deliveryLabel').textContent=deliveryKnown?(delivery===0?'Grátis':money(delivery)):'Calcule a entrega';
   const discountLine=document.getElementById('discountLine');
   if(discount>0){discountLine.style.display='flex';document.getElementById('discountLabel').textContent='- '+money(discount)}else{discountLine.style.display='none'}
   const redeemLine=document.getElementById('redeemLine'),r=selectedRedeem();
   if(r){redeemLine.style.display='flex';document.getElementById('redeemLabel').textContent=r.title}else{redeemLine.style.display='none'}
-  document.getElementById('total').textContent=money(Math.max(0,subtotal-discount)+(delivery||0));
+  document.getElementById('total').textContent=deliveryKnown?money(Math.max(0,subtotal-discount)+(delivery||0)):money(Math.max(0,subtotal-discount))+' + entrega';
   const minOrder=Math.max(0,Number(siteSettings.minOrder||0)),missing=Math.max(0,minOrder-subtotal),btn=document.getElementById('goAddress');
   if(btn){btn.disabled=missing>0;btn.textContent=missing>0?'Faltam '+money(missing)+' para o pedido mínimo':'Continuar'}
 }
@@ -767,7 +767,7 @@ document.getElementById('finishOrder').onclick=async()=>{
  }catch(error){message.textContent=error.message||'Falha ao iniciar pagamento.';button.disabled=false;button.textContent='Gerar pagamento Pix';}
  finally{pixCheckoutBusy=false}
 };
-document.querySelectorAll('[data-back]').forEach(button=>button.onclick=()=>showStep(Number(button.dataset.back)));
+document.querySelectorAll('[data-back]').forEach(button=>button.onclick=()=>showStep(Math.max(1,currentStep-1)));
 document.querySelectorAll('.option input').forEach(input=>input.addEventListener('change',syncOptions));
 
 if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});
