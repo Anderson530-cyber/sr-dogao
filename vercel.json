@@ -14,6 +14,16 @@
     },
     {
       "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "entregador.srdogao.com.br"
+        }
+      ],
+      "destination": "/entregador/index.html"
+    },
+    {
+      "source": "/",
       "destination": "/cardapio-web-preview/index.html"
     }
   ],
