@@ -405,11 +405,12 @@ function renderCart(){
   document.querySelectorAll('[data-note]').forEach(field=>field.onchange=()=>updateItemNote(Number(field.dataset.note),field.value));
   updateSummary();
 }
-function changeQty(index,delta){const cart=getCart();if(!cart[index])return;cart[index].qty+=delta;if(cart[index].qty<=0)cart.splice(index,1);saveCart(cart);renderCart()}
+function clearGuestDeliveryOnEmptyCart(){if(getCart().length)return;const verified=String(localStorage.getItem('srdogao_pin_verified_cpf')||'').replace(/\D/g,'');const account=String(checkoutState.customer?.cpf||'').replace(/\D/g,'');if(verified.length===11&&verified===account)return;delete checkoutState.address;delete checkoutState.deliveryFee;delete checkoutState.deliveryType;delete checkoutState.scheduledFor;localStorage.removeItem('srdogao_address');localStorage.setItem('srdogao_checkout',JSON.stringify(checkoutState));for(const id of ['cep','city','state','street','number','district','reference']){const el=document.getElementById(id);if(el)el.value=''}document.querySelectorAll('input[name="deliveryType"]').forEach(el=>el.checked=false);updateSummary()}
+function changeQty(index,delta){const cart=getCart();if(!cart[index])return;cart[index].qty+=delta;if(cart[index].qty<=0)cart.splice(index,1);saveCart(cart);clearGuestDeliveryOnEmptyCart();renderCart()}
 function removeItem(index){
   const cart=getCart(),item=cart[index];
   if(item?.rewardItem&&item.rewardId===checkoutState.redeemRewardId){checkoutState.redeemRewardId='';persistCheckout();renderRedeemTrigger()}
-  cart.splice(index,1);saveCart(cart);renderCart()
+  cart.splice(index,1);saveCart(cart);clearGuestDeliveryOnEmptyCart();renderCart()
 }
 function updateItemNote(index,value){const cart=getCart();if(!cart[index])return;cart[index].note=String(value||'').trim();saveCart(cart)}
 function showStep(step){
