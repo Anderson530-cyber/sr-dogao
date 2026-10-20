@@ -1,32 +1,6 @@
 {
   "cleanUrls": true,
   "trailingSlash": false,
-  "rewrites": [
-    {
-      "source": "/",
-      "has": [
-        {
-          "type": "host",
-          "value": "adm.srdogao.com.br"
-        }
-      ],
-      "destination": "/admin/index.html"
-    },
-    {
-      "source": "/",
-      "has": [
-        {
-          "type": "host",
-          "value": "entregador.srdogao.com.br"
-        }
-      ],
-      "destination": "/entregador/index.html"
-    },
-    {
-      "source": "/",
-      "destination": "/cardapio-web-preview/index.html"
-    }
-  ],
   "headers": [
     {
       "source": "/index.html",
@@ -45,6 +19,35 @@
           "value": "no-store, max-age=0"
         }
       ]
+    }
+  ],
+  "routes": [
+    {
+      "src": "^/$",
+      "has": [
+        {
+          "type": "host",
+          "value": "adm.srdogao.com.br"
+        }
+      ],
+      "dest": "/admin/index.html"
+    },
+    {
+      "src": "^/$",
+      "has": [
+        {
+          "type": "host",
+          "value": "entregador.srdogao.com.br"
+        }
+      ],
+      "dest": "/entregador/index.html"
+    },
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "^/$",
+      "dest": "/index.html"
     }
   ]
 }
