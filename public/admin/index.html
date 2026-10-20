@@ -105,6 +105,7 @@ body{background:var(--bg);color:var(--d)}
   try{if(typeof window.adminAfterLogin==='function')await window.adminAfterLogin();else status('Acesso autorizado, mas o painel não inicializou completamente.')}catch(e){console.error('Falha no painel',e);status('Falha ao carregar informações do painel.')}
   return true;
  }
+ ['user','pass'].forEach(function(id){document.getElementById(id).addEventListener('keydown',function(event){if(event.key==='Enter'&&!event.isComposing){event.preventDefault();document.getElementById('loginBtn').click()}})});
  btn.addEventListener('click',async function(event){
   event.preventDefault();event.stopImmediatePropagation();
   if(busy)return;
