@@ -207,7 +207,7 @@ let adminPromotionConfig=null;
 async function loadAdminPromotion(){
  try{
   const cfg=window.SR_DOGAO_PUBLIC_CONFIG;
-  const response=await fetch(cfg.url+'/rest/v1/srdogao_settings?key=eq.site&select=value',{headers:{apikey:cfg.publishableKey,Authorization:'Bearer '+cfg.publishableKey}});
+  const response=await fetch(cfg.url+'/rest/v1/srdogao_settings?key=eq.site&select=value',{headers:{apikey:cfg.publishableKey}});
   if(!response.ok)return;
   const rows=await response.json();adminPromotionConfig=rows?.[0]?.value?.adminPromotion||null;
   renderAdminPromotion();
