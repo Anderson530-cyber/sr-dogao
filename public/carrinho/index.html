@@ -732,8 +732,8 @@ document.getElementById('finishOrder').onclick=async()=>{
   const order=await create.json();
   if(!create.ok||!order.order_id||!order.token)throw Error('Não foi possível registrar o pedido. Verifique os dados e tente novamente.');
   localStorage.setItem('srdogao_pending_pix_order',JSON.stringify({id:order.order_id,token:order.token}));
-  message.textContent='Pedido registrado. Solicitando cobrança ao Asaas...';
-  const response=await fetch('/api/sr-dogao-pay/create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({orderId:order.order_id,token:order.token,method:'PIX'})});
+  message.textContent='Pedido registrado. Solicitando cobrança Pix à Efí...';
+  const response=await fetch('/api/sr-dogao-pay/efi-create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({orderId:order.order_id,token:order.token})});
   const pay=await response.json();
   if(!response.ok||!pay.copy_paste){
    message.textContent='Pedido registrado, mas não foi possível gerar o Pix. Não tente criar outro pedido: entre em contato com o estabelecimento para verificar a cobrança.';
