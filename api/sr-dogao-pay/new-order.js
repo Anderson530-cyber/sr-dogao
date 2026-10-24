@@ -12,7 +12,7 @@ export default async function handler(req,res){
   const scheduledDate=timing==='scheduled'?new Date(scheduledFor):null;
   if(timing==='scheduled'&&(!scheduledFor||!Number.isFinite(scheduledDate.getTime())||scheduledDate.getTime()<=Date.now()))return res.status(400).json({error:'invalid_schedule'});
   const name=String(customer?.name||'').trim(),phone=String(customer?.phone||'').replace(/\D/g,''),cpf=String(customer?.cpf||'').replace(/\D/g,'');
-  if(!validDogaoCpf(cpf)||name.length<2||name.length>120||phone.length<10||phone.length>11||!Array.isArray(items)||!items.length||items.length>40||!address||typeof address!=='object')
+  if((cpf&&!/^\d{11}$/.test(cpf))||name.length<2||name.length>120||phone.length<10||phone.length>11||!Array.isArray(items)||!items.length||items.length>40||!address||typeof address!=='object')
    return res.status(400).json({error:'invalid_order'});
   const normalized=items.map(x=>({id:Number(x.id),qty:Number(x.qty)}));
   if(normalized.some(x=>!Number.isSafeInteger(x.id)||!Number.isSafeInteger(x.qty)||x.qty<1||x.qty>30))
@@ -46,7 +46,7 @@ export default async function handler(req,res){
    p_total:totalCents/100,p_order_timing:timing,p_scheduled_for:scheduledDate?scheduledDate.toISOString():null
   }});
   if(!created?.id||!created?.public_token)throw Error('CREATE_FAILED');
-  await db('srdogao_orders',{method:'PATCH',query:'?id=eq.'+encodeURIComponent(created.id),body:{customer_cpf:cpf,delivery_fee:money(fee)/100}});
+  await db('srdogao_orders',{method:'PATCH',query:'?id=eq.'+encodeURIComponent(created.id),body:{...(cpf?{customer_cpf:cpf}:{}),delivery_fee:money(fee)/100}});
   return res.status(201).json({order_id:created.id,token:created.public_token,total:totalCents/100,status:'pending_payment'});
  }catch(e){console.error('Dogao order creation',e.message);return res.status(503).json({error:'order_creation_failed'});}
 }
