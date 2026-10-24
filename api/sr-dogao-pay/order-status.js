@@ -1,6 +1,7 @@
 // Consulta pública limitada ao pedido que possui o token secreto do cliente.
 import {db} from './_db.js';
 import {asaasRequest,publicPaymentStatus} from './_asaas.js';
+import {efiRequest} from './_efi.js';
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export default async function handler(req,res){
  res.setHeader('Cache-Control','no-store');
@@ -10,9 +11,26 @@ export default async function handler(req,res){
  try{
   const orders=await db('srdogao_orders',{query:'?id=eq.'+encodeURIComponent(orderId)+'&public_token=eq.'+encodeURIComponent(token)+'&select=id,status,created_at,order_timing,scheduled_for,items,total,delivery_pin,arriving_notified_at,delivered_at'});
   if(!orders?.length)return res.status(404).json({error:'not_found'});
-  const payments=await db('srdogao_pay_payments',{query:'?order_id=eq.'+encodeURIComponent(orderId)+'&select=status,billing_type,created_at,asaas_payment_id,amount_cents&order=created_at.desc&limit=1'});
+  const payments=await db('srdogao_pay_payments',{query:'?order_id=eq.'+encodeURIComponent(orderId)+'&select=status,billing_type,provider,efi_txid,created_at,asaas_payment_id,amount_cents&order=created_at.desc&limit=1'});
   const p=payments?.[0];let paymentStatus=p?.status||'not_created';
-  if(p?.asaas_payment_id&&paymentStatus==='pending'){
+  if(p?.provider==='efi'&&p?.efi_txid&&paymentStatus==='pending'){
+   try{
+    const current=await efiRequest('/v2/cob/'+encodeURIComponent(p.efi_txid));
+    if(current.txid===p.efi_txid&&current.status==='CONCLUIDA'&&Number.isInteger(p.amount_cents)&&Math.round(Number(current.valor?.original)*100)===p.amount_cents){
+     const paid=Array.isArray(current.pix)?current.pix.find(x=>x.txid===p.efi_txid):null;
+     const eventId=String(paid?.endToEndId||'');
+     if(eventId){
+      const settled=await db('rpc/srdogao_efi_settle_pix',{method:'POST',body:{p_event_id:eventId,p_txid:p.efi_txid,p_amount_cents:p.amount_cents,p_payload:{txid:p.efi_txid,status:current.status,endToEndId:eventId,horario:paid?.horario||null,source:'verified_provider_poll'}}});
+      if(settled===true)paymentStatus='received';
+      else{
+       const refreshed=await db('srdogao_pay_payments',{query:'?order_id=eq.'+encodeURIComponent(orderId)+'&provider=eq.efi&efi_txid=eq.'+encodeURIComponent(p.efi_txid)+'&select=status&limit=1'});
+       if(['confirmed','received'].includes(refreshed?.[0]?.status))paymentStatus=refreshed[0].status;
+      }
+     }
+    }
+   }catch(error){console.error('dogao_efi_reconciliation_failed',String(error?.message||'unknown').slice(0,90));}
+  }
+  if(p?.provider!=='efi'&&p?.asaas_payment_id&&paymentStatus==='pending'){
    try{
     const current=await asaasRequest('/payments/'+encodeURIComponent(p.asaas_payment_id));
     if(current.id===p.asaas_payment_id&&['CONFIRMED','RECEIVED'].includes(current.status)&&Number.isInteger(p.amount_cents)&&Math.round(Number(current.value)*100)===p.amount_cents){
